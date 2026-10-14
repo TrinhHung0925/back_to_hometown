@@ -37,6 +37,8 @@ dependencies:
   get: ^4.7.3
   get_storage: ^2.1.1
   flutter_screenutil: ^5.9.3
+  flame: ^1.38.2
+  flame_audio: ^2.12.2
 
 dev_dependencies:
   flutter_test:
@@ -62,7 +64,26 @@ flutter:
 
   assets:
     - assets/images/
+    - assets/images/map/
     - assets/icons/
+    - assets/audio/
+
+  fonts:
+    - family: Manrope
+      fonts:
+        - asset: assets/fonts/Manrope-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Manrope-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Manrope-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Manrope-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Manrope-ExtraBold.ttf
+          weight: 800
+    - family: PaytoneOne
+      fonts:
+        - asset: assets/fonts/PaytoneOne-Regular.ttf
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

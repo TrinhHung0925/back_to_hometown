@@ -60,6 +60,37 @@ class AppText extends StatelessWidget {
     fontSize ??= 14;
   }
 
+  /// Chữ tiêu đề kiểu Tết (Paytone One — tròn, đậm, hỗ trợ tiếng Việt).
+  AppText.paytone(
+    this.text, {
+    Key? key,
+    this.fontWeight = FontWeight.w400,
+    this.fontSize,
+    this.maxLines,
+    this.color = AppColors.ff000000,
+    this.fontFamily = 'PaytoneOne',
+    this.textAlign,
+    this.maxLength,
+    this.margin,
+    this.padding,
+    this.fontStyle,
+    this.lineHeight,
+    this.decoration,
+    this.letterSpacing,
+    this.shadow,
+    this.constraints,
+    this.boxDecoration,
+    this.foreground,
+    this.overflow = TextOverflow.ellipsis,
+    this.alignment,
+    this.height,
+    this.listColorsGradient,
+    this.beginGradient,
+    this.endGradient,
+  }) : super(key: key) {
+    fontSize ??= 14;
+  }
+
   @override
   Widget build(BuildContext context) {
     var disT = text;

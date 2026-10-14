@@ -4,10 +4,12 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 
 import 'route.dart';
+import 'service/audio_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await GetStorage.init();
+  await AudioService.shared.init();
   runApp(const MyApp());
 }
 
@@ -22,9 +24,13 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return ScreenUtilInit(
-      designSize: const Size(390, 884),
+      // Game chỉ chạy màn ngang nên khung thiết kế là ngang (884×390),
+      // khác mặc định dọc 390×884 trong flutter_architecture.md.
+      designSize: const Size(884, 390),
       minTextAdapt: true,
-      splitScreenMode: true,
+      // Tắt: splitScreenMode ép chiều cao tối thiểu 700 (dành cho màn dọc),
+      // màn ngang cao ~400 sẽ bị phóng mọi kích thước .h lên ~1.8 lần.
+      splitScreenMode: false,
       builder: (context, child) {
         return GetMaterialApp(
           debugShowCheckedModeBanner: false,
