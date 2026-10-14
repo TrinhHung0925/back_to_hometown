@@ -252,7 +252,38 @@ abstract class Img {
         imgDriverCarCrouch,
       ];
 
+  // Gà vịt chó qua đường (đầu hướng lên trên; khung _flap/_run khi chạy).
+  static const String imgAnimalDuck = '$assetsImgPath/img_animal_duck.png';
+  static const String imgAnimalDuckFlap = '$assetsImgPath/img_animal_duck_flap.png';
+  static const String imgAnimalDuckWhite = '$assetsImgPath/img_animal_duck_white.png';
+  static const String imgAnimalDuckWhiteFlap = '$assetsImgPath/img_animal_duck_white_flap.png';
+  static const String imgAnimalRooster = '$assetsImgPath/img_animal_rooster.png';
+  static const String imgAnimalRoosterFlap = '$assetsImgPath/img_animal_rooster_flap.png';
+  static const String imgAnimalHen = '$assetsImgPath/img_animal_hen.png';
+  static const String imgAnimalHenFlap = '$assetsImgPath/img_animal_hen_flap.png';
+  static const String imgAnimalDog1 = '$assetsImgPath/img_animal_dog_1.png';
+  static const String imgAnimalDog2 = '$assetsImgPath/img_animal_dog_2.png';
+  static const String imgAnimalDogRun = '$assetsImgPath/img_animal_dog_run.png';
+
+  static const List<String> animals = [
+    imgAnimalDuck,
+    imgAnimalDuckFlap,
+    imgAnimalDuckWhite,
+    imgAnimalDuckWhiteFlap,
+    imgAnimalRooster,
+    imgAnimalRoosterFlap,
+    imgAnimalHen,
+    imgAnimalHenFlap,
+    imgAnimalDog1,
+    imgAnimalDog2,
+    imgAnimalDogRun,
+  ];
+
   static List<String> get worldArt => [
+        ...animals,
+        // Săm, lốp thợ vá lưu động bày ra đất.
+        item('va_sam'),
+        item('va_lop'),
         ...roadside,
         ...tripEvents,
         texAsphalt,

@@ -131,7 +131,8 @@ class NailPatch {
   static const double width = GameConfig.laneWidth * 0.8;
 }
 
-const _mechanics = ['Chú Tư', 'Anh Hùng', 'Chú Bảy', 'Anh Tuấn', 'Chú Năm', 'Anh Dũng'];
+/// Tên thợ vá xe (tiệm ven đường, thợ lưu động).
+const mechanicNames = ['Chú Tư', 'Anh Hùng', 'Chú Bảy', 'Anh Tuấn', 'Chú Năm', 'Anh Dũng'];
 const _bottleSellers = ['Bà Sáu', 'Cô Ba', 'Bà Năm', 'Cô Hạnh', 'Bà Tám'];
 const _owners = ['Cô Ba', 'Chú Tư', 'Bà Sáu', 'Chị Hoa', 'Anh Hùng', 'Cô Lan', 'Út Hiền', 'Chú Bảy', 'Bà Năm', 'Chị Mai', 'Anh Tuấn', 'Cô Hạnh'];
 
@@ -153,7 +154,7 @@ typedef StallZone = ({RoadKind kind, double startS, double endS});
   int roadSide() => random.nextDouble() < 0.62 ? 1 : -1;
   String owner() => _owners[random.nextInt(_owners.length)];
   // Thợ vá xe thường là đàn ông; bán xăng lẻ hay là các bà, các cô.
-  String mechanic() => _mechanics[random.nextInt(_mechanics.length)];
+  String mechanic() => mechanicNames[random.nextInt(mechanicNames.length)];
   String bottleSeller() => _bottleSellers[random.nextInt(_bottleSellers.length)];
 
   /// Rải đều theo khoảng cách (km) trong các đoạn [kinds].

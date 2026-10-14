@@ -210,7 +210,7 @@ class TripMapPainter extends CustomPainter {
     }
 
     // Chấm thành phố (dưới cùng), ưu tiên nhãn: trên lộ trình > thành phố lớn > còn lại.
-    final showMinorLabels = camera.scale > 75;
+    final showMinorLabels = camera.scale > _minorLabelScale;
     // Cùng hạng thì theo thứ tự ưu tiên của danh sách thành phố lớn.
     final majors = majorIds.toList();
     int priority(Place p) => _rank(p) * 100 + (majors.contains(p.id) ? majors.indexOf(p.id) : 99);
@@ -277,11 +277,18 @@ class TripMapPainter extends CustomPainter {
           ? 1
           : 2;
 
+  /// Tỉ lệ camera bắt đầu hiện tên các điểm nhỏ.
+  static const double _minorLabelScale = 75;
+
   void _dot(Canvas canvas, Offset s, Place p) {
     final u = unit;
     final onRoute = routeIds.contains(p.id);
-    final r = (onRoute ? 4.6 : majorIds.contains(p.id) ? 4.2 : 3.4) * u;
-    canvas.drawCircle(s.translate(0, 0.8 * u), r + 1.2 * u, Paint()..color = const Color(0x40000000));
+    final major = majorIds.contains(p.id);
+    // Thu nhỏ cả nước: chấm điểm nhỏ bé lại (tới lúc hiện tên mới đủ cỡ) để
+    // thành phố lớn nổi lên, vùng nhiều tỉnh không thành một đám chấm.
+    final grow = onRoute || major ? 1.0 : ((camera.scale - 20) / (_minorLabelScale - 20)).clamp(0.0, 1.0);
+    final r = (onRoute ? 4.6 : major ? 4.2 : 2.2 + 1.2 * grow) * u;
+    canvas.drawCircle(s.translate(0, 0.8 * u), r + (0.6 + 0.6 * grow) * u, Paint()..color = const Color(0x40000000));
     canvas.drawCircle(s, r, Paint()..color = AppColors.ffFFFFFF);
     canvas.drawCircle(
       s,
@@ -289,7 +296,7 @@ class TripMapPainter extends CustomPainter {
       Paint()
         ..color = onRoute ? MapColors.route : MapColors.label
         ..style = PaintingStyle.stroke
-        ..strokeWidth = (onRoute ? 2.2 : 1.6) * u,
+        ..strokeWidth = (onRoute ? 2.2 : 1.2 + 0.4 * grow) * u,
     );
   }
 

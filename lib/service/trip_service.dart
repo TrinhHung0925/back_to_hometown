@@ -31,6 +31,16 @@ class TripService {
       // Dữ liệu cũ không đọc được thì bỏ.
       LocalService.shared.clearTrip();
     }
+    final progress = _current;
+    if (progress != null && !progress.finished && progress.budget < GameConfig.timeBudgetFactor) {
+      // Chuyến lưu từ bản cũ (ít thời gian dư hơn): lùi đồng hồ cho phần
+      // đường còn lại được dư như chuyến mới.
+      final remaining = progress.plan.stages.skip(progress.stageIndex).fold(0.0, (sum, s) => sum + stageGameMinutes(s));
+      progress
+        ..clockMinutes -= (GameConfig.timeBudgetFactor - progress.budget) * remaining
+        ..budget = GameConfig.timeBudgetFactor;
+      _save(progress);
+    }
     return _current;
   }
 
@@ -69,6 +79,7 @@ class TripService {
       stageCount: progress.plan.stages.length,
       seed: _random.nextInt(1 << 20),
       south: _isSouth(progress.plan, progress.stageIndex),
+      laterMinutes: progress.plan.stages.skip(progress.stageIndex + 1).fold(0.0, (sum, s) => sum + stageGameMinutes(s)),
     );
   }
 

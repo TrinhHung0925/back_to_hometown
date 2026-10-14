@@ -59,6 +59,10 @@ abstract class GameConfig {
   /// khoảng nửa sức kéo cần lái của ô tô.
   static const double curveAdviseDrift = 60;
 
+  /// Lực văng xe tự ôm được (lốp còn bám, người lái nghiêng theo cua): vào
+  /// cua không quá tốc độ khuyên dùng thì không phải bẻ lái giữ làn.
+  static const double curveHoldDrift = curveAdviseDrift;
+
   /// Bị văng tì vào mép đường / dải phân cách (lực văng vượt mức này): quệt
   /// lề, mất tốc độ nhanh.
   static const double scrapeMinDrift = 30;
@@ -175,7 +179,8 @@ abstract class GameConfig {
   static const double gameSecondsPerPlaySecond = 2 * 3600 / 300;
 
   /// Thời gian cho phép = thời gian ước tính × hệ số này.
-  static const double timeBudgetFactor = 1.25;
+  /// Dư nhiều cho những chuyện dọc đường (ghé quán, đổ xăng, vá xe, bị phạt).
+  static const double timeBudgetFactor = 1.6;
 
   // ------------------------------------------------------- Lộ trình
   /// Mỗi km quốc lộ mất bao nhiêu giây chơi (100 km ≈ 5 phút).
@@ -285,7 +290,7 @@ abstract class GameConfig {
   /// Mức tỉnh táo lúc vào chặng (0..100) và tụt mỗi giây chơi khi đang lái;
   /// ban đêm tụt nhanh hơn. Một chặng ~5 phút chơi ≈ 2 giờ lái liền.
   static const double alertStart = 82;
-  static const double alertDecayPerSecond = 0.24;
+  static const double alertDecayPerSecond = 0.17;
   static const double alertNightFactor = 1.7;
 
   /// Dưới mức này: ngáp, mép màn hình tối dần.
@@ -342,13 +347,23 @@ abstract class GameConfig {
   /// Hộp va chạm nhỏ hơn hình vẽ cho cảm giác công bằng.
   static const double hitboxShrink = 0.82;
 
-  /// Chênh lệch tốc độ lúc đâm từ mức này trở lên là tai nạn (thua ngay).
-  static const double accidentRelativeSpeed = 0.75 * normalSpeed;
+  /// Chênh lệch tốc độ lúc đâm từ mức này trở lên là tai nạn: xe hỏng, lập
+  /// biên bản, chờ sửa xe (mất nhiều lì xì, nhiều phút) rồi mới đi tiếp.
+  static const double accidentRelativeSpeed = 1.0 * normalSpeed;
+
+  /// Đâm cực mạnh: thua chặng ngay. Đối đầu xe ngược chiều thì ngưỡng thấp
+  /// hơn; tông đuôi / đâm ngang / đâm barrier thì phải rất nhanh mới tới mức này.
+  static const double fatalRelativeSpeed = 1.5 * normalSpeed;
+  static const double fatalRearRelativeSpeed = 1.9 * normalSpeed;
+
+  /// Tai nạn (chưa tới mức thua): phạt lì xì, phút chờ lập biên bản + sửa xe.
+  static const int crashFineLixi = 6;
+  static const double crashFineMinutes = 35;
 
   // ------------------------------------------------------------ Công an
   /// Phạt: số lì xì và số phút trong game bị giữ lại.
   static const int fineLixi = 5;
-  static const double fineMinutes = 15;
+  static const double fineMinutes = 10;
 
   /// Không đủ lì xì thì bị giữ thêm.
   static const double fineExtraMinutesIfBroke = 20;
@@ -426,9 +441,9 @@ abstract class GameConfig {
   static const double nailGapKmMin = 18;
   static const double nailGapKmMax = 34;
   static const double nailPatchLength = 70;
-  static const double nailFlatChanceMotorbike = 0.8;
-  static const double nailFlatChanceCar = 0.6;
-  static const double nailFlatChanceBus = 0.5;
+  static const double nailFlatChanceMotorbike = 0.65;
+  static const double nailFlatChanceCar = 0.5;
+  static const double nailFlatChanceBus = 0.4;
 
   /// Sập ổ gà lúc chạy nhanh hơn mức này thì có thể xì lốp.
   static const double potholeFlatSpeed = 1.25 * normalSpeed;
@@ -447,7 +462,7 @@ abstract class GameConfig {
 
   /// Gọi thợ vá xe lưu động tới tận nơi.
   static const int mobileRepairLixi = 3;
-  static const double mobileRepairMinutes = 20;
+  static const double mobileRepairMinutes = 15;
 
   // ------------------------------------------------------------- Mưa
   /// Miền Bắc dịp Tết hay mưa phùn, thỉnh thoảng mưa rào; miền Nam ít mưa.

@@ -61,11 +61,11 @@ void main() {
     });
 
     test('đi ngược qua cua phải của đường thì thành cua trái: văng sang phải chiều đi', () {
-      final p = PlayerPhysics(spec: VehicleSpec.car, s: 5000, d: Lanes.center(2), speed: 300)
+      final p = PlayerPhysics(spec: VehicleSpec.car, s: 5000, d: Lanes.center(2), speed: 450)
         ..dir = -1
         ..curvature = 1 / 600;
       for (var i = 0; i < 60; i++) {
-        p.speed = 300;
+        p.speed = 450;
         p.update(1 / 60);
       }
       expect(p.d, lessThan(Lanes.center(2) - 20));

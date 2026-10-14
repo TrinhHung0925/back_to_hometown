@@ -12,6 +12,7 @@ import 'game_controller.dart';
 import 'game_hud.dart';
 import 'game_overlays.dart';
 import 'roadside_overlays.dart';
+import 'speedometer.dart';
 import 'steering_stick.dart';
 
 class GameView extends StatefulWidget {
@@ -111,11 +112,34 @@ class _GameViewState extends State<GameView> {
                           ? const SizedBox.shrink()
                           : SteeringStick(onChanged: controller.onSteer)),
                     ),
+                    // Đồng hồ tốc độ sát bên trái nút Phanh; nút theo tình huống
+                    // xếp tiếp bên trái đồng hồ.
                     Positioned(
-                      right: 14.h + 222.h,
+                      right: 14.h + 215.h,
+                      bottom: 6.h,
+                      child: Obx(() {
+                        final hud = controller.hud.value;
+                        if (hud == null || controller.phase.value == GamePhase.resting) return const SizedBox.shrink();
+                        return Speedometer(
+                          speedKmh: hud.speedKmh,
+                          cruiseKmh: hud.cruiseKmh,
+                          maxKmh: controller.maxSpeedKmh,
+                          limitKmh: hud.speedLimit?.limit,
+                        );
+                      }),
+                    ),
+                    Positioned(
+                      right: 14.h + 215.h + Speedometer.width + 10.h,
                       bottom: 22.h,
                       child: ContextActions(controller: controller),
                     ),
+                    Obx(() {
+                      if (!controller.cruiseTip.value || controller.phase.value != GamePhase.driving) {
+                        return const SizedBox.shrink();
+                      }
+                      // Góc trên bên trái (phía làn ngược chiều) để không che xe mình.
+                      return Positioned(left: 12.h, top: 58.h, child: const CruiseTip());
+                    }),
                     Obx(() {
                       final job = controller.job.value;
                       if (job == null) return const SizedBox.shrink();
@@ -153,7 +177,7 @@ class _GameViewState extends State<GameView> {
                           onHeadlight: controller.toggleHeadlights,
                           headlightOn: hud?.headlightsOn ?? false,
                           hornTick: controller.hornTick.value,
-                          speedFraction: hud == null ? 0 : hud.speedKmh / controller.maxSpeedKmh,
+                          gasFraction: hud == null ? 0 : hud.cruiseKmh / controller.maxSpeedKmh,
                           danger: hud?.danger ?? false,
                         );
                       }),

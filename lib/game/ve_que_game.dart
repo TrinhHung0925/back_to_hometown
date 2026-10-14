@@ -6,8 +6,10 @@ import 'package:flame/game.dart';
 
 import '../model/trip.dart';
 import '../resource/app_resource.dart';
+import 'components/animal_layer.dart';
 import 'components/checkpoint_layer.dart';
 import 'components/crew_layer.dart';
+import 'components/effects_layer.dart';
 import 'components/night_overlay.dart';
 import 'components/pickups.dart';
 import 'components/police_component.dart';
@@ -20,6 +22,7 @@ import 'components/traffic_layer.dart';
 import 'components/vehicle_sprite.dart';
 import 'components/world_paints.dart';
 import 'game_config.dart';
+import 'logic/animals.dart';
 import 'logic/chase.dart';
 import 'logic/collision.dart';
 import 'logic/cross_traffic.dart';
@@ -93,6 +96,8 @@ class VeQueGame extends FlameGame {
   )..cargo = setup.startCargo;
   late final TrafficSystem traffic = TrafficSystem(Random(setup.seed * 31 + 7));
   late final CrossTraffic cross = CrossTraffic(Random(setup.seed * 17 + 9));
+  late final AnimalSystem animals = AnimalSystem(Random(setup.seed * 7 + 3));
+  late double _animalTimer = 14 + _random.nextDouble() * 20;
   late final List<TollGate> _gates = [for (final t in layout.tolls) TollGate(t, setup.vehicle)];
   late final TripClock clock = TripClock(minutes: setup.startClockMinutes);
   late int lixi = setup.startLixi;
@@ -146,6 +151,11 @@ class VeQueGame extends FlameGame {
   late final RainSkyLayer _rainSky;
   late final RainStreaks _rainStreaks;
   late final CrewLayer _crew;
+  late final AnimalLayer _animalLayer;
+  final GroundEffects _groundFx = GroundEffects();
+  final AirEffects _airFx = AirEffects();
+  final Fireworks _fireworks = Fireworks();
+  final SpeechLayer _speech = SpeechLayer();
 
   /// Đang dừng đón khách ở điểm nào, đã dừng bao lâu.
   BusStop? _boardingStop;
@@ -299,6 +309,7 @@ class VeQueGame extends FlameGame {
     _rainSky = RainSkyLayer();
     _rainStreaks = RainStreaks();
     _crew = CrewLayer(road: road, images: images);
+    _animalLayer = AnimalLayer(road: road, animals: animals, images: images);
     _playerSprite = VehicleSprite(
       sprite: _riderSprite,
       shadow: Sprite(images.fromCache(Img.imgShadowBox)),
@@ -325,7 +336,9 @@ class VeQueGame extends FlameGame {
       _featureGround,
       _nailLayer,
       _rainGround,
+      _groundFx,
       _busStops,
+      _animalLayer,
       _trafficLayer,
       _checkpoints,
       _playerSprite,
@@ -334,8 +347,11 @@ class VeQueGame extends FlameGame {
       _featureOverhead,
       _powerLines,
       _overtakeArrow,
+      _airFx,
       _rainSky,
       _night,
+      _fireworks,
+      _speech,
     ]);
     await camera.viewport.add(_rainStreaks);
     _updateCamera(0);
@@ -374,6 +390,14 @@ class VeQueGame extends FlameGame {
     _hornCooldown = GameConfig.hornCooldown;
     onSound(GameSound.horn);
     if (phase != GamePhase.driving && phase != GamePhase.chase) return true;
+    final scared = animals.scare(player.s, dir, GameConfig.hornReach + 200);
+    if (scared != null) {
+      _notice('scare${scared.s.round()}', switch (scared.kind) {
+        AnimalKind.duck => 'Bóp còi — đàn vịt nháo nhác vỗ cánh chạy!',
+        AnimalKind.chicken => 'Bóp còi — gà hoảng hốt chạy toán loạn!',
+        AnimalKind.dog => 'Bóp còi — con chó cụp đuôi chạy mất!',
+      }, NoticeKind.info);
+    }
     switch (traffic.requestYield(_snapshot)) {
       case YieldResult.honkedBack:
         _honkBackTimer = 0.45;
@@ -416,6 +440,7 @@ class VeQueGame extends FlameGame {
         _stepFinished(step);
     }
     _updateCamera(step);
+    _stepEffects(step);
     _syncVisuals();
     _pushHud();
     super.update(step);
@@ -480,6 +505,7 @@ class VeQueGame extends FlameGame {
     _stepBusStops(dt);
     _stepOvertakes(dt);
     _stepPickups(dt);
+    _stepAnimals(dt);
     _stepNails();
     _stepStallNotices();
     _stepServiceNotices();
@@ -489,7 +515,8 @@ class VeQueGame extends FlameGame {
     // Va chạm: xe dọc đường, xe đường ngang, vật cản cố định.
     final hit = traffic.hit(_playerBox);
     if (hit != null) {
-      _collide(relativeImpactSpeed(dir * player.speed, hit.velocity), onMinor: () => traffic.remove(hit), stopOther: () => hit.speed = 0);
+      _collide(relativeImpactSpeed(dir * player.speed, hit.velocity),
+          headOn: hit.velocity * dir < 0, onMinor: () => traffic.remove(hit), stopOther: () => hit.speed = 0);
       return;
     }
     final crossHit = cross.hit(_playerBox);
@@ -498,6 +525,8 @@ class VeQueGame extends FlameGame {
       _collide(rel, onMinor: () => cross.remove(crossHit), stopOther: () => crossHit.speed = 0);
       return;
     }
+    final critter = _uTurn == null ? animals.hit(_playerBox) : null;
+    if (critter != null) _hitAnimal(critter);
     if (_hitsObstacle()) {
       _collide(player.speed, onMinor: () {}, stopOther: () {}, backOff: true);
       return;
@@ -527,6 +556,7 @@ class VeQueGame extends FlameGame {
       canSpawnAt: (s) => !layout.nearFeature(s, margin: 160),
     );
     cross.update(dt, _time, layout.lightsBetween(_camLeftS - 300, _camRightS + 600), _playerBox);
+    animals.update(dt);
   }
 
   /// Đi ngược quá xa so với chỗ xa nhất đã tới (hoặc lùi về quá điểm xuất
@@ -537,7 +567,7 @@ class VeQueGame extends FlameGame {
     if (dir > 0 || player.s >= limit) return;
     player
       ..s = limit
-      ..speed = 0;
+      ..stop();
     _notice('backtrack${_maxS.round()}', 'Quay lại xa quá rồi — quay đầu về quê thôi!', NoticeKind.warning);
   }
 
@@ -631,7 +661,9 @@ class VeQueGame extends FlameGame {
     player.grip = 1 - (1 - GameConfig.wetGrip) * _wet;
     if (fuel.empty) {
       player.engineOff = !pushing;
-    } else if (fuel.sputtering && player.throttle) {
+      // Máy tắt: xe trôi tới đâu thì mức ga về tới đó (dắt bộ phải bấm Ga lại).
+      if (!pushing) player.cruise = min(player.cruise, player.speed);
+    } else if (fuel.sputtering && player.cruise > 1) {
       if (_sputterLeft > 0) {
         _sputterLeft -= dt;
       } else {
@@ -686,8 +718,9 @@ class VeQueGame extends FlameGame {
   }
 
   /// Xì lốp: rít hơi, xe khựng, báo tìm tiệm vá.
-  void _puncture(String cause) {
+  void _puncture(String cause, {bool nails = false}) {
     tires.puncture(_random);
+    _flatFromNails = nails;
     onSound(GameSound.tireHiss);
     _shake = max(_shake, 0.25);
     final spare = spec.kind.fourWheels && tires.spare;
@@ -706,7 +739,7 @@ class VeQueGame extends FlameGame {
       if (!patch.overlaps(box, shrink: 0.9) || player.speed < 5) continue;
       if (!_nailsChecked.add('${n.seed}/$dir')) continue;
       if (tires.ok && _random.nextDouble() < tires.flatChanceOnNails) {
-        _puncture('Cán phải đinh tặc — xì lốp rồi!');
+        _puncture('Cán phải đinh tặc — xì lốp rồi!', nails: true);
       } else if (tires.ok) {
         onNotice(const GameNotice('Lạo xạo… cán qua bãi đinh. May quá, lốp chưa sao!', kind: NoticeKind.warning));
       }
@@ -881,15 +914,33 @@ class VeQueGame extends FlameGame {
 
   double get _jobSeconds => switch (_job?.kind) {
         RoadsideJobKind.spareTire => spec.kind == VehicleKind.bus ? 5.5 : 4.5,
-        RoadsideJobKind.mobileRepair => 4.8,
+        // Thợ chạy tới, vừa sửa vừa nói chuyện với mình.
+        RoadsideJobKind.mobileRepair => 12,
+        RoadsideJobKind.fuelDelivery => 6.5,
         _ => 4.2,
       };
 
+  /// Tiến độ cho thẻ việc: có người tới giúp thì ba bước khớp thực tế — gọi
+  /// điện, chờ người tới (tới lúc xe đỗ), làm việc tới hết.
+  double get _jobProgress {
+    final total = _jobSeconds;
+    if (_job?.kind == RoadsideJobKind.spareTire || (_job?.steps.length ?? 0) != 3) return (_jobT / total).clamp(0.0, 1.0);
+    if (_jobT < 0.6) return _jobT / 0.6 / 3;
+    if (_jobT < _helperArrive) return 1 / 3 + (_jobT - 0.6) / (_helperArrive - 0.6) / 3;
+    return (2 / 3 + (_jobT - _helperArrive) / (total - _helperArrive) / 3).clamp(0.0, 1.0);
+  }
+
   void _stepJob(double dt) {
     final job = _job!;
+    final before = _jobT;
     _jobT += dt;
     _stepWorld(dt);
-    final progress = (_jobT / _jobSeconds).clamp(0.0, 1.0);
+    if (before < _helperArrive && _jobT >= _helperArrive) _helperArrived(job);
+    if (job.kind == RoadsideJobKind.mobileRepair && _jobT >= _helperArrive) {
+      final (s, d) = _wheelSpot;
+      _repairFx(dt, _talkT, s, d, patch: (3.0, 6.0), pump: (6.3, 7.6));
+    }
+    final progress = _jobProgress;
     if (progress - _jobReported >= 0.02 || progress >= 1) {
       _jobReported = progress;
       onJob?.call(JobState(job, progress));
@@ -1060,6 +1111,7 @@ class VeQueGame extends FlameGame {
     player
       ..d = player.d.clamp(-player.maxOffset, player.maxOffset)
       ..speed = u.done ? 20 : 0
+      ..cruise = u.done ? 20 : 0
       ..lateralVelocity = 0;
   }
 
@@ -1199,7 +1251,9 @@ class VeQueGame extends FlameGame {
     clock.addPenalty(option.minutes);
     tires.fix();
     if (spec.kind.fourWheels) tires.spare = true;
-    _repairT = 2.4;
+    _repairT = _shopRepairSeconds;
+    _repairOption = option;
+    _shopTalk(_restStall!, option);
     onSound(GameSound.toll);
     onNotice(GameNotice('${option.name} xong (−${option.price} lì xì · ${option.minutes.round()} phút) — lốp căng rồi!', kind: NoticeKind.money));
   }
@@ -1222,6 +1276,8 @@ class VeQueGame extends FlameGame {
   void leaveStall() {
     if (phase != GamePhase.resting || _job != null) return;
     if (_restStep == _RestStep.walkingOut || _restStep == _RestStep.pullingOut) return;
+    _stopTalk();
+    _repairT = 0;
     if (_restStep == _RestStep.parking || !_riderLeaves(_restStall!)) {
       _restStep = _RestStep.pullingOut;
       _parkFrom = (player.s, player.d);
@@ -1244,6 +1300,8 @@ class VeQueGame extends FlameGame {
 
   /// Thợ đang vá xe (giây còn lại của cảnh vá).
   double _repairT = 0;
+  RepairOption? _repairOption;
+  static const double _shopRepairSeconds = 9.5;
 
   /// Vị trí, góc lệch của xe trên đường lượn vào / ra (k = 0..1).
   (double, double, double) _parkPath(double k) {
@@ -1280,6 +1338,11 @@ class VeQueGame extends FlameGame {
     final plan = _stalls.planOf(stall);
     _restT += dt;
     _repairT = max(0, _repairT - dt);
+    if (_repairT > 0 && stall.kind.fixesTires) {
+      final (s, d) = _wheelSpot;
+      final patching = _repairOption?.art.startsWith('va') ?? true;
+      _repairFx(dt, _shopRepairSeconds - _repairT, s, d, patch: patching ? (2.0, 4.6) : (0, 0), pump: (5.0, 6.4));
+    }
     _stepWorld(dt);
     for (final g in _gates) {
       if (g.plaza.plazaEnd > _camLeftS - 600 && g.plaza.plazaStart < _camRightS + 1500) g.updateAi(dt, traffic.vehicles);
@@ -1325,7 +1388,8 @@ class VeQueGame extends FlameGame {
         player
           ..s = s
           ..d = d
-          ..speed = 30;
+          ..speed = 30
+          ..cruise = 30;
         _parkYaw = yaw;
         if (k >= 1) {
           _parkYaw = 0;
@@ -1374,8 +1438,16 @@ class VeQueGame extends FlameGame {
     }
     final home = plan.toRoad(Offset(worker.x, worker.y));
     final job = (player.s - dir * spec.length * 0.15, player.d + stall.side * (spec.width / 2 + 12));
+    final repairing = _shopRepairSeconds - _repairT;
     final out = switch (stall.kind) {
-      StallKind.vaXe => _repairT > 0 ? 1.0 : 0.0,
+      // Thợ đi ra cạnh xe (1 giây), làm, xong thì đi về chỗ.
+      StallKind.vaXe => _repairT <= 0
+          ? 0.0
+          : repairing < 1
+              ? ease(repairing)
+              : _repairT < 1
+                  ? ease(_repairT)
+                  : 1.0,
       _ => switch (_restStep) {
           _RestStep.served => ease((_restT / 1.1).clamp(0.0, 1.0)),
           _RestStep.seated => 1.0,
@@ -1392,11 +1464,12 @@ class VeQueGame extends FlameGame {
     final (wx, wy) = road.worldAt(ws, wd);
     // Đang đi thì nhìn về phía trước, tới nơi thì quay mặt vào xe.
     final (tx, ty) = out >= 1 ? road.worldAt(player.s, player.d) : road.worldAt(js, jd);
+    final busy = stall.kind == StallKind.vaXe && out >= 1 ? sin(_time * 9) * 0.14 : 0.0;
     _stalls
       ..servingStall = stall
       ..workerS = ws
       ..workerD = wd
-      ..workerAngle = atan2(ty - wy, tx - wx) + pi / 2;
+      ..workerAngle = atan2(ty - wy, tx - wx) + pi / 2 + busy;
   }
 
   /// Chuyện nghe được ở quán: chào hỏi, chuyện Tết, và tin thật về đoạn đường
@@ -1521,6 +1594,7 @@ class VeQueGame extends FlameGame {
       if (g.plaza.plazaEnd < _camLeftS - 300 || g.plaza.plazaStart > _camRightS + 900) continue;
       stops.addAll(g.stops());
     }
+    stops.addAll(animals.stops());
     return stops;
   }
 
@@ -1569,16 +1643,31 @@ class VeQueGame extends FlameGame {
     return false;
   }
 
-  void _collide(double relative, {required void Function() onMinor, required void Function() stopOther, bool backOff = false}) {
-    final severity = classifyCollision(relative);
+  void _collide(double relative,
+      {required void Function() onMinor, required void Function() stopOther, bool backOff = false, bool headOn = false}) {
+    final severity = classifyCollision(relative, headOn: headOn);
+    _impactFx(relative);
     _finishUTurn();
     player.stop();
-    if (severity == CollisionSeverity.accident) {
+    // Đang bỏ chạy mà đâm mạnh thì hết đường chạy.
+    if (severity == CollisionSeverity.fatal || (severity == CollisionSeverity.crash && phase == GamePhase.chase)) {
       onSound(GameSound.crashHeavy);
       stopOther();
       _shake = 0.7;
       _crashSpin = 6;
       _end(StageEndReason.accident, delay: 1.4);
+      return;
+    }
+    if (severity == CollisionSeverity.crash) {
+      // Tai nạn: xe văng xoay, xe kia đứng lại; quà buộc sau xe rơi vỡ mất một món.
+      onSound(GameSound.crashHeavy);
+      stopOther();
+      _shake = 0.6;
+      _crashSpin = 4;
+      if (player.cargo > 0) player.cargo -= 1;
+      incidentKind = IncidentKind.crash;
+      violation = Violation(IncidentKind.crash, place: _placeName());
+      _startIncident();
       return;
     }
     _shake = 0.3;
@@ -1615,6 +1704,7 @@ class VeQueGame extends FlameGame {
       switch (event) {
         case TollPaid(:final fee, :final broke, :final nonStop):
           lixi -= fee;
+          if (fee > 0) _popAt(player.s, player.d, '−$fee', const Color(0xffFF8A80));
           onSound(GameSound.toll);
           if (broke) {
             clock.addPenalty(GameConfig.tollBrokeMinutes);
@@ -1655,6 +1745,7 @@ class VeQueGame extends FlameGame {
           final fare = stop.passengers * GameConfig.fareLixi;
           player.cargo += stop.passengers;
           lixi += fare;
+          _popAt(player.s, player.d, '+$fare', const Color(0xffFFD166));
           onSound(GameSound.toll);
           onNotice(GameNotice('Đón ${stop.passengers} khách về quê: +$fare lì xì', kind: NoticeKind.money));
         }
@@ -1702,6 +1793,7 @@ class VeQueGame extends FlameGame {
   }
 
   void _stepIncident(double dt) {
+    _crashSpin = max(0, _crashSpin - dt * 5);
     // Công an chạy tới dừng ngay sau xe mình.
     final target = player.s - dir * (spec.length / 2 + 34);
     _policeS += (target - _policeS) * (1 - exp(-2.5 * dt));
@@ -1712,6 +1804,7 @@ class VeQueGame extends FlameGame {
   void payFine() {
     if (phase != GamePhase.incident) return;
     final fine = incidentKind.fineLixi;
+    if (lixi > 0) _popAt(player.s, player.d, '−${min(fine, lixi)}', const Color(0xffFF8A80));
     if (lixi >= fine) {
       lixi -= fine;
       clock.addPenalty(incidentKind.fineMinutes);
@@ -1730,9 +1823,9 @@ class VeQueGame extends FlameGame {
     onPhaseChanged(phase);
   }
 
-  /// Bỏ chạy: bắt đầu rượt đuổi.
+  /// Bỏ chạy: bắt đầu rượt đuổi (xe vừa tai nạn hỏng thì không chạy được).
   void flee() {
-    if (phase != GamePhase.incident) return;
+    if (phase != GamePhase.incident || incidentKind == IncidentKind.crash) return;
     _startChase();
   }
 
@@ -1808,10 +1901,12 @@ class VeQueGame extends FlameGame {
         case PickupKind.lixi:
           lixi++;
           onSound(GameSound.lixi);
+          _popAt(pickup.s, pickup.d, '+1', const Color(0xffFFD166));
         case PickupKind.gift:
           if (player.cargo < spec.cargoCapacity) {
             player.cargo++;
             onSound(GameSound.gift);
+            _popAt(pickup.s, pickup.d, '+1 quà', const Color(0xffFF8FAB));
             onNotice(GameNotice('Nhặt được quà Tết! (${player.cargo}/${spec.cargoCapacity}) — xe nặng hơn'));
           } else {
             onNotice(const GameNotice('Xe đã chất đầy quà rồi!'));
@@ -1928,6 +2023,369 @@ class VeQueGame extends FlameGame {
     }
   }
 
+  // ------------------------------------------- Thợ sửa xe nói chuyện
+  /// Lời thoại đang chạy theo giây (tính từ lúc bắt đầu nói chuyện).
+  List<({double at, bool mine, String text})> _talk = const [];
+  double _talkT = 0;
+  int _talkNext = 0;
+  String _talkName = '';
+  (double, double) Function()? _talkThem;
+  bool _flatFromNails = false;
+  bool _hissed = false;
+  double _fxT = 0;
+
+  /// Thợ lưu động chạy xe tới mất bấy nhiêu giây.
+  static const double _helperArrive = 2.5;
+
+  /// Chỗ thợ lưu động ngồi sửa (cạnh bánh sau, phía lề) và chỗ bánh xe.
+  (double, double) get _mechanicSpot =>
+      (player.s - dir * spec.length * 0.25, player.d + dir * (spec.width / 2 + 14));
+  (double, double) get _wheelSpot =>
+      (player.s - dir * spec.length * (spec.kind == VehicleKind.motorbike ? 0.32 : 0.28), player.d + dir * (spec.width / 2 + 6));
+
+  /// Chỗ mình đang đứng / ngồi (để gắn bong bóng thoại của mình).
+  (double, double) _meAt() {
+    if (_riderOff && _restStall != null) return road.worldAt(_stalls.guestS, _stalls.guestD);
+    return road.worldAt(player.s, player.d);
+  }
+
+  /// Xưng hô theo tên: "Chú Tư" → chú / cháu; "Anh Hùng" → anh / em.
+  static (String self, String you) _pronouns(String name) =>
+      name.startsWith('Chú') || name.startsWith('Bác') ? ('chú', 'cháu') : name.startsWith('Cô') || name.startsWith('Bà') ? ('cô', 'cháu') : ('anh', 'em');
+
+  static String _cap(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1);
+
+  void _startTalk(String name, (double, double) Function() them, List<({double at, bool mine, String text})> lines) {
+    _talk = lines;
+    _talkT = 0;
+    _talkNext = 0;
+    _talkName = name;
+    _talkThem = them;
+    _hissed = false;
+    _speech.clear();
+  }
+
+  void _stopTalk() {
+    _talk = const [];
+    _talkThem = null;
+    _speech.clear();
+  }
+
+  void _stepTalk(double dt) {
+    if (_talkThem == null) return;
+    _talkT += dt;
+    while (_talkNext < _talk.length && _talk[_talkNext].at <= _talkT) {
+      final line = _talk[_talkNext++];
+      if (line.mine) {
+        _speech.say('me', _meAt, line.text, name: 'Mình', mine: true);
+      } else {
+        _speech.say('them', _talkThem!, line.text, name: _talkName);
+      }
+    }
+  }
+
+  /// Hiệu ứng lúc sửa: khói vá nóng bốc lên từ bánh xe, rồi bơm hơi xì xì.
+  void _repairFx(double dt, double t, double s, double d, {required (double, double) patch, required (double, double) pump}) {
+    _fxT -= dt;
+    final (x, y) = road.worldAt(s, d);
+    if (t >= patch.$1 && t < patch.$2 && _fxT <= 0) {
+      _fxT = 0.18;
+      _airFx.dust(_random, x, y, count: 1, size: 13, color: const Color(0xffD8D4CC));
+    }
+    if (t >= pump.$1 && t < pump.$2) {
+      if (!_hissed) {
+        _hissed = true;
+        onSound(GameSound.tireHiss);
+      }
+      if (_fxT <= 0) {
+        // Hơi xì ra ở van khi bơm: từng luồng trắng ngắn.
+        _fxT = 0.09;
+        _airFx.dust(_random, x, y, count: 1, size: 8, color: const Color(0xffF4F7FA));
+      }
+    }
+  }
+
+  /// Người giúp vừa tới: thợ lưu động hỏi chuyện, người mang xăng dặn dò.
+  void _helperArrived(RoadsideJob job) {
+    final name = mechanicNames[_random.nextInt(mechanicNames.length)];
+    final (self, you) = _pronouns(name);
+    final them = self;
+    final car = spec.kind != VehicleKind.motorbike;
+    switch (job.kind) {
+      case RoadsideJobKind.mobileRepair:
+        _startTalk(name, () => road.worldAt(_mechanicSpot.$1, _mechanicSpot.$2), [
+          (at: 0.2, mine: false, text: 'Xì lốp hả $you? Để $self xem nào.'),
+          (at: 1.7, mine: true, text: 'Vâng, đang chạy tự dưng xì hết hơi $them ạ.'),
+          (at: 3.1, mine: false, text: _flatFromNails ? 'Đinh tặc đây này! Đoạn này tụi nó rải suốt, Tết càng nhiều.' : 'Sập ổ gà mạnh quá, rách ${car ? 'lốp' : 'săm'} rồi.'),
+          (at: 4.6, mine: false, text: car ? 'Rút đinh, nút lốp cái là xong, $you đứng nghỉ tí.' : 'Vá nóng cái là xong, $you ngồi nghỉ tí đi.'),
+          (at: 6.0, mine: true, text: 'Tết nhất $them vẫn đi sửa xe à?'),
+          (at: 7.2, mine: false, text: 'Tết mới đông việc chứ! Bơm căng rồi đấy, thượng lộ bình an nhé!'),
+          (at: 8.4, mine: true, text: '${_cap(you)} cảm ơn $them! Chúc $them năm mới phát tài!'),
+        ]);
+      case RoadsideJobKind.fuelDelivery:
+        _startTalk(name, () {
+          final (s, d) = (player.s - dir * (spec.length / 2 + 46), player.d);
+          return road.worldAt(s, d);
+        }, [
+          (at: 0.2, mine: false, text: 'Xăng đây $you ơi! Can này đủ chạy tới cây xăng.'),
+          (at: 1.8, mine: true, text: 'May quá, $you cảm ơn $them nhiều!'),
+          (at: 3.2, mine: false, text: 'Lần sau thấy đèn xăng nháy thì đổ luôn nhé!'),
+        ]);
+      case RoadsideJobKind.spareTire:
+        break;
+    }
+  }
+
+  /// Thợ ở tiệm vá xe vừa làm vừa nói chuyện (tiệm "chặn đầu" bãi đinh thì
+  /// nói kiểu khác).
+  void _shopTalk(Stall stall, RepairOption option) {
+    final name = stall.owner.isEmpty ? 'Thợ vá xe' : stall.owner;
+    final (self, you) = _pronouns(name);
+    final them = self;
+    final first = switch (option.art) {
+      'va_sam' => 'Để $self vá cho, nhanh thôi!',
+      'thay_sam' => 'Săm nát bét rồi, thay cái mới cho chắc nhé.',
+      'va_lop' => 'Rút đinh, nút lốp cái là xong.',
+      _ => 'Lốp này hỏng rồi, thay lốp mới cho an toàn.',
+    };
+    _startTalk(name, () => road.worldAt(_stalls.workerS, _stalls.workerD), [
+      (at: 0.9, mine: false, text: first),
+      if (stall.gouging) ...[
+        (at: 2.4, mine: false, text: 'Đường này đinh nhiều lắm, may mà gặp $self đấy!'),
+        (at: 3.8, mine: true, text: 'Sao giá đắt thế $them...'),
+        (at: 5.0, mine: false, text: 'Tết mà $you, giá Tết!'),
+      ] else ...[
+        (at: 2.4, mine: false, text: _flatFromNails ? 'Lại đinh tặc! Hôm nay $self vá cả chục cái rồi.' : 'Sập ổ gà à? Đường này ổ gà to như cái chậu.'),
+        (at: 3.8, mine: true, text: 'Tết nhất đông khách không $them?'),
+        (at: 5.0, mine: false, text: 'Ngày giáp Tết xe về quê đông lắm $you ạ.'),
+      ],
+      (at: 6.6, mine: false, text: 'Xong rồi, bơm căng rồi đấy. Đi cẩn thận nhé!'),
+      (at: 7.8, mine: true, text: '${_cap(you)} cảm ơn $them, chúc $them năm mới an khang!'),
+    ]);
+  }
+
+  // ------------------------------------------------------- Gà vịt chó
+  /// Thỉnh thoảng trên quốc lộ có gà vịt chó qua đường ngay phía trước.
+  void _stepAnimals(double dt) {
+    for (final g in animals.groups) {
+      if (g.announced) continue;
+      final ahead = (g.s - player.s) * dir;
+      if (ahead < 0 || ahead > _visibleWidth * 0.75) continue;
+      g.announced = true;
+      _notice('animal${g.s.round()}', switch (g.kind) {
+        AnimalKind.duck => 'Đàn vịt qua đường phía trước — giảm tốc, bóp còi cho chúng tránh!',
+        AnimalKind.chicken => 'Gà chạy qua đường — coi chừng con quay đầu chạy ngược!',
+        AnimalKind.dog => 'Chó chạy rông ra đường — đi chậm thôi!',
+      }, NoticeKind.warning);
+    }
+    if (_uTurn != null || player.speed < 0.5 * GameConfig.normalSpeed) return;
+    _animalTimer -= dt;
+    if (_animalTimer > 0) return;
+    _animalTimer = 30 + _random.nextDouble() * 35;
+    final spawnS = (dir > 0 ? _camRightS : _camLeftS) + dir * 160;
+    if (layout.kindAt(spawnS) != RoadKind.highway || layout.nearFeature(spawnS, margin: 450)) return;
+    if (animals.groups.any((g) => (g.s - spawnS).abs() < 1500)) return;
+    if (traffic.vehicles.any((v) => (v.s - spawnS).abs() < 160)) return;
+    final r = _random.nextDouble();
+    final kind = setup.south
+        ? (r < 0.5 ? AnimalKind.duck : r < 0.8 ? AnimalKind.chicken : AnimalKind.dog)
+        : (r < 0.28 ? AnimalKind.duck : r < 0.72 ? AnimalKind.chicken : AnimalKind.dog);
+    animals.spawn(kind, spawnS, _random.nextBool() ? 1 : -1);
+  }
+
+  /// Tông phải con vật: lông bay, xe khựng lại; gà vịt nhà người ta thì phải
+  /// dừng đền (mỗi đàn đền một lần).
+  void _hitAnimal(Animal a) {
+    final (x, y) = road.worldAt(a.s, a.d);
+    final dog = a.kind == AnimalKind.dog;
+    _airFx.dust(_random, x, y, count: dog ? 3 : 7, size: dog ? 14 : 9, color: switch (a.kind) {
+      AnimalKind.duck => a.variant == 1 ? const Color(0xffF4F2EA) : const Color(0xffA88A64),
+      AnimalKind.chicken => const Color(0xffC8823C),
+      AnimalKind.dog => const Color(0xffC9A06A),
+    });
+    player.speed *= dog ? 0.6 : 0.82;
+    _shake = max(_shake, dog ? 0.3 : 0.12);
+    onSound(GameSound.pothole);
+    if (dog) {
+      if (spec.kind == VehicleKind.motorbike) _tiltT = 0.6;
+      _notice('dog${a.s.round()}', 'Chó lao ra đường — suýt ngã! Đi chậm thôi', NoticeKind.warning);
+      return;
+    }
+    final group = animals.groups.firstWhere((g) => g.animals.contains(a));
+    if (group.fined) return;
+    group.fined = true;
+    final pay = min(lixi, 1);
+    lixi -= pay;
+    clock.addPenalty(4);
+    if (pay > 0) _popAt(player.s, player.d, '−1', const Color(0xffFF8A80));
+    onNotice(GameNotice(
+      a.kind == AnimalKind.duck ? 'Quệt phải con vịt — người chăn chạy tới, đền ${pay > 0 ? '1 lì xì' : 'lời xin lỗi'} mất 4 phút' : 'Quệt phải con gà nhà người ta — đền ${pay > 0 ? '1 lì xì' : 'lời xin lỗi'}, mất 4 phút',
+      kind: NoticeKind.warning,
+    ));
+  }
+
+  // ------------------------------------------------------------ Hiệu ứng
+  double _exhaustT = 0;
+  double _heavySmokeT = 0;
+  double _sprayT = 0;
+  double _fireworkT = 1.5;
+  List<(double, double)>? _skidFrom;
+
+  /// Hướng mũi xe mình (góc thế giới), vị trí, véc-tơ tới và sang phải.
+  ({double x, double y, double fx, double fy, double rx, double ry}) get _pose {
+    final u = _uTurn;
+    final backward = (u?.dirFrom ?? dir) < 0;
+    final yaw = u != null ? -u.theta : (phase == GamePhase.resting ? _parkYaw : player.yawOffset);
+    final a = road.at(player.s).heading + yaw + (backward ? pi : 0);
+    final (x, y) = road.worldAt(player.s, player.d);
+    return (x: x, y: y, fx: cos(a), fy: sin(a), rx: -sin(a), ry: cos(a));
+  }
+
+  /// Khói pô, vệt phanh, tia lửa, bụi nước theo xe mình; pháo hoa giao thừa.
+  void _stepEffects(double dt) {
+    _airFx.cameraAngle = _camAngle;
+    _speech.cameraAngle = _camAngle;
+    _stepTalk(dt);
+    _stepFireworks(dt);
+    final driving = phase == GamePhase.driving || phase == GamePhase.chase;
+    if (!driving) {
+      _skidFrom = null;
+      return;
+    }
+    final p = _pose;
+    final v = player.speed;
+    final vx = p.fx * v, vy = p.fy * v;
+    final len = spec.length, wid = spec.width;
+    final moto = spec.kind == VehicleKind.motorbike;
+
+    // Khói pô: vặn ga (đang tăng tốc) thì phụt dày, chạy đều thì mỏng.
+    final engineOn = !player.engineOff && !pushing;
+    if (engineOn) {
+      final accelerating = player.throttle || player.speed < player.cruise - 4;
+      final interval = accelerating ? 0.05 : (v < 5 ? 0.3 : 0.15);
+      _exhaustT -= dt;
+      if (_exhaustT <= 0) {
+        _exhaustT = interval;
+        final side = switch (spec.kind) {
+          VehicleKind.motorbike => 0.32,
+          VehicleKind.car => 0.28,
+          VehicleKind.bus => -0.34,
+        };
+        final ex = p.x - p.fx * len * 0.5 + p.rx * wid * side;
+        final ey = p.y - p.fy * len * 0.5 + p.ry * wid * side;
+        _airFx.exhaust(_random, ex, ey, vx * 0.12 - p.fx * 26, vy * 0.12 - p.fy * 26,
+            strength: accelerating ? 1 : 0.55, diesel: spec.kind == VehicleKind.bus);
+      }
+    }
+
+    // Xe tải, xe khách chạy cùng đường thỉnh thoảng phụt khói đen.
+    _heavySmokeT -= dt;
+    if (_heavySmokeT <= 0) {
+      _heavySmokeT = 0.12;
+      for (final t in traffic.vehicles) {
+        if (!t.type.heavy || t.s < _camLeftS - 100 || t.s > _camRightS + 100 || _random.nextDouble() > 0.35) continue;
+        final back = t.oncoming ? 1.0 : -1.0;
+        final ta = road.at(t.s).heading + (t.oncoming ? pi : 0);
+        final (x, y) = road.worldAt(t.s + back * t.type.length / 2, t.d - back * t.type.width * 0.3);
+        _airFx.exhaust(_random, x, y, -cos(ta) * 30, -sin(ta) * 30, strength: 0.8, diesel: true);
+      }
+    }
+
+    // Bánh sau (xe máy một vết, ô tô hai vết).
+    final rear = -len * (moto ? 0.34 : 0.3);
+    final wheels = moto ? const [0.0] : [-wid * 0.38, wid * 0.38];
+    final points = [for (final w in wheels) (p.x + p.fx * rear + p.rx * w, p.y + p.fy * rear + p.ry * w)];
+
+    // Phanh gấp / trượt cua trên đường khô: vệt lốp in xuống mặt đường.
+    final hardBrake = player.brake && v > 0.3 * GameConfig.normalSpeed;
+    final skidding = (hardBrake || player.scraping || player.lateralVelocity.abs() > 0.75 * player.steerAuthority && v > GameConfig.normalSpeed) && _wet < 0.3;
+    if (skidding) {
+      final from = _skidFrom;
+      if (from != null && from.length == points.length) {
+        for (var i = 0; i < points.length; i++) {
+          _groundFx.skid(from[i].$1, from[i].$2, points[i].$1, points[i].$2, width: moto ? 3 : 4.2, alpha: hardBrake ? 0.34 : 0.22);
+        }
+      }
+      _skidFrom = points;
+    } else {
+      _skidFrom = null;
+    }
+
+    // Quệt lề: tia lửa toé ở hông xe phía mép đường.
+    if (player.scraping) {
+      final side = (player.d > 0 ? 1.0 : -1.0) * dir;
+      final along = (_random.nextDouble() - 0.5) * len * 0.6;
+      _airFx.sparks(_random, p.x + p.rx * side * wid / 2 + p.fx * along, p.y + p.ry * side * wid / 2 + p.fy * along, vx, vy);
+    }
+
+    // Đường ướt: bánh xe tung bụi nước phía sau.
+    if (_wet > 0.3 && v > 0.3 * GameConfig.normalSpeed) {
+      _sprayT -= dt;
+      if (_sprayT <= 0) {
+        _sprayT = 0.035;
+        final strength = (_wet * v / GameConfig.normalSpeed).clamp(0.3, 1.0);
+        for (final (x, y) in points) {
+          _airFx.spray(_random, x, y, vx * 0.25 - p.fx * v * 0.12, vy * 0.25 - p.fy * v * 0.12, strength: strength);
+        }
+      }
+    }
+  }
+
+  /// Va chạm: mảnh vỡ văng ra, khói bụi bốc lên ở đầu xe.
+  void _impactFx(double relative) {
+    final p = _pose;
+    final fx = p.x + p.fx * spec.length / 2, fy = p.y + p.fy * spec.length / 2;
+    final hard = relative / GameConfig.accidentRelativeSpeed;
+    _groundFx.shatter(_random, fx, fy, p.fx * player.speed, p.fy * player.speed, count: (6 + 14 * hard.clamp(0.0, 1.5)).round());
+    _airFx.dust(_random, fx, fy, count: hard > 1 ? 9 : 4, size: hard > 1 ? 24 : 14);
+  }
+
+  /// Chữ nổi tại chỗ (s, d) trên đường.
+  void _popAt(double s, double d, String text, Color color) {
+    final (x, y) = road.worldAt(s, d);
+    _airFx.popup(x, y, text, color);
+  }
+
+  /// Gần giao thừa (từ 22:30) trời bắt đầu có pháo hoa, càng sát nửa đêm càng
+  /// dày; về tới nhà ở chặng cuối thì pháo hoa mừng nổ rộ.
+  void _stepFireworks(double dt) {
+    final m = clock.minutes;
+    final celebrate = phase == GamePhase.finished && _endReason == StageEndReason.arrived && setup.stageNumber >= setup.stageCount;
+    double rate;
+    if (celebrate) {
+      rate = 3;
+    } else if (m >= TripClock.midnight - 90 && m < TripClock.midnight + 30) {
+      final k = ((m - (TripClock.midnight - 90)) / 90).clamp(0.0, 1.0);
+      rate = 0.25 + 2.2 * k * k;
+    } else {
+      return;
+    }
+    _fireworkT -= dt;
+    if (_fireworkT > 0) return;
+    _fireworkT = (0.4 + 1.2 * _random.nextDouble()) / rate;
+    // Chỗ nổ: ngẫu nhiên trong khung nhìn (theo hướng camera).
+    final w = _visibleWidth, h = _visibleHeight;
+    final ax = (_random.nextDouble() - 0.5) * w * 0.9, ay = (_random.nextDouble() - 0.5) * h * 0.8;
+    final c = cos(_camAngle), s = sin(_camAngle);
+    _fireworks.burst(_random, _camX + ax * c - ay * s, _camY + ax * s + ay * c, radius: 80 + _random.nextDouble() * 90);
+  }
+
+  /// Chạy tiếp ở tốc độ thường (từ chỗ đang đứng tới hết chuyến) thì về tới
+  /// nhà dư (dương) / trễ (âm) bao nhiêu phút so với giao thừa.
+  double get spareMinutes {
+    final done = ((player.s - _startS) / GameConfig.unitsPerKm).clamp(0.0, setup.lengthKm);
+    var seconds = 0.0;
+    var at = 0.0;
+    for (final section in setup.sections) {
+      final from = max(at, done);
+      final to = at + section.km;
+      if (to > from && section.km > 0) seconds += section.playSeconds * (to - from) / section.km;
+      at = to;
+    }
+    final need = seconds * GameConfig.gameSecondsPerPlaySecond / 60 + setup.laterMinutes;
+    return clock.minutesLeft - need;
+  }
+
   // -------------------------------------------------------- Kết thúc
   void _end(StageEndReason reason, {required double delay}) {
     if (phase == GamePhase.finished) return;
@@ -1964,8 +2422,11 @@ class VeQueGame extends FlameGame {
   void _updateCamera(double dt) {
     final w = _visibleWidth, h = _visibleHeight;
     final speedRatio = (player.speed / spec.maxSpeed).clamp(0.0, 1.0);
-    final targetFraction =
-        GameConfig.playerScreenXSlow + (GameConfig.playerScreenXFast - GameConfig.playerScreenXSlow) * speedRatio;
+    // Đang làm việc bên lề (thợ tới sửa, chờ xăng): đưa xe vào gần giữa để
+    // thấy cả người giúp đỗ phía sau.
+    final targetFraction = _job != null
+        ? 0.3
+        : GameConfig.playerScreenXSlow + (GameConfig.playerScreenXFast - GameConfig.playerScreenXSlow) * speedRatio;
     _screenFraction += (targetFraction - _screenFraction) * (1 - exp(-2.5 * dt));
     final lead = (0.5 - _screenFraction) * w;
 
@@ -1997,7 +2458,8 @@ class VeQueGame extends FlameGame {
       tx = sx - ux * shift;
       ty = sy - uy * shift;
     }
-    final zoomTarget = resting ? 1.35 : 1.0;
+    // Chạy nhanh thì camera lùi ra một chút: thấy xa hơn, cảm giác tốc độ.
+    final zoomTarget = resting ? 1.35 : 1.0 - 0.13 * speedRatio;
     if ((_zoomFactor - zoomTarget).abs() > 0.001) {
       _zoomFactor += (zoomTarget - _zoomFactor) * (1 - exp(-2.5 * dt));
       camera.viewfinder.zoom = _baseZoom * _zoomFactor;
@@ -2218,9 +2680,9 @@ class VeQueGame extends FlameGame {
         }
       case RoadsideJobKind.fuelDelivery:
       case RoadsideJobKind.mobileRepair:
-        // Xe người giúp: chạy tới đỗ sau xe mình, xong việc thì chạy đi.
-        final arrive = (k / 0.35).clamp(0.0, 1.0);
-        final leave = ((k - 0.85) / 0.15).clamp(0.0, 1.0);
+        // Xe người giúp: chạy tới đỗ sau xe mình (2,5 giây), xong việc thì chạy đi.
+        final arrive = (_jobT / _helperArrive).clamp(0.0, 1.0);
+        final leave = ((_jobT - (_jobSeconds - 1.2)) / 1.2).clamp(0.0, 1.0);
         final park = player.s - dir * (spec.length / 2 + 46);
         final from = _behindEdgeS - dir * 40;
         final hs = leave > 0 ? park + dir * leave * 900 : from + (park - from) * (1 - pow(1 - arrive, 2));
@@ -2233,8 +2695,15 @@ class VeQueGame extends FlameGame {
           _crew.items.add(CrewItem(Img.imgJerrycan, atCar ? player.s : hs - dir * 22, atCar ? player.d + curb * (spec.width / 2 + 10) : hd, heading, 14, 18));
         }
         if (job.kind == RoadsideJobKind.mobileRepair && arrive >= 1 && leave <= 0) {
-          _crew.items.add(CrewItem(Img.imgMechanic, player.s - dir * spec.length * 0.25, player.d + curb * (spec.width / 2 + 14), heading - curb * pi / 2 + pi, 26, 26, shadow: false));
-          if (k > 0.5) _crew.items.add(CrewItem(Img.imgWaterBasin, player.s + dir * spec.length * 0.2, player.d + curb * (spec.width / 2 + 18), 0, 20, 20));
+          // Thợ ngồi cạnh bánh xe, tay thoăn thoắt (người lắc lư theo nhịp làm).
+          final (ms, md) = _mechanicSpot;
+          final busy = _talkT > 1 ? sin(_time * 9) : 0.0;
+          _crew.items.add(CrewItem(Img.imgMechanic, ms + dir * busy * 1.4, md, heading - curb * pi / 2 + pi + busy * 0.12, 26, 26, shadow: false));
+          if (_talkT > 3) _crew.items.add(CrewItem(Img.imgWaterBasin, player.s + dir * spec.length * 0.2, player.d + curb * (spec.width / 2 + 18), 0, 20, 20));
+          // Săm / lốp thợ kéo ra để trên đất lúc vá.
+          if (_talkT > 3 && _talkT < 6.3) {
+            _crew.items.add(CrewItem(Img.item(moto ? 'va_sam' : 'va_lop'), ms - dir * 22, md + curb * 8, heading, 20, 20));
+          }
         }
     }
   }
@@ -2371,6 +2840,8 @@ class VeQueGame extends FlameGame {
       kmDone: ((player.s - _startS) / GameConfig.unitsPerKm).clamp(0, setup.lengthKm).floor(),
       kmTotal: setup.lengthKm.round(),
       speedKmh: (player.speed * GameConfig.displayKmhPerUnitSpeed).round(),
+      cruiseKmh: (player.cruise * GameConfig.displayKmhPerUnitSpeed).round(),
+      spareMinutes: spareMinutes.round(),
       clockLabel: clock.label,
       minutesLeft: max(0, clock.minutesLeft).floor(),
       lixi: lixi,

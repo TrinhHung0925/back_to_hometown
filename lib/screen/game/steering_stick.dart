@@ -27,7 +27,7 @@ class _SteeringStickState extends State<SteeringStick> {
 
   double get _padSize => 124.h;
   double get _nubSize => 58.h;
-  double get _travel => 40.h;
+  double get _travel => 46.h;
 
   void _down(PointerDownEvent e, Size zone) {
     if (_pointer != null) return;
@@ -59,9 +59,10 @@ class _SteeringStickState extends State<SteeringStick> {
   void _update(Offset position) {
     final raw = ((position.dy - _origin!.dy) / _travel).clamp(-1.0, 1.0);
     setState(() => _value = raw);
-    // Vùng chết ở giữa để đi thẳng không bị lệch tay.
-    final magnitude = raw.abs() < _deadZone ? 0.0 : (raw.abs() - _deadZone) / (1 - _deadZone);
-    widget.onChanged(magnitude * raw.sign);
+    // Vùng chết ở giữa để đi thẳng không bị lệch tay; gần giữa thì nhẹ tay
+    // (chỉnh làn từng chút), kéo xa mới đánh lái gắt.
+    final m = raw.abs() < _deadZone ? 0.0 : (raw.abs() - _deadZone) / (1 - _deadZone);
+    widget.onChanged((0.35 * m + 0.65 * m * m) * raw.sign);
   }
 
   @override

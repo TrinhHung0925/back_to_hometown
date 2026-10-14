@@ -22,7 +22,7 @@ import os
 import subprocess
 import time
 
-from map_common import LINKS, PLACES, lines, polygons, simplify, to_map
+from map_common import LINKS, PLACES, lines, polygons, simplify, to_map, zone_of
 
 COUNTRIES = 'asset_source/map_natural_earth/ne_10m_admin_0_countries_vnm.geojson'
 RIVERS = 'asset_source/map_ne_water/ne_10m_rivers_lake_centerlines.geojson'
@@ -76,7 +76,8 @@ def osrm_geometry(a, b, cache):
 CORRIDORS = [
     ('ha_noi', 'da_nang'), ('da_nang', 'nha_trang'), ('nha_trang', 'tp_hcm'), ('tp_hcm', 'ca_mau'),
     ('ha_noi', 'lang_son'), ('ha_noi', 'ha_long'), ('ha_noi', 'lao_cai'), ('tp_hcm', 'vung_tau'),
-    ('ha_noi', 'thai_nguyen'), ('tp_hcm', 'can_tho'),
+    ('ha_noi', 'thai_nguyen'), ('tp_hcm', 'can_tho'), ('ha_long', 'mong_cai'), ('ha_noi', 'hoa_binh'),
+    ('ha_noi', 'tuyen_quang'),
 ]
 
 
@@ -117,16 +118,42 @@ def expressway_by_link(cache):
 
 
 # Bổ sung tay: OSRM (dữ liệu demo) chưa đi qua cao tốc TP.HCM – Trung Lương –
-# Mỹ Thuận – Cần Thơ dù tuyến đã khai thác. Số km lấy xấp xỉ, chỉ để chia
-# loại đường trong game.
+# Mỹ Thuận – Cần Thơ dù tuyến đã khai thác, và không nhận ra cao tốc Hà Nội –
+# Thái Nguyên. Số km lấy xấp xỉ, chỉ để chia loại đường trong game.
 MANUAL_EXPRESSWAY_KM = {
+    ('ha_noi', 'thai_nguyen'): 45.0,
     ('tp_hcm', 'my_tho'): 50.0,
     ('my_tho', 'can_tho'): 85.0,
+    ('tp_hcm', 'tan_an'): 40.0,
+    ('tan_an', 'my_tho'): 10.0,
+    ('my_tho', 'vinh_long'): 40.0,
+    ('vinh_long', 'can_tho'): 20.0,
+}
+
+
+# Đường đèo dốc miền núi: thời gian OSRM tính theo tốc độ giới hạn, lạc quan
+# quá (70–85 km/h qua đèo Ô Quy Hồ, Khánh Lê...). Chặn tốc độ trung bình của ô
+# tô ở mức đi thật (km/h), xấp xỉ theo thời gian Google Maps / kinh nghiệm.
+SLOW_ROAD_KMH = {
+    # Tây Bắc, Việt Bắc
+    ('lao_cai', 'sa_pa'): 38, ('sa_pa', 'lai_chau'): 40, ('lai_chau', 'dien_bien'): 45,
+    ('son_la', 'dien_bien'): 45, ('moc_chau', 'son_la'): 50, ('hoa_binh', 'moc_chau'): 48,
+    ('tuyen_quang', 'ha_giang'): 50, ('thai_nguyen', 'bac_kan'): 55, ('bac_kan', 'cao_bang'): 45,
+    ('lang_son', 'cao_bang'): 42,
+    # Tây Nguyên và các đèo xuống biển
+    ('quang_ngai', 'kon_tum'): 45, ('quang_ngai', 'pleiku'): 50, ('quy_nhon', 'pleiku'): 50,
+    ('pleiku', 'buon_ma_thuot'): 55, ('buon_ma_thuot', 'nha_trang'): 50, ('buon_ma_thuot', 'da_lat'): 48,
+    ('buon_ma_thuot', 'tp_hcm'): 50, ('buon_ma_thuot', 'gia_nghia'): 50, ('gia_nghia', 'dong_xoai'): 55,
+    ('da_lat', 'phan_rang'): 45, ('da_lat', 'nha_trang'): 45, ('da_lat', 'bien_hoa'): 50,
+    ('da_lat', 'bao_loc'): 50, ('bao_loc', 'bien_hoa'): 45,
 }
 
 
 def build_routes(cache):
     by_id = {p[0]: p for p in PLACES}
+    for table in (MANUAL_EXPRESSWAY_KM, SLOW_ROAD_KMH):
+        missing = [k for k in table if k not in LINKS]
+        assert not missing, f'không có trong LINKS (sai thứ tự a, b?): {missing}'
     links = []
     for a, b in LINKS:
         r = dict(osrm(by_id[a], by_id[b], cache))
@@ -138,7 +165,12 @@ def build_routes(cache):
     for a, b, r, _ in links:
         # Lấy phần cao tốc lớn hơn trong hai cách tính, không vượt quá 95% đoạn.
         r['ctKm'] = min(r['km'] * 0.95, max(r['ctKm'], corridor[(a, b)], MANUAL_EXPRESSWAY_KM.get((a, b), 0)))
-        print(f'{a:>14} → {b:<14} {r["km"]:6.1f} km  {r["hours"]:4.1f} h  cao tốc {r["ctKm"]:5.1f} km')
+        if r['ctKm'] < 3:
+            r['ctKm'] = 0.0  # vài trăm mét cao tốc "lạc" từ tuyến dài bên cạnh: bỏ
+        if (a, b) in SLOW_ROAD_KMH:
+            r['hours'] = max(r['hours'], r['km'] / SLOW_ROAD_KMH[(a, b)])
+        print(f'{a:>14} → {b:<14} {r["km"]:6.1f} km  {r["hours"]:4.2f} h  {r["km"] / r["hours"]:3.0f} km/h  '
+              f'cao tốc {r["ctKm"]:5.1f} km')
     return links
 
 
@@ -245,9 +277,12 @@ def write_route_dart(links):
         'abstract class VnRouteData {',
         '  static const List<Place> places = [',
     ]
-    for pid, name, lat, lon, label in PLACES:
+    for place in PLACES:
+        pid, name, lat, lon, label, region = place
         x, y = to_map(lon, lat)
-        out.append(f"    Place(id: '{pid}', name: '{name}', x: {x:.4f}, y: {y:.4f}, label: LabelSide.{side[label]}),")
+        extra = f", region: '{region}'" if region else ''
+        out.append(f"    Place(id: '{pid}', name: '{name}', x: {x:.4f}, y: {y:.4f}, label: LabelSide.{side[label]}, "
+                   f"zone: PlaceZone.{zone_of(place)}{extra}),")
     out += ['  ];', '', '  static const List<RoadLink> links = [']
     for a, b, r, _ in links:
         out.append(

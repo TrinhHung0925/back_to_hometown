@@ -24,6 +24,7 @@ class StageSetup {
     this.stageCount = 1,
     this.seed = 0,
     this.south = false,
+    this.laterMinutes = 0,
   });
 
   final VehicleKind vehicle;
@@ -52,6 +53,10 @@ class StageSetup {
   /// Chặng ở miền Nam (lúa chín vàng dịp Tết thay cho lúa non).
   final bool south;
 
+  /// Các chặng sau chặng này cần chừng bao nhiêu phút trong game (chạy ở tốc
+  /// độ thường) — để HUD báo đang dư hay trễ giờ so với giao thừa.
+  final double laterMinutes;
+
   double get lengthKm => sections.fold(0, (sum, s) => sum + s.km);
   double get lengthUnits => lengthKm * GameConfig.unitsPerKm;
 
@@ -69,6 +74,7 @@ class StageSetup {
         stageCount: stageCount,
         seed: value,
         south: south,
+        laterMinutes: laterMinutes,
       );
 }
 
@@ -172,17 +178,23 @@ enum IncidentKind {
   speeding,
 
   /// Quay đầu nơi cấm (vùng chốt CSGT).
-  illegalUTurn;
+  illegalUTurn,
+
+  /// Đâm mạnh gây tai nạn: xe hỏng, chờ lập biên bản và sửa xe (không bỏ
+  /// chạy được).
+  crash;
 
   /// Tiền phạt (lì xì) và số phút bị giữ lại.
   int get fineLixi => switch (this) {
         speeding => GameConfig.speedingFineLixi,
         illegalUTurn => GameConfig.uTurnFineLixi,
+        crash => GameConfig.crashFineLixi,
         _ => GameConfig.fineLixi,
       };
   double get fineMinutes => switch (this) {
         speeding => GameConfig.speedingFineMinutes,
         illegalUTurn => GameConfig.uTurnFineMinutes,
+        crash => GameConfig.crashFineMinutes,
         _ => GameConfig.fineMinutes,
       };
 }
@@ -305,6 +317,8 @@ class HudData {
     required this.kmDone,
     required this.kmTotal,
     required this.speedKmh,
+    this.cruiseKmh = 0,
+    this.spareMinutes = 0,
     required this.clockLabel,
     required this.minutesLeft,
     required this.lixi,
@@ -340,6 +354,13 @@ class HudData {
   final int kmDone;
   final int kmTotal;
   final int speedKmh;
+
+  /// Mức ga đang giữ (km/h): xe tự giữ tốc độ này khi buông tay.
+  final int cruiseKmh;
+
+  /// Chạy tiếp ở tốc độ thường thì về tới nhà dư (dương) / trễ (âm) bao
+  /// nhiêu phút so với giao thừa.
+  final int spareMinutes;
   final String clockLabel;
   final int minutesLeft;
   final int lixi;
@@ -413,6 +434,8 @@ class HudData {
       other.kmDone == kmDone &&
       other.kmTotal == kmTotal &&
       other.speedKmh == speedKmh &&
+      other.cruiseKmh == cruiseKmh &&
+      other.spareMinutes == spareMinutes &&
       other.clockLabel == clockLabel &&
       other.minutesLeft == minutesLeft &&
       other.lixi == lixi &&
@@ -446,7 +469,7 @@ class HudData {
 
   @override
   int get hashCode => Object.hashAll([
-        kmDone, kmTotal, speedKmh, clockLabel, minutesLeft, lixi, cargo, danger, light, curve, headlightsOn, night, //
+        kmDone, kmTotal, speedKmh, cruiseKmh, spareMinutes, clockLabel, minutesLeft, lixi, cargo, danger, light, curve, headlightsOn, night, //
         alert, drowse, canUTurn, stallPrompt, stallKind, reversed, fuel, fuelKm, tire, spare, rain, rainKind, raincoat,
         soaked, speedLimit, pullOver, outOfFuel, pushing, fuelAhead, repairAhead, Object.hashAll(actions),
       ]);

@@ -6,10 +6,12 @@ import '../vehicle_spec.dart';
 /// Chuyển động của xe người chơi trong toạ độ đường: [s] dọc đường,
 /// [d] lệch khỏi tim đường (dương = bên phải hướng đi).
 ///
-/// Giữ ga thì tăng tốc, nhả ga thì xe trôi chậm dần; giữ phanh thì giảm
-/// tốc mạnh. Cần lái đổi tốc độ dạt ngang. Vào cua thì xe bị văng ra phía
-/// ngoài (càng nhanh, cua càng gắt càng văng mạnh) — phải bẻ lái giữ làn,
-/// chạy quá nhanh thì tì vào mép đường, quệt lề mất tốc độ.
+/// Ga kiểu "giữ mức" (như vặn tay ga rồi giữ yên): giữ nút Ga thì vặn thêm
+/// ga, xe tăng tốc; buông tay thì xe giữ nguyên tốc độ đang chạy. Giữ Phanh
+/// thì giảm tốc, buông ra xe giữ tốc độ mới. Cần lái đổi tốc độ dạt ngang.
+/// Vào cua đúng tốc độ thì xe tự ôm cua (người lái nghiêng theo cua); chạy
+/// nhanh quá thì xe bị văng ra phía ngoài — phải bẻ lái giữ làn, quá nữa thì
+/// tì vào mép đường, quệt lề mất tốc độ.
 class PlayerPhysics {
   PlayerPhysics({required this.spec, this.s = 0, this.d = 0, this.speed = 0});
 
@@ -28,6 +30,10 @@ class PlayerPhysics {
   // Đầu vào từ cần lái và cụm nút.
   bool throttle = false;
   bool brake = false;
+
+  /// Mức ga đang giữ: tốc độ xe tự giữ khi buông tay. Giữ Ga thì mức này
+  /// tăng dần, giữ Phanh thì hạ theo tốc độ; xe dừng hẳn / va chạm thì về 0.
+  double cruise = 0;
 
   /// -1 (kéo hết lên) .. 1 (kéo hết xuống).
   double steer = 0;
@@ -64,8 +70,14 @@ class PlayerPhysics {
   bool scraping = false;
 
   /// Tốc độ dạt ngang do lực văng khi vào cua (âm = văng sang trái hướng đi).
-  /// Đi ngược chiều thì cua phải của đường thành cua trái của mình.
-  double get curveDrift => -dir * curvature * speed * speed * GameConfig.curveDrift / grip;
+  /// Đi ngược chiều thì cua phải của đường thành cua trái của mình. Phần lực
+  /// văng trong sức bám của lốp ([GameConfig.curveHoldDrift], kém đi khi
+  /// đường ướt) xe tự ôm cua được — chỉ phần vượt quá mới đẩy xe ra ngoài.
+  double get curveDrift {
+    final raw = -dir * curvature * speed * speed * GameConfig.curveDrift / grip;
+    final hold = GameConfig.curveHoldDrift * grip;
+    return raw.sign * max(0.0, raw.abs() - hold);
+  }
 
   /// Sức kéo ngang tối đa của cần lái ở tốc độ hiện tại.
   double get steerAuthority => spec.lateralSpeed * handling * (speed / (0.5 * GameConfig.normalSpeed)).clamp(0.0, 1.0);
@@ -88,13 +100,23 @@ class PlayerPhysics {
 
     final top = min(spec.maxSpeed, speedCap ?? double.infinity);
     if (brake) {
-      // Chở nặng thì phanh ăn kém hơn; đường ướt phanh trượt dài hơn.
+      // Chở nặng thì phanh ăn kém hơn; đường ướt phanh trượt dài hơn. Buông
+      // phanh thì xe giữ tốc độ vừa giảm tới.
       speed = max(0, speed - spec.brakeDecel * h * grip * dt);
-    } else if (throttle && !engineOff && speed < top) {
-      speed = min(top, speed + spec.accel * h * dt);
-    } else {
-      // Nhả ga: xe trôi chậm dần (phải giữ ga mới giữ được tốc độ).
-      speed = max(0, speed - GameConfig.coastDecel * dt);
+      cruise = min(cruise, speed);
+    } else if (throttle) {
+      // Vặn thêm ga: mức ga tăng theo sức kéo của xe.
+      cruise = max(cruise, speed) + spec.accel * h * dt;
+    }
+    // Lốp xẹp, dắt bộ: vặn ga cỡ nào cũng không quá được mức này.
+    cruise = min(cruise, top);
+    if (!brake) {
+      if (!engineOff && speed < cruise) {
+        speed = min(cruise, speed + spec.accel * h * dt);
+      } else if (engineOff || speed > cruise) {
+        // Máy tắt / khục khặc: xe trôi chậm dần.
+        speed = max(engineOff ? 0 : cruise, speed - GameConfig.coastDecel * dt);
+      }
     }
     // Lốp xẹp: không chạy nhanh nổi, đang nhanh thì bị ghì lại.
     if (speed > top) speed = max(top, speed - 3 * GameConfig.coastDecel * dt);
@@ -121,7 +143,11 @@ class PlayerPhysics {
       scraping = drift * side > GameConfig.scrapeMinDrift && target * side > 0;
       d = d.clamp(lo, hi);
       lateralVelocity = 0;
-      if (scraping) speed = max(0, speed - GameConfig.scrapeDecel * dt);
+      if (scraping) {
+        // Quệt lề thì giật mình nhả bớt ga.
+        speed = max(0, speed - GameConfig.scrapeDecel * dt);
+        cruise = min(cruise, speed);
+      }
     }
 
     s += dir * speed * dt;
@@ -130,9 +156,10 @@ class PlayerPhysics {
   /// Qua ổ gà: xóc, mất một phần tốc độ.
   void bump() => speed *= GameConfig.potholeSpeedFactor;
 
-  /// Va chạm: xe dừng hẳn.
+  /// Va chạm, dừng hẳn: xe đứng yên, trả hết ga.
   void stop() {
     speed = 0;
+    cruise = 0;
     lateralVelocity = 0;
   }
 }

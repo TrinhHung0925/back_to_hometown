@@ -18,7 +18,7 @@ class ActionButtons extends StatelessWidget {
     super.key,
     required this.onThrottle,
     required this.onBrake,
-    required this.speedFraction,
+    required this.gasFraction,
     required this.danger,
     this.onHorn,
     this.onHeadlight,
@@ -37,8 +37,8 @@ class ActionButtons extends StatelessWidget {
   /// Đổi giá trị mỗi lần bóp còi thành công — nút còi chạy vòng hồi chiêu.
   final int hornTick;
 
-  /// 0..1 để vẽ vòng tốc độ quanh nút ga.
-  final double speedFraction;
+  /// 0..1 mức ga đang giữ (so với tốc độ tối đa) để vẽ vòng quanh nút ga.
+  final double gasFraction;
   final bool danger;
 
   @override
@@ -68,9 +68,9 @@ class ActionButtons extends StatelessWidget {
           at(
             c,
             ring,
-            _SpeedRing(
+            _GasRing(
               size: ring,
-              fraction: speedFraction,
+              fraction: gasFraction,
               danger: danger,
               child: _HoldButton(size: gas, icon: Img.icPedalGas, label: 'Ga', onChanged: onThrottle),
             ),
@@ -314,9 +314,10 @@ class _SweepPainter extends CustomPainter {
   bool shouldRepaint(covariant _SweepPainter old) => old.progress != progress;
 }
 
-/// Vòng tốc độ quanh nút ga: xanh khi an toàn, đỏ khi đâm vào là tai nạn.
-class _SpeedRing extends StatelessWidget {
-  const _SpeedRing({required this.size, required this.fraction, required this.danger, required this.child});
+/// Vòng mức ga quanh nút ga (ga giữ tới đâu thì vòng sáng tới đó): xanh khi
+/// an toàn, đỏ khi đâm vào là tai nạn.
+class _GasRing extends StatelessWidget {
+  const _GasRing({required this.size, required this.fraction, required this.danger, required this.child});
 
   final double size;
   final double fraction;

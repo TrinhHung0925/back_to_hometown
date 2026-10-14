@@ -31,6 +31,9 @@ class Autopilot {
 
   void stop() => _timer?.cancel();
 
+  /// Chạy một nhịp lái (dùng khi mô phỏng cả chặng trong test, không cần Timer).
+  void tick(double dt) => _tick(dt);
+
   void _tick(double dt) {
     if (!game.isLoaded) return;
     switch (game.phase) {
@@ -97,6 +100,11 @@ class Autopilot {
     } else if (Lanes.isOncoming(myLane)) {
       targetLane = 1;
     }
+    // Làn định chuyển sang đang có xe đứng / chạy chậm sát bên: thôi, ở lại phanh.
+    if (!crash && targetLane != myLane) {
+      final blocked = game.traffic.vehicles.any((v) => v.lane == targetLane && v.s - p.s > -80 && v.s - p.s < 260 && v.speed < p.speed - 40);
+      if (blocked) targetLane = myLane;
+    }
     if (crash) {
       // Không có xe trước mặt thì lượn sang làn có xe cùng chiều gần nhất.
       TrafficVehicle? nearest;
@@ -107,7 +115,13 @@ class Autopilot {
       if (nearest != null) targetLane = nearest.lane;
     }
     var targetD = Lanes.center(targetLane);
-    var brake = !crash && ahead != null && ahead.oncoming == false && (ahead.s - p.s) < 140 && targetLane == myLane;
+    // Phanh theo quãng đường phanh: chênh tốc độ càng lớn càng phải phanh sớm.
+    var brake = false;
+    if (!crash && ahead != null && !ahead.oncoming) {
+      final closing = max(0.0, p.speed - ahead.speed);
+      final need = closing * closing / (2 * p.spec.brakeDecel) + 70 + (ahead.type.length + p.spec.length) / 2;
+      brake = (ahead.s - p.s) < max(140, need) && (targetLane == myLane || ahead.speed < 30);
+    }
 
     // Ban đêm thì bật đèn.
     if (game.darkness > 0.3 && !game.headlightsOn) game.toggleHeadlights();
@@ -140,7 +154,13 @@ class Autopilot {
       if (ahead < 40) brake = true;
     }
 
-    if (p.speed > targetSpeed + 40) brake = true;
+    // Gà vịt chó đang qua đường phía trước: dừng chờ.
+    for (final g in game.animals.groups) {
+      final gap = g.s - p.s;
+      if (!crash && g.onRoad && gap > -20 && gap < p.speed * p.speed / (2 * p.spec.brakeDecel) + 160) brake = true;
+    }
+
+    if (p.speed > targetSpeed + 12) brake = true;
 
     // Bẻ lái bù lực văng khi vào cua, cộng thêm phần kéo về làn đích.
     final err = targetD - p.d;

@@ -28,6 +28,7 @@ class IncidentOverlay extends StatelessWidget {
         IncidentKind.redLight => 'Không chấp hành tín hiệu đèn đỏ',
         IncidentKind.speeding => 'Chạy quá tốc độ quy định',
         IncidentKind.illegalUTurn => 'Quay đầu xe ở nơi có biển cấm',
+        IncidentKind.crash => 'Gây tai nạn giao thông',
       };
 
   @override
@@ -85,6 +86,8 @@ class IncidentOverlay extends StatelessWidget {
                       if (kind == IncidentKind.speeding && violation != null && violation.measuredKmh > 0)
                         _TicketField(label: 'Tốc độ đo được', value: '${violation.measuredKmh} km/h  (tối đa ${violation.limitKmh} km/h)'),
                       if (violation != null && violation.place.isNotEmpty) _TicketField(label: 'Địa điểm', value: violation.place),
+                      if (kind == IncidentKind.crash)
+                        const _TicketField(label: 'Thiệt hại', value: 'Xe móp, vỡ đèn — chờ giám định, gọi thợ sửa'),
                       _TicketField(
                         label: 'Mức phạt',
                         value: enough ? '$fine lì xì · tạm giữ $minutes phút' : 'Không đủ lì xì — nộp hết, giữ $minutes phút',
@@ -102,8 +105,12 @@ class IncidentOverlay extends StatelessWidget {
                           SizedBox(width: 14.h),
                           Expanded(
                             child: _TicketChoice(
-                              caption: 'Chạy nhanh thì thoát · chậm là hết chuyến',
-                              button: AppButton(label: 'Bỏ chạy!', width: double.infinity, onPressed: controller.flee),
+                              caption: kind == IncidentKind.crash ? 'Xe hỏng rồi, không chạy được' : 'Chạy nhanh thì thoát · chậm là hết chuyến',
+                              button: AppButton(
+                                label: 'Bỏ chạy!',
+                                width: double.infinity,
+                                onPressed: kind == IncidentKind.crash ? null : controller.flee,
+                              ),
                             ),
                           ),
                         ],

@@ -22,17 +22,24 @@ enum CollisionSeverity {
   /// Quẹt nhẹ: dừng lại giải quyết, công an tới.
   minor,
 
-  /// Đâm mạnh: tai nạn, thua ngay.
-  accident,
+  /// Đâm mạnh: tai nạn, xe hỏng — lập biên bản, sửa xe, mất nhiều thời gian.
+  crash,
+
+  /// Đâm cực mạnh (đối đầu): thua chặng ngay.
+  fatal,
 }
 
 /// Chênh lệch tốc độ lúc đâm. [playerSpeed] luôn dọc chiều đi;
 /// [otherVelocity] có dấu: dương là xe cùng chiều, âm là xe ngược chiều.
 double relativeImpactSpeed(double playerSpeed, double otherVelocity) => (playerSpeed - otherVelocity).abs();
 
-CollisionSeverity classifyCollision(double relativeSpeed) =>
-    relativeSpeed >= GameConfig.accidentRelativeSpeed ? CollisionSeverity.accident : CollisionSeverity.minor;
+CollisionSeverity classifyCollision(double relativeSpeed, {bool headOn = false}) =>
+    relativeSpeed >= (headOn ? GameConfig.fatalRelativeSpeed : GameConfig.fatalRearRelativeSpeed)
+    ? CollisionSeverity.fatal
+    : relativeSpeed >= GameConfig.accidentRelativeSpeed
+        ? CollisionSeverity.crash
+        : CollisionSeverity.minor;
 
-/// Tốc độ "nguy hiểm" để tô đỏ vòng tốc độ quanh nút ga: đâm vào một xe
-/// cùng chiều chạy chậm nhất ở tốc độ này là thành tai nạn.
+/// Tốc độ "nguy hiểm" để tô đỏ vòng ga quanh nút ga: đâm vào một xe cùng
+/// chiều chạy chậm nhất ở tốc độ này là thành tai nạn.
 const double dangerSpeed = GameConfig.accidentRelativeSpeed + GameConfig.sameDirSpeedMin * GameConfig.normalSpeed;

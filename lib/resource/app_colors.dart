@@ -114,4 +114,8 @@ abstract class AppColors {
 
   /// Bóng mờ (viền ổ gà, bóng đổ).
   static const Color shadowSoft = Color(0x55000000);
+  static const Color ff2B3038 = Color(0xff2B3038);
+  static const Color ff121418 = Color(0xff121418);
+  static const Color ffFFB020 = Color(0xffFFB020);
+  static const Color ffFF8A80 = Color(0xffFF8A80);
 }

@@ -76,27 +76,62 @@ void main() {
   });
 
   group('PlayerPhysics', () {
-    test('giữ ga tăng tới tối đa, nhả ga thì chậm dần, phanh về 0', () {
+    test('ga giữ mức: giữ Ga tăng tốc, buông tay giữ tốc độ, Phanh hạ mức rồi giữ', () {
       final p = PlayerPhysics(spec: VehicleSpec.motorbike);
-      p.throttle = true;
-      for (var i = 0; i < 600; i++) {
-        p.update(1 / 60);
+      void run(int frames) {
+        for (var i = 0; i < frames; i++) {
+          p.update(1 / 60);
+        }
       }
+
+      p.throttle = true;
+      run(30);
+      final mid = p.speed;
+      expect(mid, greaterThan(0));
+      p.throttle = false;
+      run(120);
+      expect(p.speed, closeTo(mid, 1e-6));
+
+      p.throttle = true;
+      run(600);
+      expect(p.speed, VehicleSpec.motorbike.maxSpeed);
+      p.throttle = false;
+      run(60);
       expect(p.speed, VehicleSpec.motorbike.maxSpeed);
 
-      p.throttle = false;
-      p.speed = 200;
+      p.brake = true;
+      run(20);
+      p.brake = false;
+      final slowed = p.speed;
+      expect(slowed, lessThan(VehicleSpec.motorbike.maxSpeed - 100));
+      run(120);
+      expect(p.speed, closeTo(slowed, 1e-6));
+
+      p.brake = true;
+      run(120);
+      p.brake = false;
+      run(60);
+      expect(p.speed, 0);
+    });
+
+    test('ổ gà làm khựng xe rồi xe tự lấy lại tốc độ đang giữ', () {
+      final p = PlayerPhysics(spec: VehicleSpec.car, speed: 300)..cruise = 300;
+      p.bump();
+      expect(p.speed, lessThan(300));
+      for (var i = 0; i < 120; i++) {
+        p.update(1 / 60);
+      }
+      expect(p.speed, 300);
+    });
+
+    test('máy tắt (hết xăng / khục khặc) thì xe trôi chậm dần', () {
+      final p = PlayerPhysics(spec: VehicleSpec.motorbike, speed: 200)
+        ..cruise = 200
+        ..engineOff = true;
       for (var i = 0; i < 60; i++) {
         p.update(1 / 60);
       }
       expect(p.speed, closeTo(200 - GameConfig.coastDecel, 1e-6));
-      expect(p.speed, greaterThan(0));
-
-      p.brake = true;
-      for (var i = 0; i < 120; i++) {
-        p.update(1 / 60);
-      }
-      expect(p.speed, 0);
     });
 
     test('đứng yên thì kéo cần lái cũng không dạt ngang', () {
@@ -117,10 +152,19 @@ void main() {
       expect(p.d, closeTo(p.maxOffset, 1e-9));
     });
 
-    test('vào cua bị văng ra phía ngoài nếu không bẻ lái', () {
+    test('vào cua vừa tốc độ thì xe tự ôm cua, không phải bẻ lái', () {
       final p = PlayerPhysics(spec: VehicleSpec.car, d: Lanes.center(1), speed: 300)..curvature = 1 / 600;
       for (var i = 0; i < 60; i++) {
         p.speed = 300;
+        p.update(1 / 60);
+      }
+      expect(p.d, closeTo(Lanes.center(1), 1e-9));
+    });
+
+    test('vào cua nhanh quá thì bị văng ra phía ngoài nếu không bẻ lái', () {
+      final p = PlayerPhysics(spec: VehicleSpec.car, d: Lanes.center(1), speed: 450)..curvature = 1 / 600;
+      for (var i = 0; i < 60; i++) {
+        p.speed = 450;
         p.update(1 / 60);
       }
       // Cua phải: văng sang trái hướng đi (về phía làn ngược chiều).
@@ -147,14 +191,14 @@ void main() {
         ..throttle = true;
       var scraped = false;
       var slowest = p.speed;
-      for (var i = 0; i < 240; i++) {
+      for (var i = 0; i < 480; i++) {
         p.update(1 / 60);
         scraped |= p.scraping;
         slowest = min(slowest, p.speed);
       }
       expect(scraped, isTrue);
       expect(p.d, lessThan(-p.maxOffset + 30));
-      expect(slowest, lessThan(VehicleSpec.car.maxSpeed - 100));
+      expect(slowest, lessThan(VehicleSpec.car.maxSpeed - 50));
     });
 
     test('chở quà làm tăng tốc chậm hơn', () {
@@ -179,15 +223,19 @@ void main() {
       expect(a.overlaps(const RoadBox(s: 0, d: 60, length: 88, width: 46)), isFalse);
     });
 
-    test('quẹt đuôi khi chạy thường là nhẹ, phóng nhanh đâm là tai nạn', () {
+    test('quẹt đuôi khi chạy thường là nhẹ, phóng nhanh đâm là tai nạn (chưa thua)', () {
       const slow = GameConfig.sameDirSpeedMin * GameConfig.normalSpeed;
       expect(classifyCollision(relativeImpactSpeed(GameConfig.normalSpeed, slow)), CollisionSeverity.minor);
-      expect(classifyCollision(relativeImpactSpeed(VehicleSpec.motorbike.maxSpeed, slow)), CollisionSeverity.accident);
+      expect(classifyCollision(relativeImpactSpeed(VehicleSpec.motorbike.maxSpeed, slow)), CollisionSeverity.crash);
+      expect(classifyCollision(relativeImpactSpeed(GameConfig.normalSpeed, 0)), CollisionSeverity.crash);
     });
 
-    test('đâm trực diện xe ngược chiều ở tốc độ thường là tai nạn', () {
+    test('đâm trực diện xe ngược chiều ở tốc độ thường là thua ngay', () {
       const oncoming = -GameConfig.oncomingSpeedMin * GameConfig.normalSpeed;
-      expect(classifyCollision(relativeImpactSpeed(GameConfig.normalSpeed, oncoming)), CollisionSeverity.accident);
+      expect(classifyCollision(relativeImpactSpeed(GameConfig.normalSpeed, oncoming), headOn: true), CollisionSeverity.fatal);
+      // Tông đuôi xe đang dừng ở tốc độ tối đa của xe máy: tai nạn nặng nhưng chưa thua.
+      expect(classifyCollision(relativeImpactSpeed(VehicleSpec.motorbike.maxSpeed, 0)), CollisionSeverity.crash);
+      expect(classifyCollision(relativeImpactSpeed(VehicleSpec.car.maxSpeed, 0)), CollisionSeverity.fatal);
     });
   });
 
@@ -222,8 +270,8 @@ void main() {
     });
 
     test('giờ xuất phát = giao thừa trừ thời gian ước tính × hệ số', () {
-      // 300 giây chơi ước tính = 120 phút trong game → được 150 phút.
-      expect(TripClock.departureFor(300), closeTo(24 * 60 - 150, 1e-9));
+      // 300 giây chơi ước tính = 120 phút trong game → được 192 phút.
+      expect(TripClock.departureFor(300), closeTo(24 * 60 - 192, 1e-9));
     });
 
     test('quá giao thừa là hết giờ', () {

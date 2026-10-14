@@ -1,3 +1,4 @@
+import '../game/game_config.dart';
 import '../game/vehicle_spec.dart';
 
 /// Loại đoạn đường trong một chặng.
@@ -18,6 +19,17 @@ class StageSection {
 
   final RoadKind kind;
   final double km;
+
+  /// Thời gian chơi ước tính (giây) ở tốc độ thường: phố chậm hơn (đèn đỏ,
+  /// xe đông), cao tốc nhanh hơn.
+  double get playSeconds =>
+      km *
+      GameConfig.playSecondsPerKm *
+      switch (kind) {
+        RoadKind.city => GameConfig.cityPaceFactor,
+        RoadKind.highway => 1.0,
+        RoadKind.expressway => GameConfig.expresswayPaceFactor,
+      };
 
   Map<String, dynamic> toJson() => {'kind': kind.name, 'km': km};
 
@@ -113,6 +125,7 @@ class TripProgress {
     required this.cargo,
     this.fuel = 0.6,
     this.score = 0,
+    this.budget = GameConfig.timeBudgetFactor,
   });
 
   final TripPlan plan;
@@ -131,6 +144,9 @@ class TripProgress {
   /// Tổng điểm các chặng đã xong.
   int score;
 
+  /// Hệ số thời gian cho phép lúc tính giờ xuất phát (bản cũ là 1,25).
+  double budget;
+
   bool get finished => stageIndex >= plan.stages.length;
 
   Map<String, dynamic> toJson() => {
@@ -141,6 +157,7 @@ class TripProgress {
         'cargo': cargo,
         'fuel': fuel,
         'score': score,
+        'budget': budget,
       };
 
   factory TripProgress.fromJson(Map<String, dynamic> json) => TripProgress(
@@ -151,6 +168,7 @@ class TripProgress {
         cargo: json['cargo'] as int,
         fuel: (json['fuel'] as num?)?.toDouble() ?? 0.6,
         score: (json['score'] as int?) ?? 0,
+        budget: (json['budget'] as num?)?.toDouble() ?? 1.25,
       );
 }
 

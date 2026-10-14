@@ -82,7 +82,7 @@ Splash → Menu ─┬─ Về quê → Chọn cách về ─┬─ Tự lái xe
 | Trạm thu phí | Đi làn xe máy sát lề, không mất phí, nhưng làn hẹp | Phải trả phí bằng lì xì |
 | Đánh lái | Nhạy | Nặng hơn |
 | Tăng tốc | Nhanh | Chậm hơn |
-| Tốc độ tối đa | Thấp hơn | Cao hơn |
+| Tốc độ tối đa | 90 km/h (xe khách cũng 90) | 110 km/h |
 | Kích thước | Nhỏ, lách được khe giữa hai xe | To, khó lách |
 | Chở quà | Ít, chất sau yên; mỗi món ảnh hưởng tay lái rõ | Nhiều, để cốp và buộc nóc; mỗi món ảnh hưởng ít |
 | Khi bị công an đuổi | Luồn lách tốt | Chạy nhanh hơn khi đường thoáng |
@@ -160,7 +160,8 @@ Chia hai tay giống game MOBA: **tay trái đặt liên tục trên cần lái*
 
 **Cần lái — góc dưới bên trái:**
 - Ngón cái trái đặt lên và giữ liên tục. **Kéo lên** thì xe đánh lái lên phía trên màn hình (sang trái theo hướng đi), **kéo xuống** thì xuống dưới (sang phải theo hướng đi).
-- Kéo càng xa thì đánh lái càng gắt. Để núm ở giữa hoặc thả tay ra thì xe đi thẳng theo đường.
+- Kéo càng xa thì đánh lái càng gắt; gần giữa thì nhẹ tay (đường cong mềm, dễ chỉnh làn từng chút). Để núm ở giữa hoặc thả tay ra thì xe đi thẳng theo đường.
+- Vào cua không quá tốc độ khuyên dùng thì xe **tự ôm cua** (người lái nghiêng theo cua), không phải bẻ lái. Chỉ khi chạy nhanh quá thì xe mới bị văng ra phía ngoài.
 - Xe di chuyển liên tục chứ không nhảy từng làn, nên xe máy lách được khe giữa hai xe.
 - **Cần lái nổi:** chạm chỗ nào trong vùng dưới-trái thì cần lái hiện ra ở đó, nên không phải nhìn xuống tìm nút.
 - **Vì sao để bên trái chứ không ở trong cụm nút bên phải:** ngón cái đã đặt liên tục trên cần lái thì không bấm được ga, phanh. Để chung một góc thì không thể vừa lái vừa phanh. Chia hai tay giống cách game MOBA để cần di chuyển bên trái, nút kỹ năng bên phải.
@@ -169,13 +170,14 @@ Chia hai tay giống game MOBA: **tay trái đặt liên tục trên cần lái*
 
 | Nút | Vị trí | Cách dùng | Tác dụng |
 |---|---|---|---|
-| **Ga** | Nút to nhất, sát góc dưới bên phải | Giữ | Tăng tốc. **Nhả ga thì xe trôi chậm dần** (muốn giữ tốc độ phải giữ ga). Vòng sáng quanh nút là đồng hồ tốc độ, chuyển đỏ khi đang ở tốc độ mà đâm vào là thành tai nạn |
-| **Phanh** | Vòng cung, bên trái-dưới nút ga | Giữ | Giảm tốc mạnh, có thể dừng hẳn (cần cho đèn đỏ và trạm thu phí). Thả ra thì xe trôi chậm dần như nhả ga |
+| **Ga** | Nút to nhất, sát góc dưới bên phải | Giữ | **Tay ga giữ mức:** giữ nút thì vặn thêm ga, xe tăng tốc; **buông tay thì xe giữ nguyên tốc độ đang chạy**. Vòng sáng quanh nút là mức ga đang giữ, chuyển đỏ khi đang ở tốc độ mà đâm vào là thành tai nạn |
+| **Phanh** | Vòng cung, bên trái-dưới nút ga | Giữ | Giảm tốc mạnh, có thể dừng hẳn (cần cho đèn đỏ và trạm thu phí). Buông ra thì xe giữ tốc độ vừa giảm tới |
 | **Còi** | Vòng cung, phía trên-trái nút ga | Bấm | Xin đường. Có hiệu ứng hồi chiêu quét tròn như skill MOBA |
 | **Đèn** | Vòng cung, phía trên nút ga | Bấm để bật/tắt | Nhìn rõ đường khi trời tối. Nút sáng lên khi đang bật |
 
-- Nhả ga thì xe trôi chậm dần (khoảng 4 giây từ tốc độ thường về 0), nên ngón cái phải vẫn chuyển nhanh sang còi, đèn được mà không mất hết tốc độ; muốn chạy đều thì phải giữ ga.
-- Ga và phanh cùng giữ thì phanh được ưu tiên.
+- Ga giữ mức nên ngón cái rảnh để bấm còi, đèn, nút tình huống mà xe vẫn chạy đều. Sập ổ gà, lội vũng nước thì xe khựng rồi tự lấy lại tốc độ đang giữ; quệt lề thì như giật mình nhả bớt ga. Hết xăng / máy khục khặc thì xe trôi chậm dần.
+- Ga và phanh cùng giữ thì phanh được ưu tiên. Lần đầu vào chơi có thẻ nhỏ chỉ cách dùng.
+- **Đồng hồ tốc độ** kiểu công-tơ-mét xe máy nằm sát bên trái nút Phanh: kim đỏ, số km/h ở giữa, vạch hổ phách ngoài vành là mức ga đang giữ; có chốt CSGT phía trước thì phần quá tốc độ cho phép tô đỏ.
 
 **Góc trên bên phải:** nút **Chat** và nút **Tạm dừng**.
 
@@ -203,7 +205,8 @@ Chia hai tay giống game MOBA: **tay trái đặt liên tục trên cần lái*
 | Mức | Khi nào | Hậu quả |
 |---|---|---|
 | **Va chạm nhẹ** | Quẹt, hoặc đâm khi chênh lệch tốc độ thấp (ví dụ chạm đuôi xe cùng chiều khi đang chạy gần bằng tốc độ) | Dừng lại giải quyết, công an tới |
-| **Tai nạn** | Đâm mạnh: đâm trực diện xe ngược chiều, hoặc đâm khi chênh lệch tốc độ lớn | **Thua ngay: "Tai nạn — không về được quê"** |
+| **Tai nạn** | Đâm mạnh khi chênh lệch tốc độ lớn (ví dụ tông đuôi xe đang dừng ở hàng chờ đèn đỏ) | Xe văng xoay, mảnh vỡ văng ra, rơi 1 món quà. Công an lập biên bản "Gây tai nạn": phạt nặng (6 lì xì, giữ 35 phút chờ giám định, sửa xe), **không bỏ chạy được** — nhưng vẫn đi tiếp |
+| **Tai nạn nghiêm trọng** | Đâm cực mạnh: thường là đối đầu xe ngược chiều ở tốc độ cao | **Thua ngay: "Tai nạn — không về được quê"** |
 
 - Ngưỡng chênh lệch để trong `game_config.dart`.
 - Vòng tốc độ quanh nút ga chuyển đỏ khi đang ở tốc độ nguy hiểm. Nhờ vậy người chơi hiểu vì sao lần này chỉ bị phạt còn lần kia lại là tai nạn.
@@ -348,7 +351,8 @@ Chia hai tay giống game MOBA: **tay trái đặt liên tục trên cần lái*
   - Thẻ việc tích dần từng bước: bật đèn khẩn cấp → đặt biển tam giác sau xe → kích xe, tháo lốp → lắp lốp dự phòng.
   - Trên đường: đèn khẩn cấp nháy, biển tam giác, con đội, người lái ngồi xổm cạnh bánh.
   - Thay rồi thì hết lốp dự phòng; vá ở tiệm thì có lại.
-- **Gọi thợ vá lưu động:** 3 lì xì · 20 phút, dùng được ở bất cứ đâu (số điện thoại dán trên cột điện).
+- **Gọi thợ vá lưu động:** 3 lì xì · 15 phút, dùng được ở bất cứ đâu (số điện thoại dán trên cột điện). Thợ chạy xe tới đỗ sau xe mình, ngồi xuống cạnh bánh làm (người lắc lư theo tay), kéo săm ra để dưới đất, khói vá nóng bốc lên, rồi bơm hơi xì xì.
+- **Thợ nói chuyện với mình:** bong bóng thoại hiện chữ dần trên đầu người nói (tên thợ, xưng hô đúng vai chú–cháu / anh–em): hỏi "Xì lốp hả em?", nói nguyên nhân (đinh tặc hay sập ổ gà), mình đáp lại, cuối cùng chúc Tết "thượng lộ bình an". Ở tiệm vá xe ven đường cũng vậy; tiệm "chặn đầu" bãi đinh thì nói kiểu "Tết mà em, giá Tết!". Người mang can xăng tới cũng dặn dò vài câu.
 
 **Mưa**
 - **Mưa theo vùng:**
@@ -395,6 +399,10 @@ Chia hai tay giống game MOBA: **tay trái đặt liên tục trên cần lái*
   - Cây xăng có màn hình cột bơm LED và đồng hồ bình E–F.
 - **Bộ icon** vẽ bằng code, cùng một kiểu: cốc, cột bơm, chai, lốp, cờ lê, điện thoại, áo mưa, mây mưa, còi…
 
+**Gà vịt chó qua đường (quốc lộ):** thỉnh thoảng ngay phía trước có đàn vịt lạch bạch nối đuôi qua đường (người chăn cầm sào đi sau), gà chạy ngang — có con khựng lại, có con quay đầu chạy ngược — hoặc chó chạy rông đứng giữa đường. Miền Nam nhiều vịt, miền Bắc nhiều gà, chó. Xe AI dừng chờ. **Bóp còi** thì chúng giật mình vỗ cánh chạy nhanh. Quệt phải gà vịt: lông bay, xe khựng, chủ chạy ra — đền 1 lì xì, mất 4 phút (mỗi đàn một lần). Chó lao ra: xe khựng mạnh, xe máy loạng choạng.
+
+**Hiệu ứng cho sống động:** khói pô phụt dày khi vặn ga (xe tải, xe khách phụt khói đen); phanh gấp / trượt cua in vệt lốp xuống mặt đường, mờ dần; quệt lề toé tia lửa; đường ướt bánh xe tung bụi nước; va chạm văng mảnh vỡ kính, nhựa, bốc khói bụi; nhặt lì xì / trả phí hiện chữ nổi "+1", "−2"; chạy nhanh camera lùi ra một chút. Từ 22:30 đêm giao thừa trời bắt đầu có pháo hoa, càng sát nửa đêm càng dày; về tới nhà ở chặng cuối thì pháo hoa nổ rộ.
+
 **Làm tiếp sau**
 - Tắc đường ngày 28 Tết: xe đứng im cả km, len lỏi xe máy.
 - Sương mù sáng sớm ở đèo; trời rét làm xe khó nổ máy.
@@ -407,7 +415,8 @@ Chia hai tay giống game MOBA: **tay trái đặt liên tục trên cần lái*
 - **Thua** khi xảy ra một trong ba:
   - **Hết giờ:** quá giao thừa mà chưa về tới nhà.
   - **Bị công an bắt** khi bỏ chạy.
-  - **Tai nạn:** đâm mạnh vào xe khác hoặc barrier.
+  - **Tai nạn nghiêm trọng:** đâm cực mạnh (đối đầu). Tai nạn thường chỉ bị phạt nặng, mất thời gian.
+- **Dư / trễ giờ:** dưới đồng hồ trên HUD luôn hiện "dư 1g05" (xanh), "sát giờ" (vàng) hoặc "trễ 12 phút" (đỏ) — nếu chạy tiếp ở tốc độ thường tới hết chuyến thì về tới nhà dư/trễ bao nhiêu so với giao thừa. Thời gian cho phép = ước tính × 1,6 (chừa cho ghé quán, đổ xăng, vá xe, bị phạt).
 - Thua ở giữa một chuyến dài thì chơi lại thế nào: xem mục 9, câu 2.
 
 ---

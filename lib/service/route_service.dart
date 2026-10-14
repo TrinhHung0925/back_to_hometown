@@ -171,18 +171,7 @@ class RouteService {
   }
 
   /// Thời gian chơi ước tính (giây) của một chặng.
-  static double stagePlaySeconds(TripStage stage) {
-    var seconds = 0.0;
-    for (final s in stage.sections) {
-      final pace = switch (s.kind) {
-        RoadKind.city => GameConfig.cityPaceFactor,
-        RoadKind.highway => 1.0,
-        RoadKind.expressway => GameConfig.expresswayPaceFactor,
-      };
-      seconds += s.km * GameConfig.playSecondsPerKm * pace;
-    }
-    return seconds;
-  }
+  static double stagePlaySeconds(TripStage stage) => stage.sections.fold(0, (sum, s) => sum + s.playSeconds);
 
   static double planPlaySeconds(TripPlan plan) =>
       plan.stages.fold(0, (sum, s) => sum + stagePlaySeconds(s));

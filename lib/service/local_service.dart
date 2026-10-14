@@ -5,6 +5,7 @@ enum LocalKey {
   soundOn,
   currentTrip,
   records,
+  cruiseTip,
 }
 
 class LocalService {
@@ -30,6 +31,13 @@ class LocalService {
 
   bool getSoundOn() {
     return storage.read(LocalKey.soundOn.name) ?? true;
+  }
+
+  /// Đã chỉ cách dùng ga giữ mức chưa (chỉ một lần).
+  bool getCruiseTipShown() => storage.read(LocalKey.cruiseTip.name) ?? false;
+
+  void saveCruiseTipShown() {
+    storage.write(LocalKey.cruiseTip.name, true);
   }
 
   /// Chuyến đi đang chơi dở (JSON của TripProgress).

@@ -15,6 +15,7 @@ import '../../model/trip.dart';
 import '../../resource/app_resource.dart';
 import '../../route.dart';
 import '../../service/audio_service.dart';
+import '../../service/local_service.dart';
 import '../../service/route_service.dart';
 import '../../service/trip_service.dart';
 
@@ -55,6 +56,10 @@ class GameController extends GetxController {
   /// Tăng mỗi lần bóp còi thành công — nút Còi chạy vòng hồi chiêu.
   final hornTick = 0.obs;
 
+  /// Đang hiện thẻ chỉ cách dùng ga giữ mức (chỉ lần đầu chơi).
+  final cruiseTip = false.obs;
+  Timer? _cruiseTipTimer;
+
   /// Chat: đang gõ (game tạm dừng) và các tin vừa gửi (hiện ~4 giây).
   final chatOpen = false.obs;
   final chatMessages = <ChatMessage>[].obs;
@@ -74,6 +79,11 @@ class GameController extends GetxController {
     final args = Get.arguments;
     setup = args is StageSetup ? args : _fallbackStage();
     _createGame();
+    if (!LocalService.shared.getCruiseTipShown()) {
+      cruiseTip.value = true;
+      LocalService.shared.saveCruiseTipShown();
+      _cruiseTipTimer = Timer(const Duration(seconds: 12), () => cruiseTip.value = false);
+    }
   }
 
   /// Vào thẳng màn chơi (chế độ tự lái khi phát triển): đi tiếp chuyến đang
@@ -312,6 +322,7 @@ class GameController extends GetxController {
   @override
   void onClose() {
     _noticeTimer?.cancel();
+    _cruiseTipTimer?.cancel();
     _autopilot?.stop();
     _audio.stopEngine();
     _audio.stopSiren();

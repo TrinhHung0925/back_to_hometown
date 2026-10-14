@@ -33,7 +33,7 @@ class ContextActions extends StatelessWidget {
       if (hud == null || controller.phase.value != GamePhase.driving || hud.actions.isEmpty) return const SizedBox.shrink();
       final vehicle = controller.setup.vehicle;
       return ConstrainedBox(
-        constraints: BoxConstraints(maxWidth: 400.h),
+        constraints: BoxConstraints(maxWidth: 250.h),
         child: Wrap(
           alignment: WrapAlignment.end,
           verticalDirection: VerticalDirection.up,

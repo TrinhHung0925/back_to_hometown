@@ -681,29 +681,30 @@ class _RouteProgress extends StatelessWidget {
   }
 }
 
-/// Giờ hiện tại trong game + còn bao lâu tới giao thừa (đỏ khi sắp hết giờ).
+/// Giờ hiện tại trong game + đang dư / trễ bao nhiêu so với giao thừa (chạy
+/// tiếp ở tốc độ thường tới hết chuyến): xanh khi dư, vàng khi sát nút, đỏ khi
+/// trễ — biết lúc nào nên tăng ga, lúc nào ghé quán được.
 class _Clock extends StatelessWidget {
   const _Clock({required this.hud});
 
   final HudData hud;
 
+  static String _span(int minutes) => minutes >= 60 ? '${minutes ~/ 60}g${(minutes % 60).toString().padLeft(2, '0')}' : '$minutes phút';
+
   @override
   Widget build(BuildContext context) {
-    final left = hud.minutesLeft;
-    final urgent = left <= 15;
-    final leftLabel = left >= 60 ? '${left ~/ 60}g${(left % 60).toString().padLeft(2, '0')}' : '$left phút';
+    final spare = hud.spareMinutes;
+    final (label, color) = spare < 0
+        ? ('trễ ${_span(-spare)}', AppColors.ffFF5A4E)
+        : spare < 15
+            ? ('sát giờ · dư ${_span(spare)}', AppColors.ffFFD166)
+            : ('dư ${_span(spare)}', AppColors.ff4ADE80);
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         AppText.manrope(hud.clockLabel, fontSize: 16.h, fontWeight: FontWeight.w800, color: AppColors.ffFFFFFF, lineHeight: 1.05),
-        AppText.manrope(
-          'còn $leftLabel',
-          fontSize: 9.5.h,
-          fontWeight: FontWeight.w700,
-          lineHeight: 1.1,
-          color: urgent ? AppColors.ffFF5A4E : AppColors.ffB8BCC4,
-        ),
+        AppText.manrope(label, fontSize: 9.5.h, fontWeight: FontWeight.w800, lineHeight: 1.1, color: color),
       ],
     );
   }
