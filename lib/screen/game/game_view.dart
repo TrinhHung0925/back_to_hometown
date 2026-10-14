@@ -5,11 +5,13 @@ import 'package:get/get.dart';
 
 import '../../game/stage.dart';
 import '../../resource/app_colors.dart';
+import '../../resource/app_resource.dart';
 import 'action_buttons.dart';
 import 'chat_overlay.dart';
 import 'game_controller.dart';
 import 'game_hud.dart';
 import 'game_overlays.dart';
+import 'roadside_overlays.dart';
 import 'steering_stick.dart';
 
 class GameView extends StatefulWidget {
@@ -36,6 +38,15 @@ class _GameViewState extends State<GameView> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Ảnh minh hoạ món ở quán: nạp sẵn để bảng quán hiện ra là có hình ngay.
+    for (final path in Img.items) {
+      precacheImage(AssetImage(path), context);
+    }
+  }
+
+  @override
   void dispose() {
     _lifecycle.dispose();
     Get.delete<GameController>();
@@ -57,23 +68,31 @@ class _GameViewState extends State<GameView> {
         body: Stack(
           children: [
             Obx(() => GameWidget(key: ValueKey(controller.gameKey.value), game: controller.game)),
+            Positioned.fill(child: DrowsyOverlay(controller: controller)),
             Positioned.fill(
               child: SafeArea(
                 child: Stack(
                   children: [
                     Positioned(top: 0, left: 0, right: 0, child: GameHud(controller: controller)),
-                    Positioned(
-                      top: 56.h,
-                      left: 0,
-                      right: 0,
-                      child: Column(
-                        children: [
-                          NoticeBanner(controller: controller),
-                          SizedBox(height: 6.h),
-                          ChatFeed(controller: controller),
-                        ],
-                      ),
-                    ),
+                    Positioned(top: 112.h, left: 12.h, child: ReversedChip(controller: controller)),
+                    Positioned(top: 54.h, right: 12.h, child: RoadAheadColumn(controller: controller)),
+                    // Thông báo nằm giữa khoảng trống phía trên: chừa cột "đường phía
+                    // trước" bên phải; đang ghé quán thì dời sang phải bảng quán.
+                    Obx(() {
+                      final resting = controller.phase.value == GamePhase.resting && controller.stallVisit.value != null;
+                      return Positioned(
+                        top: 56.h,
+                        left: resting ? 444.h : 0,
+                        right: resting ? 12.h : 214.h,
+                        child: Column(
+                          children: [
+                            NoticeBanner(controller: controller),
+                            SizedBox(height: 6.h),
+                            ChatFeed(controller: controller),
+                          ],
+                        ),
+                      );
+                    }),
                     Obx(() {
                       if (controller.phase.value != GamePhase.chase) return const SizedBox.shrink();
                       return Positioned(
@@ -88,13 +107,45 @@ class _GameViewState extends State<GameView> {
                       bottom: 0,
                       width: MediaQuery.sizeOf(context).width * 0.34,
                       height: MediaQuery.sizeOf(context).height * 0.62,
-                      child: SteeringStick(onChanged: controller.onSteer),
+                      child: Obx(() => controller.phase.value == GamePhase.resting
+                          ? const SizedBox.shrink()
+                          : SteeringStick(onChanged: controller.onSteer)),
                     ),
+                    Positioned(
+                      right: 14.h + 222.h,
+                      bottom: 22.h,
+                      child: ContextActions(controller: controller),
+                    ),
+                    Obx(() {
+                      final job = controller.job.value;
+                      if (job == null) return const SizedBox.shrink();
+                      // Lúc làm việc bên lề cụm nút lái ẩn đi: thẻ việc nằm góc phải dưới.
+                      return Positioned(right: 14.h, bottom: 16.h, child: JobCard(state: job));
+                    }),
+                    Obx(() {
+                      final visit = controller.stallVisit.value;
+                      if (visit == null) return const SizedBox.shrink();
+                      return Positioned(
+                        left: 12.h,
+                        top: 48.h,
+                        child: StallSheet(key: ValueKey(visit.stall), controller: controller, visit: visit),
+                      );
+                    }),
+                    Obx(() {
+                      final visit = controller.stallVisit.value;
+                      if (visit == null) return const SizedBox.shrink();
+                      return Positioned(
+                        right: 20.h,
+                        bottom: 18.h,
+                        child: StallChatter(key: ValueKey(visit.stall), chatter: visit.chatter),
+                      );
+                    }),
                     Positioned(
                       right: 14.h,
                       bottom: 18.h,
                       child: Obx(() {
                         final hud = controller.hud.value;
+                        if (controller.phase.value == GamePhase.resting) return const SizedBox.shrink();
                         return ActionButtons(
                           onThrottle: controller.onThrottle,
                           onBrake: controller.onBrake,

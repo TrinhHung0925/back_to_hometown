@@ -2,6 +2,7 @@ import 'dart:math';
 
 import '../game/game_config.dart';
 import '../game/logic/trip_clock.dart';
+import '../game/logic/vehicle_condition.dart';
 import '../game/stage.dart';
 import '../model/trip.dart';
 import 'local_service.dart';
@@ -45,6 +46,8 @@ class TripService {
       clockMinutes: departureFor(plan),
       lixi: 0,
       cargo: 0,
+      // Đi vội, bình còn chừng nửa (chưa kịp đổ đầy).
+      fuel: GameConfig.fuelTripStartMin + _random.nextDouble() * (GameConfig.fuelTripStartMax - GameConfig.fuelTripStartMin),
     );
     _save(progress);
     return progress;
@@ -61,6 +64,7 @@ class TripService {
       startClockMinutes: progress.clockMinutes,
       startLixi: progress.lixi,
       startCargo: progress.cargo,
+      startFuel: progress.fuel,
       stageNumber: progress.stageIndex + 1,
       stageCount: progress.plan.stages.length,
       seed: _random.nextInt(1 << 20),
@@ -78,6 +82,20 @@ class TripService {
     return 32 - y < 12.8;
   }
 
+  /// Đổ đầy bình ở trạm dừng nghỉ (giá như cây xăng, mất vài phút). Trả về
+  /// false nếu bình đã đầy hoặc không đủ lì xì.
+  bool refuelAtRestStop(TripProgress progress) {
+    final tank = FuelTank(progress.plan.vehicle, level: progress.fuel);
+    final price = tank.fullPrice;
+    if (price <= 0 || progress.lixi < price) return false;
+    progress
+      ..lixi -= price
+      ..fuel = 1
+      ..clockMinutes += 5;
+    _save(progress);
+    return true;
+  }
+
   /// Về tới cuối chặng: sang chặng sau, lưu lại (đây là "trạm dừng nghỉ").
   /// Chặng cuối thì trả về tổng kết cả chuyến (và lưu kỷ lục nếu cao hơn).
   TripSummary? completeStage(StageResult result) {
@@ -88,6 +106,7 @@ class TripService {
       ..clockMinutes = result.clockMinutes
       ..lixi = result.lixi
       ..cargo = result.cargo
+      ..fuel = result.fuel
       ..score += result.score;
     if (!progress.finished) {
       _save(progress);

@@ -111,6 +111,7 @@ class TripProgress {
     required this.clockMinutes,
     required this.lixi,
     required this.cargo,
+    this.fuel = 0.6,
     this.score = 0,
   });
 
@@ -124,6 +125,9 @@ class TripProgress {
   int lixi;
   int cargo;
 
+  /// Xăng trong bình (0..1) mang sang chặng sau.
+  double fuel;
+
   /// Tổng điểm các chặng đã xong.
   int score;
 
@@ -135,6 +139,7 @@ class TripProgress {
         'clock': clockMinutes,
         'lixi': lixi,
         'cargo': cargo,
+        'fuel': fuel,
         'score': score,
       };
 
@@ -144,6 +149,7 @@ class TripProgress {
         clockMinutes: (json['clock'] as num).toDouble(),
         lixi: json['lixi'] as int,
         cargo: json['cargo'] as int,
+        fuel: (json['fuel'] as num?)?.toDouble() ?? 0.6,
         score: (json['score'] as int?) ?? 0,
       );
 }

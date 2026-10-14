@@ -43,6 +43,7 @@ class Autopilot {
         }
         return;
       case GamePhase.finished:
+      case GamePhase.resting:
         return;
       case GamePhase.driving:
       case GamePhase.chase:
@@ -51,10 +52,31 @@ class Autopilot {
 
     final p = game.player;
     final crash = mode == 'crash';
+    // Hết xăng, xẹp lốp: dừng lại gọi người tới giúp cho khỏi kẹt.
+    if (game.phase == GamePhase.driving && p.speed < 8) {
+      if (game.fuel.empty) {
+        game.callFuel();
+        return;
+      }
+      if (!game.tires.ok) {
+        if (game.tires.spare) game.changeSpare();
+        if (game.phase != GamePhase.resting) game.callMechanic();
+        return;
+      }
+    }
+    if ((game.fuel.empty || !game.tires.ok) && game.phase == GamePhase.driving) {
+      game
+        ..setThrottle(false)
+        ..setBrake(true);
+      return;
+    }
     var targetSpeed = game.phase == GamePhase.chase ? p.spec.maxSpeed : 1.15 * GameConfig.normalSpeed;
+    // Chốt CSGT phía trước: về dưới tốc độ cho phép.
+    final limit = game.layout.checkpointsBetween(p.s - 200, p.s + 900).firstOrNull;
+    if (limit != null) targetSpeed = min(targetSpeed, (limit.limitKmh - 5) / GameConfig.displayKmhPerUnitSpeed);
     // Cua gắt phía trước: giảm về tốc độ khuyên dùng.
     final curve = game.sharpCurveAhead;
-    if (curve != null && curve.startS - p.s < 500) targetSpeed = min(targetSpeed, curve.adviseSpeed);
+    if (curve != null && curve.ahead < 500) targetSpeed = min(targetSpeed, curve.curve.adviseSpeed);
     game.setThrottle(p.speed < targetSpeed);
 
     // Tìm xe gần nhất phía trước trong làn của mình.
@@ -88,7 +110,7 @@ class Autopilot {
     var brake = !crash && ahead != null && ahead.oncoming == false && (ahead.s - p.s) < 140 && targetLane == myLane;
 
     // Ban đêm thì bật đèn.
-    if (game.nightLevel > 0.3 && !game.headlightsOn) game.toggleHeadlights();
+    if (game.darkness > 0.3 && !game.headlightsOn) game.toggleHeadlights();
 
     // Đèn đỏ / vàng phía trước: dừng trước vạch (chế độ crash thì cứ vượt).
     final front = p.s + p.spec.length / 2;

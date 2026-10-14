@@ -240,6 +240,166 @@ Chia hai tay giống game MOBA: **tay trái đặt liên tục trên cần lái*
 | Đàn vịt, chó chạy qua đường | Băng ngang đường từ vỉa hè, ở đoạn đường làng | P5 |
 | Mưa, đường trơn | Phanh ăn kém hơn, đánh lái bị trượt | P5 |
 
+### Kịch bản dọc đường: quán ven đường, buồn ngủ, quay đầu, xăng, lốp, mưa, CSGT
+
+Đường về quê dịp Tết ngoài đời: lái liền mấy tiếng thì mỏi, buồn ngủ; ven quốc lộ cứ một đoạn lại có quán nước. Ai cũng từng tấp vào uống cốc trà đá, hay lỡ quán thì quay đầu lại. Game làm đúng như vậy.
+
+**Quán ven đường**
+- Quốc lộ cứ 1–2,6 km có một quán; trong phố cứ 0,7–1,5 km có quán trà đá vỉa hè. Cao tốc không có quán, chỉ có trạm dừng nghỉ (cây xăng bên phải).
+- Khoảng 6/10 quán nằm bên phải chiều về, số còn lại ở bên kia đường.
+- Quán không đặt sát ngã tư, trạm thu phí, điểm đón khách. Nhà, cây, cột điện tự né khu quán.
+- Các kiểu quán (vẽ từ trên xuống, đổ bóng theo khối như xe):
+
+| Quán | Cảnh | Thực đơn (lì xì · tỉnh táo · phút) |
+|---|---|---|
+| Trà đá | Ghế nhựa đỏ/xanh, bàn thấp có cốc trà đá, ô dù, bình đá, thùng đá | Cốc trà đá (1 · +18 · 5′), Đĩa hướng dương (1 · +8 · 10′), Ngồi nghỉ chân (0 · +10 · 12′) |
+| Nước mía | Máy ép mía inox, bó mía, bạt xanh | Cốc nước mía (1 · +24 · 6′), Nước mía tắc (2 · +32 · 7′) |
+| Cà phê võng | Hàng võng dưới mái bạt, tài xế nằm nghỉ | Cà phê đen đá (2 · +45 · 10′), Bạc xỉu (2 · +38 · 10′), Nằm võng chợp mắt (1 · +75 · 30′) |
+| Bánh mì | Xe bánh mì kính, ô dù | Bánh mì pate (2 · +20 · 8′), Xôi xéo (2 · +22 · 10′) |
+| Cơm bình dân | Tủ kính khay thức ăn, mái bạt, nhiều bàn | Suất cơm (3 · +35 · 20′), Trà đá miễn phí (0 · +10 · 4′) |
+| Tiệm vá xe | Lốp xếp chồng, máy bơm hơi, chậu nước thử săm, mái bạt, bàn trà | Vá / thay săm, lốp (xem mục Thủng lốp) + Cốc trà đá (1 · +18 · 5′) |
+| Cây xăng | Sân bê tông, mái che viền đỏ xanh, hai đảo bơm, cửa hàng mái bằng, trụ giá | Đổ xăng (xem mục Xăng) |
+| Xăng lẻ | Kệ gỗ chai xăng, phễu, can, bà bán xăng ngồi dưới ô | Một chai xăng (chỉ xe máy) |
+
+- Mỗi quán có tên chủ quán: "Quán trà đá Cô Ba", "Cà phê võng Út Hiền"…
+- Khách ngồi sẵn trên ghế. Xe máy của khách dựng ở lề, mũi xe chĩa vào quán.
+- Biển hiệu đọc xuôi theo chiều đi của phía quán.
+
+**Ghé quán**
+1. Đi chậm sát lề phải, dừng hẳn trước quán (trong khoảng ±95). Nút **Ghé quán** hiện lên.
+2. Bấm nút: xe tấp hẳn vào lề và tắt máy; xe máy đổi sang hình xe dựng không người.
+3. Người lái xuống xe, đi bộ vào ngồi ghế (ở quán cà phê võng thì nằm võng). Camera phóng to và dời sang để quán nằm ở nửa phải màn hình.
+4. Bảng quán hiện bên trái:
+   - biển quán, tên quán, số lì xì
+   - chuyện trò đổi dần mỗi ~4 giây
+   - thực đơn có nút **Gọi**
+   - thanh tỉnh táo, giờ trong game
+   - nút **Lên đường**
+5. Dựng xe tốn sẵn 2 phút; mỗi món tốn thêm số phút của món đó. Đồng hồ giao thừa không chạy theo thời gian thật lúc ngồi quán, chỉ cộng theo món đã gọi.
+6. **Chuyện ở quán** vừa cho không khí Tết vừa có tin thật về đoạn đường phía trước:
+   - còn bao nhiêu cây tới trạm thu phí
+   - có cua gắt
+   - sắp vào phố hay lên cao tốc
+   - còn bao xa về tới nơi
+   - trời tối nhớ bật đèn
+   - "mắt đỏ hết rồi kìa" khi đang buồn ngủ
+7. Lên đường: người lái đi ra xe, xe nổ máy và lăn bánh ra làn.
+
+**Tỉnh táo, ngủ gật**
+- **Mức tỉnh táo:** vào chặng ở 82/100. Khi đang chạy, mỗi giây chơi tụt 0,24; ban đêm tụt nhanh gấp 1,7. Một chặng khoảng 5 phút chơi, tức là lái liền chừng 2 tiếng.
+- **Dưới 45:** thông báo "Bắt đầu buồn ngủ rồi…", mép màn hình tối dần, ô tỉnh táo trên HUD chuyển vàng.
+- **Dưới 25 — ngủ gật:** cứ 5–15 giây (càng thấp càng dày) mí mắt khép lại khoảng 0,9 giây, dưới 10 thì khoảng 1,35 giây. Lúc đó tay lái không ăn, xe tự dạt ngang 60 u/s. Gật trúng lúc có xe bên cạnh là tai nạn.
+- **Ô tỉnh táo trên HUD:** cốc cà phê + phần trăm, đổi xanh → vàng → đỏ.
+- **Nhắc ghé quán:** khi tỉnh táo dưới 60 (hoặc vài quán đầu chặng), game báo trước "Quán … bên phải phía trước".
+
+**Quay đầu**
+- **Khi nào được quay:** đi chậm dưới khoảng 15 km/h thì nút **Quay đầu** hiện lên. Không quay được trên cao tốc (dải phân cách) và trong trạm thu phí.
+- **Cú quay:** xe cua một nửa vòng tròn về bên trái, sang làn ngoài cùng của chiều kia. Camera xoay theo nên chiều đang đi luôn hướng sang phải màn hình.
+- **Đủ chỗ quay theo loại xe:**
+  - xe máy quay gọn ở đâu cũng được
+  - ô tô phải tấp sát lề phải, nếu không thì báo "Chưa đủ chỗ"
+  - xe khách chỉ quay được ở ngã tư, nhờ có thêm chỗ của đường ngang
+- **Xe khác:** xe hai chiều thấy mình đang quay chắn ngang thì phanh nếu còn kịp, quá gần thì đâm.
+- **Đi ngược:**
+  - Mọi thứ tính theo chiều đang đi:
+    - cần lái
+    - lực văng khi vào cua (cua phải của đường thành cua trái)
+    - vạch dừng đèn đỏ của chiều kia
+    - xe cùng chiều mới
+    - lì xì, ổ gà rơi trên làn của mình
+    - biển báo cua của chiều kia
+  - HUD có nhãn "Đang đi ngược về …".
+  - Đi qua trạm thu phí theo chiều ngược không mất phí.
+  - Không có xe vượt từ phía sau, không đón khách.
+- **Giới hạn:** chỉ đi ngược tối đa khoảng 3 km so với chỗ xa nhất đã tới; đường và cảnh phía sau trong khoảng đó được giữ lại nguyên vẹn. Quá giới hạn thì báo "Quay lại xa quá rồi — quay đầu về quê thôi!".
+- **Dùng để làm gì:** quay lại quán vừa chạy lỡ, hoặc sang quán bên kia đường.
+
+**Xăng**
+- Bình xăng hiện trên HUD (cột bơm + vạch + %), mang từ chặng này sang chặng sau. Chuyến mới bắt đầu với 42–70% bình vì đi vội chưa kịp đổ đầy.
+- Đầy bình chạy được: xe máy 140 km, ô tô 420 km, xe khách 560 km (ở tốc độ thường). Chạy nhanh và chở nặng tốn hơn.
+- **Dưới 12%:** đèn báo xăng nháy đỏ, game báo còn chừng bao nhiêu km. HUD bên phải hiện chỗ đổ xăng gần nhất ("Cây xăng 2,4 km"); xe máy tính cả xăng lẻ.
+- **Dưới 3,5%:** máy khục khặc, thỉnh thoảng mất ga một nhịp.
+- **Hết hẳn:** xe trôi rồi đứng. Các nút hiện ra:
+  - **Nghiêng xe** (xe máy, mỗi lần cạn một lần): dồn được chừng 3 km xăng.
+  - **Dắt bộ** (xe máy): người lái xuống dắt xe đi bên cạnh, giữ Ga để đẩy, tối đa ~12 km/h.
+  - **Gọi xăng / Gọi cứu hộ:** xe ôm hoặc xe cứu hộ chạy tới đỗ sau xe, đổ một can (+20% bình). Xe máy 2 lì xì + 15 phút; ô tô 4 lì xì, xe khách 6 lì xì + 25 phút. Không đủ tiền thì đưa hết, chờ thêm 10 phút.
+- **Cây xăng:** quốc lộ 8–14 km một cây, phố 5–8 km, cao tốc 22–32 km (trạm dừng nghỉ).
+  - Dừng sát lề trước cây xăng → nút **Đổ xăng**. Xe lượn vào đỗ cạnh đảo bơm, mái che mờ đi để thấy cột bơm, nhân viên ra tận xe.
+  - Bảng cột bơm có màn LED số lít, phần trăm bình chạy lên khi bơm. Chọn **Đổ 1 lì xì** hoặc **Đổ đầy bình**. Một lì xì được 50% bình xe máy, 20% ô tô, 14% xe khách.
+- **Xăng lẻ:** kệ chai xăng ven quốc lộ, 2,5–5 km một kệ, chỉ bán cho xe máy: 1 lì xì một chai (+25%), đắt hơn cây xăng.
+- **Trạm dừng nghỉ giữa các chặng** có nút **Đổ đầy** (giá như cây xăng, mất 5 phút).
+
+**Thủng lốp, đinh tặc**
+- **Đinh tặc:**
+  - Quốc lộ cứ 18–34 km có một bãi đinh rải trên một làn. Đinh lấp lánh dưới nắng, có bãi người dân dựng biển viết tay "CÓ ĐINH! ĐI CHẬM".
+  - Cán qua thì xì lốp: xe máy 80%, ô tô 60%, xe khách 50%.
+  - Ngay sau bãi đinh có tiệm vá xe "VÁ XE 24H" chặn đầu, giá gấp đôi, chủ tiệm than "đoạn này đinh nhiều lắm".
+- **Sập ổ gà** khi đang phóng nhanh (trên 1,25 lần tốc độ thường): 15% xì lốp.
+- **Lốp xẹp:**
+  - Tiếng xì hơi, xe khựng.
+  - Tốc độ tối đa còn 45% tốc độ thường; xe bị kéo lệch về một bên, thân xe lắc lắc.
+  - HUD hiện lốp đỏ "Xẹp" và tiệm vá xe gần nhất.
+- **Nát săm:** chạy lốp xẹp quá 1,5 km thì nát săm: chỉ còn cách thay, xe còn chậm hơn.
+- **Tiệm vá xe** (quốc lộ 4–7 km, phố 3–5 km):
+  - Xe máy: vá săm 1 lì xì · 12 phút, thay săm 2 lì xì · 8 phút.
+  - Ô tô, xe khách: vá lốp 2 · 15 phút, thay lốp 5 · 12 phút.
+  - Thợ ra tận xe làm; người lái ngồi bàn uống trà.
+- **Lốp dự phòng** (ô tô, xe khách): tấp sát lề phải → **Thay lốp** (15 phút, xe khách 25 phút).
+  - Thẻ việc tích dần từng bước: bật đèn khẩn cấp → đặt biển tam giác sau xe → kích xe, tháo lốp → lắp lốp dự phòng.
+  - Trên đường: đèn khẩn cấp nháy, biển tam giác, con đội, người lái ngồi xổm cạnh bánh.
+  - Thay rồi thì hết lốp dự phòng; vá ở tiệm thì có lại.
+- **Gọi thợ vá lưu động:** 3 lì xì · 20 phút, dùng được ở bất cứ đâu (số điện thoại dán trên cột điện).
+
+**Mưa**
+- **Mưa theo vùng:**
+  - Miền Bắc dịp Tết: 55% chặng có mưa. Phần nhiều là mưa phùn (hạt nhỏ, trời mù mù, có khi hai đợt); 30% là mưa rào.
+  - Miền Nam mùa khô: 15% chặng có một cơn mưa trái mùa.
+- **Mưa theo giờ trong game:** to dần rồi ngớt dần. Ngồi quán lâu thì có thể chờ tạnh. Tạnh rồi đường còn ướt thêm 20 phút.
+- **Hình ảnh:**
+  - Hạt mưa xiên trên màn hình (xe chạy nhanh thì hạt như hắt ngược), mưa rào hạt dài, mưa phùn lấm tấm.
+  - Hạt rơi toé vòng tròn trên mặt đất; mặt đường ướt sẫm, loang vệt sáng.
+  - Xe chạy bắn bụi nước phía sau. Trời tối hơn (mưa rào gần như phải bật đèn), mưa phùn thêm lớp sương.
+  - Người đi xe máy trùm áo mưa cánh dơi đủ màu. Quán đông người vào trú, xe dựng kín lề.
+  - Có tiếng mưa rơi.
+- **Đường trơn:**
+  - Phanh ăn còn 74%, lực văng khi vào cua mạnh hơn; tốc độ khuyên dùng ở biển cua tự hạ xuống.
+  - Đường đọng vũng nước: lao qua nhanh (trên 0,8 lần tốc độ thường) thì trượt nước, tay lái không ăn ~0,5 giây.
+- **Xe máy không có áo mưa:**
+  - Ướt dần (HUD hiện giọt nước + %).
+  - Ướt sũng thì lạnh run: tay lái run, tỉnh táo tụt gần gấp đôi.
+  - Mua **áo mưa cánh dơi** (1 lì xì) ở bất cứ quán / cây xăng nào; mặc vào thì hình người lái trùm áo mưa.
+
+**Chốt CSGT, phạt nguội**
+- **Chốt trên quốc lộ:** 45 km một chốt, đặt ở đoạn thẳng, xa trạm thu phí.
+  - Bãi đất bên lề, lều bạt sọc xanh trắng chữ CSGT, bàn làm việc, hai xe máy CSGT dựng, hàng cọc tiêu.
+  - Cán bộ đứng bắn tốc độ ở hai đầu chốt, một người cầm gậy chỉ huy.
+- **Biển báo:** 750 trước chốt có biển hạn chế tốc độ (50 hoặc 60 km/h) kèm biển phụ "KIỂM SOÁT"; quanh chốt có biển cấm quay đầu. HUD bên phải hiện biển tốc độ và quãng tới súng bắn tốc độ, nền đỏ khi đang quá tốc độ.
+- **Quá tốc độ** (vượt quá 3 km/h) qua súng bắn tốc độ:
+  - Còi "toét toét", cán bộ bước ra vẫy gậy. HUD hiện băng đỏ "CSGT vẫy — DỪNG XE!" kèm số mét.
+  - Dừng trong 650 thì bị lập biên bản: phạt 4 lì xì, giữ 12 phút. Không dừng thì CSGT nổ máy đuổi theo (rượt đuổi như bỏ chạy).
+- **Quay đầu trong vùng cấm quanh chốt** (±950): quay xong là bị gọi vào, phạt 3 lì xì, giữ 10 phút.
+- **Biên bản vi phạm:** băng phản quang vàng chanh, tờ giấy kẻ dòng, dấu đỏ "ĐÃ GHI".
+  - Ghi lỗi, tốc độ đo được / tốc độ cho phép, nơi vi phạm (km thứ mấy đoạn nào), mức phạt.
+  - Chọn **Nộp phạt** hoặc **Bỏ chạy!**. Va chạm và vượt đèn đỏ cũng dùng biên bản này.
+- **Camera phạt nguội:** 40% ngã tư trong phố có biển cấm quay đầu. Quay đầu ở đó thì vài giây sau báo "Camera phạt nguội", trừ 3 lì xì.
+
+**Giao diện**
+- **Thanh trên cùng:**
+  - lộ trình, đồng hồ hai dòng (giờ + còn bao lâu tới giao thừa)
+  - lì xì + hàng chở chung một ô
+  - cụm tình trạng xe: xăng, tỉnh táo; lốp hỏng và mưa / áo mưa chỉ hiện khi có chuyện. Mức thấp thì nháy; nhiều mục quá thì tự thu nhỏ cho vừa.
+- **Cột "đường phía trước"** bên phải, dưới nút tạm dừng: CSGT vẫy, đèn giao thông, cua gắt, biển tốc độ, cây xăng / tiệm vá gần nhất.
+- **Nút tình huống:** hai dòng (tên + giá / thời gian) có icon tròn màu. Nhiều nút thì xếp thành hai hàng.
+- **Bảng quán:** mái hiên sọc theo màu quán, mỗi món có hình minh hoạ vẽ riêng (cốc trà đá, nước mía, phin cà phê, bánh mì, xôi, đĩa cơm, áo mưa, vòi bơm, chai xăng, săm, lốp…).
+  - Chuyện trò hiện thành bong bóng thoại nổi trên cảnh quán.
+  - Cây xăng có màn hình cột bơm LED và đồng hồ bình E–F.
+- **Bộ icon** vẽ bằng code, cùng một kiểu: cốc, cột bơm, chai, lốp, cờ lê, điện thoại, áo mưa, mây mưa, còi…
+
+**Làm tiếp sau**
+- Tắc đường ngày 28 Tết: xe đứng im cả km, len lỏi xe máy.
+- Sương mù sáng sớm ở đèo; trời rét làm xe khó nổ máy.
+- Đổ xăng nhầm / xăng pha, kẹt xe ở trạm thu phí giờ cao điểm.
+
 ### Vật phẩm, thắng thua
 - **Vật phẩm:** lì xì để cộng điểm, trả phí cầu đường và nộp phạt. Quà Tết (bánh chưng, giỏ quà, cành đào) thì được chất lên xe. Lì xì và quà được mang theo qua các chặng.
 - **Cơ chế chở đồ Tết:** mỗi món quà làm xe đánh lái nặng hơn, tăng tốc chậm hơn và phanh ăn kém hơn. Chở càng nhiều thì về tới nhà được càng nhiều điểm, nhưng xe càng khó lái và càng khó chạy thoát công an. Xe máy chịu ảnh hưởng nhiều hơn ô tô.

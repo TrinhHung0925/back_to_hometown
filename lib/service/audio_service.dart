@@ -18,6 +18,8 @@ class AudioService {
   AudioPlayer? _engine;
   double _engineRate = 1;
   AudioPlayer? _siren;
+  AudioPlayer? _rain;
+  double _rainVolume = 0;
   AudioPool? _lixiPool;
 
   bool get enabled => LocalService.shared.getSoundOn();
@@ -113,10 +115,34 @@ class AudioService {
     await siren?.dispose();
   }
 
+  // ----------------------------------------------------------- Mưa
+  /// Tiếng mưa rơi lặp, to nhỏ theo độ nặng hạt [level] (0 = tắt).
+  Future<void> setRain(double level) async {
+    final volume = (level * 0.5).clamp(0.0, 0.5);
+    if (volume <= 0.01) {
+      final rain = _rain;
+      _rain = null;
+      _rainVolume = 0;
+      await rain?.stop();
+      await rain?.dispose();
+      return;
+    }
+    if (!enabled || !_ready) return;
+    if (_rain == null) {
+      _rainVolume = volume;
+      _rain = await FlameAudio.loop(AppAudio.sfxRain, volume: volume);
+      return;
+    }
+    if ((volume - _rainVolume).abs() < 0.04) return;
+    _rainVolume = volume;
+    await _rain?.setVolume(volume);
+  }
+
   // ------------------------------------------------- Tạm dừng / tắt
   void pauseLoops() {
     _engine?.pause();
     _siren?.pause();
+    _rain?.pause();
     FlameAudio.bgm.pause();
   }
 
@@ -124,12 +150,14 @@ class AudioService {
     if (!enabled) return;
     _engine?.resume();
     _siren?.resume();
+    _rain?.resume();
     if (_music != null) FlameAudio.bgm.resume();
   }
 
   void stopAll() {
     stopEngine();
     stopSiren();
+    setRain(0);
     stopMusic();
   }
 }

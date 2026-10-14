@@ -83,7 +83,7 @@ class _HomeViewState extends State<HomeView> {
                   fontSize: 54.h,
                   color: AppColors.ffFFD166,
                   shadow: const [
-                    Shadow(color: Color(0xffB4231E), offset: Offset(0, 4)),
+                    Shadow(color: AppColors.ffB4231E, offset: Offset(0, 4)),
                     Shadow(color: AppColors.shadowSoft, offset: Offset(0, 8), blurRadius: 10),
                   ],
                 ),

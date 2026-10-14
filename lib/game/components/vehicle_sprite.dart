@@ -21,7 +21,7 @@ class VehicleSprite extends PositionComponent {
           priority: priority,
         );
 
-  final Sprite sprite;
+  Sprite sprite;
   final Sprite shadow;
   final bool motorbike;
 
@@ -35,6 +35,12 @@ class VehicleSprite extends PositionComponent {
 
   /// Bật đèn pha (ban đêm): vẽ đèn pha sáng và đèn hậu.
   bool lightsOn = false;
+
+  /// Đèn khẩn cấp: cả bốn xi-nhan cùng nháy (dừng bên lề sửa xe).
+  bool hazard = false;
+
+  /// Người dắt xe đi bộ bên trái xe (xe máy hết xăng).
+  Sprite? walker;
 
   double _t = 0;
 
@@ -82,12 +88,20 @@ class VehicleSprite extends PositionComponent {
         canvas.drawCircle(Offset(x, motorbike ? h * 0.09 : 4), motorbike ? 2.2 : 3, _head);
       }
     }
-    if (blinker != 0 && (_t * 2.6).floor().isEven) {
-      final x = blinker > 0 ? w * (motorbike ? 0.78 : 0.95) : w * (motorbike ? 0.22 : 0.05);
-      for (final y in [motorbike ? h * 0.12 : 6.0, rearY]) {
-        canvas.drawCircle(Offset(x, y), 6, _blinkGlow);
-        canvas.drawCircle(Offset(x, y), 2.4, _blink);
+    if ((blinker != 0 || hazard) && (_t * 2.6).floor().isEven) {
+      final left = w * (motorbike ? 0.22 : 0.05), right = w * (motorbike ? 0.78 : 0.95);
+      for (final x in hazard ? [left, right] : [blinker > 0 ? right : left]) {
+        for (final y in [motorbike ? h * 0.12 : 6.0, rearY]) {
+          canvas.drawCircle(Offset(x, y), 6, _blinkGlow);
+          canvas.drawCircle(Offset(x, y), 2.4, _blink);
+        }
       }
+    }
+    final person = walker;
+    if (person != null) {
+      // Người dắt xe: đứng bên trái, tay vịn ghi-đông, bước đi lắc nhẹ.
+      final step = sin(_t * 7) * 1.5;
+      person.render(canvas, position: Vector2(-w * 0.95, h * 0.18 + step), size: Vector2.all(w * 1.05));
     }
   }
 

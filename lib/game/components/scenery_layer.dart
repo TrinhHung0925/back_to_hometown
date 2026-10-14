@@ -37,7 +37,9 @@ class SceneryLayer extends Component with HasGameReference<FlameGame> {
   static const double _half = GameConfig.roadHalfWidth;
   static const double _sidewalk = GameConfig.sidewalkWidth;
 
-  void sync(double fromS, double toS) {
+  /// Sinh cảnh tới quá [toS]; giữ cảnh phía sau tới [keepFrom] (đi ngược
+  /// lại sau khi quay đầu vẫn còn nguyên).
+  void sync(double fromS, double toS, {double? keepFrom}) {
     for (final side in [-1, 1]) {
       var s = _next[side]!;
       if (s < fromS - 400) s = fromS - 400;
@@ -46,8 +48,9 @@ class SceneryLayer extends Component with HasGameReference<FlameGame> {
       }
       _next[side] = s;
     }
+    final keep = keepFrom ?? fromS;
     _items.removeWhere((item) {
-      if (item.$1 >= fromS - 500) return false;
+      if (item.$1 >= keep - 500) return false;
       item.$2.removeFromParent();
       return true;
     });
@@ -55,7 +58,7 @@ class SceneryLayer extends Component with HasGameReference<FlameGame> {
 
   /// Sinh một món cảnh ở [s] phía [side]; trả về quãng của món kế tiếp.
   double _spawn(int side, double s) {
-    if (layout.nearFeature(s, margin: 20)) {
+    if (layout.nearFeature(s, margin: 20) || layout.nearStall(s, side, margin: 100)) {
       return s + 40;
     }
     return switch (layout.kindAt(s)) {
@@ -208,6 +211,7 @@ class SceneryLayer extends Component with HasGameReference<FlameGame> {
     // Phía trong khúc cua gắt: không mọc lấn qua tâm cong sang đường.
     final inner = _innerBend(s, side, size);
     if (inner > 0 && (d + size / 2) * inner > 0.8) return;
+    if (layout.nearStall(s, side, margin: size / 2)) return;
     final c = ShadowedSprite(
       sprite: Sprite(game.images.fromCache(path)),
       size: Vector2.all(size),
@@ -425,12 +429,13 @@ class PowerLines extends Component {
   static final Paint _poleEdge = Paint()..color = const Color(0xff5F5C57);
   static final Paint _arm = Paint()..color = const Color(0xff6B6F74);
 
-  void sync(double fromS, double toS, RoadLayout layout) {
-    _poles.removeWhere((p) => p.$1 < fromS - 400);
+  void sync(double fromS, double toS, RoadLayout layout, {double? keepFrom}) {
+    _poles.removeWhere((p) => p.$1 < (keepFrom ?? fromS) - 400);
     var s = _poles.isEmpty ? (fromS / 180).floor() * 180.0 - 360 : _poles.last.$1 + 180;
     while (s < toS + 400) {
       final kind = layout.kindAt(s);
-      if (kind != RoadKind.expressway) {
+      // Cột điện ở lề trái: chừa chỗ cho quán phía bên đó.
+      if (kind != RoadKind.expressway && !layout.nearStall(s, -1, margin: 10)) {
         final d = kind == RoadKind.city
             ? -(GameConfig.roadHalfWidth + 12)
             : -(GameConfig.roadHalfWidth + 40);

@@ -21,6 +21,17 @@ class TrafficLayer extends Component with HasGameReference<FlameGame> {
   /// Ban đêm: xe AI bật đèn.
   bool lightsOn = false;
 
+  /// Trời mưa: người đi xe máy trùm áo mưa.
+  bool raining = false;
+
+  final Map<String, Sprite> _cache = {};
+
+  Sprite _sprite(String path) => _cache.putIfAbsent(path, () => Sprite(game.images.fromCache(path)));
+
+  String _pathFor(TrafficType type, int variant) => raining && type == TrafficType.motorbike && variant % 3 != 0
+      ? Img.scootersRaincoat[variant % Img.scootersRaincoat.length]
+      : spritePath(type, variant);
+
   static String spritePath(TrafficType type, int variant) => switch (type) {
         TrafficType.motorbike => Img.scootersAi[variant % Img.scootersAi.length],
         TrafficType.sedan => Img.sedansAi[variant % Img.sedansAi.length],
@@ -30,7 +41,7 @@ class TrafficLayer extends Component with HasGameReference<FlameGame> {
       };
 
   VehicleSprite _make(TrafficType type, int variant) => VehicleSprite(
-        sprite: Sprite(game.images.fromCache(spritePath(type, variant))),
+        sprite: _sprite(_pathFor(type, variant)),
         shadow: Sprite(game.images.fromCache(Img.imgShadowBox)),
         width: type.width * (type == TrafficType.motorbike ? GameConfig.motorbikeVisualScale : 1),
         motorbike: type == TrafficType.motorbike,
@@ -42,6 +53,7 @@ class TrafficLayer extends Component with HasGameReference<FlameGame> {
       alive.add(v.id);
       final sprite = _sprites.putIfAbsent(v.id, () => _make(v.type, v.variant)..addToParent(this));
       sprite
+        ..sprite = _sprite(_pathFor(v.type, v.variant))
         ..braking = v.braking
         ..lightsOn = lightsOn
         ..placeOn(road, v.s, v.d, facingBackward: v.oncoming, blinkerD: v.blinker);
@@ -53,6 +65,7 @@ class TrafficLayer extends Component with HasGameReference<FlameGame> {
       crossAlive.add(v.id);
       final sprite = _crossSprites.putIfAbsent(v.id, () => _make(v.type, v.variant)..addToParent(this));
       sprite
+        ..sprite = _sprite(_pathFor(v.type, v.variant))
         ..braking = v.speed < v.cruiseSpeed * 0.5
         ..lightsOn = lightsOn
         ..placeAcross(road, v.s, v.d, down: v.down);

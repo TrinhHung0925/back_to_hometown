@@ -153,13 +153,30 @@ class TrafficVehicle {
 
 /// Thông tin xe người chơi mà xe AI cần biết để không tông từ phía sau.
 class PlayerSnapshot {
-  const PlayerSnapshot({required this.s, required this.d, required this.speed, required this.length, required this.width});
+  const PlayerSnapshot({
+    required this.s,
+    required this.d,
+    required this.speed,
+    required this.length,
+    required this.width,
+    this.forward = true,
+    this.maneuvering = false,
+  });
 
   final double s;
   final double d;
   final double speed;
   final double length;
   final double width;
+
+  /// Người chơi đang đi chiều về quê (s tăng) hay đã quay đầu.
+  final bool forward;
+
+  /// Đang quay đầu chắn ngang đường: xe hai chiều thấy thì phanh (nếu kịp).
+  final bool maneuvering;
+
+  /// Xe AI [v] đi cùng chiều với người chơi không.
+  bool sameWay(TrafficVehicle v) => v.oncoming != forward;
 }
 
 /// Chỗ xe phải dừng (đèn đỏ, barrier trạm thu phí). [forward]: áp cho chiều
@@ -230,7 +247,9 @@ class TrafficSystem {
       _spawnTimer = _nextSpawnDelay();
       final profile = profileAt?.call(spawnS) ?? TrafficProfile.highway;
       if (vehicles.length < profile.maxVehicles && (canSpawnAt?.call(spawnS) ?? true)) {
-        trySpawn(spawnS, profile: profile);
+        // Đã quay đầu thì "xe cùng chiều" với mình là xe chạy ngược s.
+        final chance = player.forward ? profile.oncomingChance : 1 - profile.oncomingChance;
+        trySpawn(spawnS, oncoming: _random.nextDouble() < chance, profile: profile);
       }
     }
   }
@@ -305,10 +324,16 @@ class TrafficSystem {
       }
 
       // Xe cùng chiều phía sau người chơi thì coi người chơi là xe trước —
-      // phanh gấp không bao giờ bị tông đuôi oan.
-      if (!v.oncoming && (player.d - v.d).abs() < (player.width + v.type.width) / 2) {
-        final ahead = player.s - v.s;
-        if (ahead > 0) consider(ahead - (v.type.length + player.length) / 2, player.speed);
+      // phanh gấp không bao giờ bị tông đuôi oan. Người chơi đang quay đầu
+      // chắn ngang thì xe hai chiều đều phanh, nếu còn kịp.
+      if ((player.d - v.d).abs() < (player.width + v.type.width) / 2) {
+        final ahead = v.oncoming ? v.s - player.s : player.s - v.s;
+        final g = ahead - (v.type.length + player.length) / 2;
+        if (ahead > 0 && player.sameWay(v)) {
+          consider(g, player.speed);
+        } else if (ahead > 0 && player.maneuvering && g >= v.speed * v.speed / (2 * _stopDecel * 1.6) - 4) {
+          consider(g, 0);
+        }
       }
 
       // Đèn đỏ / barrier: chỉ dừng nếu còn kịp phanh êm; không kịp thì đi luôn.
@@ -345,11 +370,9 @@ class TrafficSystem {
     final type = _randomType(profile);
 
     if (!isLaneClear(lane, spawnS, type.length + GameConfig.trafficSafeGap * 3)) return null;
-    if (!isOncoming) {
-      final otherLane = lane == 0 ? 1 : 0;
-      if (!isLaneClear(otherLane, spawnS, GameConfig.sideBySideBlockGap, sameDirectionOnly: true)) {
-        return null;
-      }
+    // Không cho 2 xe cùng chiều chắn kín cả hai làn của chiều đó.
+    if (!isLaneClear(Lanes.neighbour(lane), spawnS, GameConfig.sideBySideBlockGap, oncoming: isOncoming)) {
+      return null;
     }
 
     final (minF, maxF) = isOncoming ? profile.oncomingSpeed : profile.sameDirSpeed;
@@ -405,9 +428,9 @@ class TrafficSystem {
     TrafficVehicle? target;
     var best = double.infinity;
     for (final v in vehicles) {
-      if (v.oncoming || v.targetLane != null) continue;
+      if (!player.sameWay(v) || v.targetLane != null) continue;
       if ((v.d - player.d).abs() > (v.type.width + player.width) / 2 + 6) continue;
-      final ahead = v.s - player.s;
+      final ahead = player.forward ? v.s - player.s : player.s - v.s;
       if (ahead <= 0 || ahead > GameConfig.hornReach) continue;
       if (ahead < best) {
         best = ahead;
@@ -422,10 +445,11 @@ class TrafficSystem {
   }
 
   /// Làn [lane] có trống trong khoảng ±[halfRange] quanh [s] không.
-  bool isLaneClear(int lane, double s, double halfRange, {bool sameDirectionOnly = false}) {
+  /// [oncoming]: chỉ xét xe của chiều đó (null = mọi xe).
+  bool isLaneClear(int lane, double s, double halfRange, {bool? oncoming}) {
     for (final v in vehicles) {
       if (!v.occupies(lane)) continue;
-      if (sameDirectionOnly && v.oncoming) continue;
+      if (oncoming != null && v.oncoming != oncoming) continue;
       if ((v.s - s).abs() < halfRange) return false;
     }
     return true;

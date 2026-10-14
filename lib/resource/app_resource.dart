@@ -142,7 +142,119 @@ abstract class Img {
   static const String imgWaterTank = '$assetsImgPath/img_water_tank.png';
   static const String imgWaterTankRound = '$assetsImgPath/img_water_tank_round.png';
 
+  /// images — quán ven đường, xe dựng, người lái đi bộ (vẽ bằng code:
+  /// tool/asset_pipeline/build_roadside.py)
+  static const String imgScooterParked = '$assetsImgPath/img_scooter_parked.png';
+  static final List<String> scootersParked = [for (var i = 1; i <= 3; i++) '$assetsImgPath/img_scooter_parked_$i.png'];
+  static const String imgDriverMoto = '$assetsImgPath/img_driver_moto.png';
+  static const String imgDriverCar = '$assetsImgPath/img_driver_car.png';
+  static const List<String> stools = ['$assetsImgPath/img_stool_red.png', '$assetsImgPath/img_stool_blue.png'];
+  static const List<String> tables = ['$assetsImgPath/img_table_1.png', '$assetsImgPath/img_table_2.png'];
+  static const List<String> umbrellas = [
+    '$assetsImgPath/img_umbrella_red.png',
+    '$assetsImgPath/img_umbrella_blue.png',
+    '$assetsImgPath/img_umbrella_green.png',
+  ];
+  static const List<String> hammocks = [
+    '$assetsImgPath/img_hammock_1.png',
+    '$assetsImgPath/img_hammock_2.png',
+    '$assetsImgPath/img_hammock_3.png',
+  ];
+  static const String imgTeaJug = '$assetsImgPath/img_tea_jug.png';
+  static const String imgCooler = '$assetsImgPath/img_cooler.png';
+  static const String imgCanePress = '$assetsImgPath/img_cane_press.png';
+  static const String imgCaneBundle = '$assetsImgPath/img_cane_bundle.png';
+  static const String imgBreadCart = '$assetsImgPath/img_bread_cart.png';
+  static const String imgFoodTray = '$assetsImgPath/img_food_tray.png';
+  static const String imgTireStack = '$assetsImgPath/img_tire_stack.png';
+  static const String imgGasPump = '$assetsImgPath/img_gas_pump.png';
+
+  static List<String> get roadside => [
+        imgScooterParked,
+        ...scootersParked,
+        imgDriverMoto,
+        imgDriverCar,
+        ...stools,
+        ...tables,
+        ...umbrellas,
+        ...hammocks,
+        imgTeaJug,
+        imgCooler,
+        imgCanePress,
+        imgCaneBundle,
+        imgBreadCart,
+        imgFoodTray,
+        imgTireStack,
+        imgGasPump,
+      ];
+
+  /// images — tình huống dọc đường: áo mưa, chốt CSGT, xăng lẻ, sửa xe (vẽ
+  /// bằng code: tool/asset_pipeline/build_trip_events.py)
+  static const String imgScooterPlayerRaincoat = '$assetsImgPath/img_scooter_player_raincoat.png';
+  static final List<String> scootersRaincoat = [for (var i = 1; i <= 4; i++) '$assetsImgPath/img_scooter_ai_raincoat_$i.png'];
+  static const String imgPoliceOfficer = '$assetsImgPath/img_police_officer.png';
+  static const String imgPoliceOfficerWave = '$assetsImgPath/img_police_officer_wave.png';
+  static const String imgPoliceOfficerRadar = '$assetsImgPath/img_police_officer_radar.png';
+  static const String imgRadarTripod = '$assetsImgPath/img_radar_tripod.png';
+  static const String imgTrafficCone = '$assetsImgPath/img_traffic_cone.png';
+  static const String imgPoliceTable = '$assetsImgPath/img_police_table.png';
+  static const String imgScooterPoliceParked = '$assetsImgPath/img_scooter_police_parked.png';
+  static const String imgBottleShelf = '$assetsImgPath/img_bottle_shelf.png';
+  static const String imgFunnel = '$assetsImgPath/img_funnel.png';
+  static const String imgJerrycan = '$assetsImgPath/img_jerrycan.png';
+  static const String imgCompressor = '$assetsImgPath/img_compressor.png';
+  static const String imgWaterBasin = '$assetsImgPath/img_water_basin.png';
+  static const String imgWarningTriangle = '$assetsImgPath/img_warning_triangle.png';
+  static const String imgSpareTire = '$assetsImgPath/img_spare_tire.png';
+  static const String imgCarJack = '$assetsImgPath/img_car_jack.png';
+  static const String imgAttendant = '$assetsImgPath/img_attendant.png';
+  static const String imgMechanic = '$assetsImgPath/img_mechanic.png';
+  static const String imgSeller = '$assetsImgPath/img_seller.png';
+  static const String imgDriverMotoCrouch = '$assetsImgPath/img_driver_moto_crouch.png';
+  static const String imgDriverCarCrouch = '$assetsImgPath/img_driver_car_crouch.png';
+
+  /// images — minh hoạ món trong quán, cây xăng, tiệm vá xe (vẽ bằng code:
+  /// tool/asset_pipeline/build_menu_items.py)
+  static String item(String art) => '$assetsImgPath/img_item_$art.png';
+  static final String imgItemRaincoat = item('ao_mua');
+  static final String imgItemNozzle = item('voi_xang');
+  static final String imgItemBottle = item('chai_xang');
+  static List<String> get items => [
+        for (final art in const [
+          'tra_da', 'nuoc_mia', 'nuoc_mia_tac', 'ca_phe', 'bac_xiu', 'huong_duong', 'ghe_nhua', 'vong', 'banh_mi', //
+          'xoi', 'com', 'ao_mua', 'voi_xang', 'chai_xang', 'va_sam', 'thay_sam', 'va_lop', 'thay_lop',
+        ])
+          item(art),
+      ];
+
+  static List<String> get tripEvents => [
+        imgScooterPlayerRaincoat,
+        ...scootersRaincoat,
+        imgPoliceOfficer,
+        imgPoliceOfficerWave,
+        imgPoliceOfficerRadar,
+        imgRadarTripod,
+        imgTrafficCone,
+        imgPoliceTable,
+        imgScooterPoliceParked,
+        imgBottleShelf,
+        imgFunnel,
+        imgJerrycan,
+        imgCompressor,
+        imgWaterBasin,
+        imgWarningTriangle,
+        imgSpareTire,
+        imgCarJack,
+        imgAttendant,
+        imgMechanic,
+        imgSeller,
+        imgDriverMotoCrouch,
+        imgDriverCarCrouch,
+      ];
+
   static List<String> get worldArt => [
+        ...roadside,
+        ...tripEvents,
         texAsphalt,
         texPaving,
         texPavingRed,
@@ -189,6 +301,11 @@ abstract class AppAudio {
   static const String sfxConfirm = 'sfx_confirm.wav';
   static const String sfxSiren = 'sfx_siren.wav';
   static const String sfxFirecrackers = 'sfx_firecrackers.wav';
+  static const String sfxTireHiss = 'sfx_tire_hiss.wav';
+  static const String sfxWhistle = 'sfx_whistle.wav';
+  static const String sfxSputter = 'sfx_sputter.wav';
+  static const String sfxFuelPump = 'sfx_fuel_pump.wav';
+  static const String sfxRain = 'sfx_rain.wav';
 
   static const String musicMain = 'music_main.m4a';
   static const String musicChase = 'music_chase.m4a';
@@ -210,6 +327,11 @@ abstract class AppAudio {
     sfxConfirm,
     sfxSiren,
     sfxFirecrackers,
+    sfxTireHiss,
+    sfxWhistle,
+    sfxSputter,
+    sfxFuelPump,
+    sfxRain,
     jingleWin,
     jingleLose,
   ];

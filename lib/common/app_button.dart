@@ -53,7 +53,7 @@ class AppButton extends StatelessWidget {
               Image.asset(icon!, width: 20.h, height: 20.h, color: textColor),
               SizedBox(width: 8.h),
             ],
-            AppText.manrope(label, fontSize: 15.h, fontWeight: FontWeight.w800, color: textColor),
+            Flexible(child: AppText.manrope(label, fontSize: 15.h, fontWeight: FontWeight.w800, color: textColor)),
           ],
         ),
       ),

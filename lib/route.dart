@@ -10,12 +10,14 @@ import 'screen/rest_stop/rest_stop_view.dart';
 import 'screen/splash/splash_view.dart';
 
 Route<dynamic> generateRoute(RouteSettings settings) {
-  GetPageRoute page(RouteSettings settings, Widget Function() genPage, [Bindings? bindings]) {
+  GetPageRoute page(RouteSettings settings, Widget Function() genPage, [Bindings? bindings, Transition? transition]) {
     var page = GetPage(
       name: settings.name!,
       page: genPage,
       arguments: settings.arguments,
       binding: bindings,
+      transition: transition,
+      transitionDuration: transition == Transition.fade ? const Duration(milliseconds: 500) : null,
     );
     return PageRedirect(route: page, unknownRoute: page).page();
   }
@@ -24,7 +26,8 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     case "/splash":
       return page(settings, () => SplashView());
     case "/home":
-      return page(settings, () => HomeView());
+      // Từ splash (và khi về menu) mờ dần sang cho êm.
+      return page(settings, () => HomeView(), null, Transition.fade);
     case "/game":
       return page(settings, () => GameView());
     case "/chooseMode":

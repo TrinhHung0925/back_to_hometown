@@ -6,6 +6,8 @@ import 'package:get/get.dart';
 import '../../game/debug/autopilot.dart';
 import '../../game/debug/debug_launch.dart';
 import '../../game/game_config.dart';
+import '../../game/logic/roadside.dart';
+import '../../game/logic/vehicle_condition.dart';
 import '../../game/stage.dart';
 import '../../game/ve_que_game.dart';
 import '../../game/vehicle_spec.dart';
@@ -33,12 +35,22 @@ class GameController extends GetxController {
   /// Tổng kết cả chuyến khi vừa xong chặng cuối.
   final tripSummary = Rxn<TripSummary>();
 
-  /// Vì sao công an tới (để bảng chọn ghi đúng lý do).
+  /// Vì sao công an tới (để bảng chọn ghi đúng lý do) và chi tiết lỗi.
   final incidentKind = IncidentKind.collision.obs;
+  final violation = Rxn<Violation>();
 
   /// Thông báo ngắn đang hiện (tự ẩn sau vài giây).
   final notice = Rxn<GameNotice>();
   Timer? _noticeTimer;
+
+  /// Đang ghé quán (null khi đang lái).
+  final stallVisit = Rxn<StallVisit>();
+
+  /// Việc bên lề đang làm (thay lốp, chờ xăng…), null khi không có.
+  final job = Rxn<JobState>();
+
+  /// Lần đổ xăng gần nhất: mức bình trước / sau (bảng cột bơm chạy số).
+  final pump = Rxn<(double, double)>();
 
   /// Tăng mỗi lần bóp còi thành công — nút Còi chạy vòng hồi chiêu.
   final hornTick = 0.obs;
@@ -97,15 +109,33 @@ class GameController extends GetxController {
     result.value = null;
     isPaused.value = false;
     chaseProgress.value = 0;
+    stallVisit.value = null;
+    job.value = null;
+    pump.value = null;
     game = VeQueGame(
       setup: setup,
       onHud: (data) {
         hud.value = data;
         _audio.setEngineLevel(data.speedKmh / maxSpeedKmh);
+        if (!isPaused.value && !chatOpen.value) _audio.setRain(data.rain);
       },
+      onRest: (visit) {
+        stallVisit.value = visit;
+        if (visit == null) pump.value = null;
+      },
+      onJob: (value) => job.value = value,
       onPhaseChanged: (value) {
-        if (value == GamePhase.incident) incidentKind.value = game.incidentKind;
+        if (value == GamePhase.incident) {
+          incidentKind.value = game.incidentKind;
+          violation.value = game.violation;
+        }
+        final previous = phase.value;
         phase.value = value;
+        // Dựng xe vào quán thì tắt máy, lên đường thì nổ máy lại.
+        if (value == GamePhase.resting) _audio.stopEngine();
+        if (previous == GamePhase.resting && value == GamePhase.driving) {
+          _audio.startEngine(setup.vehicle.fourWheels ? AppAudio.sfxEngineCar : AppAudio.sfxEngineMoto);
+        }
         // Bảng chọn hiện lên thì nhả hết ga/phanh đang giữ.
         if (value == GamePhase.incident || value == GamePhase.finished) {
           game
@@ -164,6 +194,14 @@ class GameController extends GetxController {
         _audio.lixi();
       case GameSound.barrier:
         _audio.play(AppAudio.sfxCrashLight, volume: 0.7);
+      case GameSound.tireHiss:
+        _audio.play(AppAudio.sfxTireHiss, volume: 0.8);
+      case GameSound.whistle:
+        _audio.play(AppAudio.sfxWhistle, volume: 0.8);
+      case GameSound.sputter:
+        _audio.play(AppAudio.sfxSputter, volume: 0.8);
+      case GameSound.fuelPump:
+        _audio.play(AppAudio.sfxFuelPump, volume: 0.7);
     }
   }
 
@@ -171,6 +209,41 @@ class GameController extends GetxController {
     notice.value = value;
     _noticeTimer?.cancel();
     _noticeTimer = Timer(const Duration(milliseconds: 3200), () => notice.value = null);
+  }
+
+  // ------------------------------------------- Quán ven đường, quay đầu
+  void stopAtStall() => game.stopAtStall();
+  void order(StallItem item) => game.order(item);
+  void leaveStall() => game.leaveStall();
+  void uTurn() => game.uTurn();
+  void repair(RepairOption option) => game.repair(option);
+  void buyRaincoat() => game.buyRaincoat();
+
+  /// Đổ xăng ([lixi] lì xì, null = đổ đầy) hoặc mua chai xăng lẻ.
+  void refuel({int? lixi, bool bottle = false}) {
+    final before = game.fuel.level;
+    final added = bottle ? game.buyBottle() : game.refuel(lixiSpent: lixi);
+    if (added > 0) pump.value = (before, game.fuel.level);
+  }
+
+  /// Nút theo tình huống.
+  void onAction(RoadAction action) {
+    switch (action) {
+      case RoadAction.visit:
+        game.stopAtStall();
+      case RoadAction.uTurn:
+        game.uTurn();
+      case RoadAction.tiltBike:
+        game.tiltBike();
+      case RoadAction.push:
+        game.startPushing();
+      case RoadAction.callFuel:
+        game.callFuel();
+      case RoadAction.spareTire:
+        game.changeSpare();
+      case RoadAction.callMechanic:
+        game.callMechanic();
+    }
   }
 
   // ------------------------------------------------------- Còi, đèn
@@ -226,9 +299,12 @@ class GameController extends GetxController {
       case GamePhase.driving:
         _audio.stopSiren();
         _audio.playMusic(AppAudio.musicMain);
+      case GamePhase.resting:
+        break;
       case GamePhase.finished:
         _audio.stopEngine();
         _audio.stopSiren();
+        _audio.setRain(0);
         _audio.stopMusic();
     }
   }
@@ -239,6 +315,7 @@ class GameController extends GetxController {
     _autopilot?.stop();
     _audio.stopEngine();
     _audio.stopSiren();
+    _audio.setRain(0);
     _audio.playMusic(AppAudio.musicMain);
     super.onClose();
   }

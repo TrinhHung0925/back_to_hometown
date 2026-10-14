@@ -44,6 +44,7 @@ class _HomeBackdropState extends State<HomeBackdrop> {
       onFinished: (_) {},
       onSound: (_) {},
       onNotice: (_) {},
+      fatigue: false,
     );
     _pilot = Autopilot(_game, mode: 'drive')..start();
   }

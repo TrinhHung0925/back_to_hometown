@@ -260,6 +260,63 @@ abstract class GameConfig {
   /// Mỗi khách trả bao nhiêu lì xì tiền xe.
   static const int fareLixi = 2;
 
+  // ------------------------------------------------- Quán ven đường
+  /// Khoảng cách giữa hai quán (km) trên quốc lộ / trong phố; quán đầu tiên
+  /// cách điểm xuất phát.
+  static const double stallGapHighwayKmMin = 1.0;
+  static const double stallGapHighwayKmMax = 2.6;
+  static const double stallGapCityKmMin = 0.7;
+  static const double stallGapCityKmMax = 1.5;
+  static const double firstStallAfterStart = 1200;
+
+  /// Lề đất trước quán để dựng xe; khu bàn ghế sâu vào trong bao nhiêu.
+  static const double stallPadWidth = 56;
+  static const double stallPlotDepth = 150;
+  static const double stallPlotHalfLength = 85;
+
+  /// Dừng hẳn sát lề phải trong khoảng ± này quanh quán thì ghé được.
+  static const double stallStopWindow = 95;
+  static const double stallStopSpeed = 25;
+
+  /// Dừng xe bao nhiêu phút trong game dù chưa gọi món (dựng xe, ngồi xuống).
+  static const double stallBaseMinutes = 2;
+
+  // ------------------------------------------------- Tỉnh táo, ngủ gật
+  /// Mức tỉnh táo lúc vào chặng (0..100) và tụt mỗi giây chơi khi đang lái;
+  /// ban đêm tụt nhanh hơn. Một chặng ~5 phút chơi ≈ 2 giờ lái liền.
+  static const double alertStart = 82;
+  static const double alertDecayPerSecond = 0.24;
+  static const double alertNightFactor = 1.7;
+
+  /// Dưới mức này: ngáp, mép màn hình tối dần.
+  static const double alertDrowsy = 45;
+
+  /// Dưới mức này: ngủ gật (mắt nhắm, xe tự dạt), càng thấp càng hay gật.
+  static const double alertMicrosleep = 25;
+  static const double alertSevere = 10;
+  static const double microsleepGapMin = 5;
+  static const double microsleepGapMax = 15;
+  static const double microsleepSeconds = 0.9;
+
+  /// Lúc ngủ gật xe dạt ngang (u/s) và tay lái không ăn.
+  static const double microsleepDrift = 60;
+
+  // ------------------------------------------------------- Quay đầu
+  /// Chỉ quay đầu được khi chạy chậm dưới mức này (≈ 15 km/h).
+  static const double uTurnMaxSpeed = 90;
+
+  /// Bán kính quay đầu nhỏ nhất: xe máy quay gọn trong một làn, ô tô cần sát
+  /// lề phải, xe khách chỉ quay được ở ngã tư (có thêm chỗ của đường ngang).
+  static const double uTurnRadiusMotorbike = 32;
+  static const double uTurnRadiusCar = 88;
+  static const double uTurnRadiusBus = 120;
+
+  /// Ở ngã tư, cung quay đầu được lấn thêm sang đường ngang bao nhiêu.
+  static const double uTurnCrossRoom = 110;
+
+  /// Đi ngược tối đa bao xa so với chỗ xa nhất đã tới (≈ 3 km).
+  static const double maxBacktrack = 2700;
+
   // ------------------------------------------------------- Quà Tết
   /// Quà Tết nằm trên đường: bao lâu xuất hiện một món.
   static const double giftIntervalMin = 9;
@@ -306,4 +363,145 @@ abstract class GameConfig {
   /// và tăng tốc bằng bao nhiêu phần gia tốc gốc của xe mình.
   static const double policeMaxSpeedFactor = 0.92;
   static const double policeAccelFactor = 0.75;
+
+  // ------------------------------------------------------------ Xăng
+  /// Đầy bình chạy được bao nhiêu km (ở tốc độ thường, không chở gì).
+  static const double fuelRangeKmMotorbike = 140;
+  static const double fuelRangeKmCar = 420;
+  static const double fuelRangeKmBus = 560;
+
+  /// Chuyến mới: bình còn khoảng này (đi vội chưa kịp đổ đầy).
+  static const double fuelTripStartMin = 0.42;
+  static const double fuelTripStartMax = 0.7;
+
+  /// Đèn báo xăng sáng; xe bắt đầu khục khặc (lâu lâu mất ga).
+  static const double fuelLow = 0.12;
+  static const double fuelSputter = 0.035;
+
+  /// Một lì xì đổ được bao nhiêu phần bình ở cây xăng.
+  static const double fuelPerLixiMotorbike = 0.5;
+  static const double fuelPerLixiCar = 0.2;
+  static const double fuelPerLixiBus = 0.14;
+
+  /// Xăng lẻ đóng chai (chỉ xe máy): một chai một lì xì.
+  static const double fuelBottle = 0.25;
+
+  /// Nghiêng xe dồn xăng (xe máy, mỗi lần cạn được một lần).
+  static const double fuelTilt = 0.025;
+
+  /// Gọi người mang xăng tới / gọi cứu hộ: đổ thêm, mất lì xì và phút chờ.
+  static const double fuelRescue = 0.2;
+  static const int fuelRescueLixiMotorbike = 2;
+  static const int fuelRescueLixiCar = 4;
+  static const int fuelRescueLixiBus = 6;
+  static const double fuelRescueMinutesMotorbike = 15;
+  static const double fuelRescueMinutesCar = 25;
+
+  /// Dắt bộ xe máy hết xăng: tốc độ tối đa (≈ 12 km/h).
+  static const double pushSpeed = 72;
+
+  /// Khoảng cách giữa hai cây xăng (km): quốc lộ, phố, cao tốc (trạm dừng
+  /// nghỉ); xăng lẻ ven quốc lộ.
+  static const double gasGapHighwayKmMin = 8;
+  static const double gasGapHighwayKmMax = 14;
+  static const double gasGapCityKmMin = 5;
+  static const double gasGapCityKmMax = 8;
+  static const double gasGapExpresswayKmMin = 22;
+  static const double gasGapExpresswayKmMax = 32;
+  static const double bottleGapKmMin = 2.5;
+  static const double bottleGapKmMax = 5;
+
+  /// Cây xăng rộng hơn quán nước (mái che, chòi bán hàng).
+  static const double gasPlotHalfLength = 125;
+
+  // ------------------------------------------------------------- Lốp
+  /// Tiệm vá xe: khoảng cách giữa hai tiệm (km).
+  static const double tireShopGapHighwayKmMin = 4;
+  static const double tireShopGapHighwayKmMax = 7;
+  static const double tireShopGapCityKmMin = 3;
+  static const double tireShopGapCityKmMax = 5;
+
+  /// Đinh tặc: bao nhiêu km quốc lộ có một bãi đinh, xác suất xì lốp khi cán
+  /// qua theo loại xe.
+  static const double nailGapKmMin = 18;
+  static const double nailGapKmMax = 34;
+  static const double nailPatchLength = 70;
+  static const double nailFlatChanceMotorbike = 0.8;
+  static const double nailFlatChanceCar = 0.6;
+  static const double nailFlatChanceBus = 0.5;
+
+  /// Sập ổ gà lúc chạy nhanh hơn mức này thì có thể xì lốp.
+  static const double potholeFlatSpeed = 1.25 * normalSpeed;
+  static const double potholeFlatChance = 0.15;
+
+  /// Lốp xẹp: tốc độ tối đa còn bao nhiêu phần tốc độ thường, xe bị kéo lệch
+  /// ngang (u/s). Chạy lốp xẹp quá xa thì nát săm (chỉ còn cách thay).
+  static const double flatSpeedFactor = 0.45;
+  static const double ruinedSpeedFactor = 0.32;
+  static const double flatPull = 20;
+  static const double flatRuinKm = 1.5;
+
+  /// Thay lốp dự phòng bên lề (ô tô, xe khách): phút trong game.
+  static const double spareMinutesCar = 15;
+  static const double spareMinutesBus = 25;
+
+  /// Gọi thợ vá xe lưu động tới tận nơi.
+  static const int mobileRepairLixi = 3;
+  static const double mobileRepairMinutes = 20;
+
+  // ------------------------------------------------------------- Mưa
+  /// Miền Bắc dịp Tết hay mưa phùn, thỉnh thoảng mưa rào; miền Nam ít mưa.
+  static const double rainChanceNorth = 0.55;
+  static const double rainChanceSouth = 0.15;
+
+  /// Độ bám đường lúc đường ướt hẳn: phanh ăn còn bấy nhiêu phần, lực văng
+  /// khi vào cua mạnh lên tương ứng (1 / độ bám).
+  static const double wetGrip = 0.74;
+
+  /// Đường còn ướt bao nhiêu phút trong game sau khi tạnh.
+  static const double wetLingerMinutes = 20;
+
+  /// Vũng nước: bao lâu xuất hiện một vũng (lúc mưa to), lao qua nhanh hơn
+  /// mức này thì trượt nước, tay lái không ăn một lúc.
+  static const double puddleIntervalMin = 4;
+  static const double puddleIntervalMax = 8;
+  static const double aquaplaneSpeed = 0.8 * normalSpeed;
+  static const double aquaplaneSeconds = 0.55;
+  static const double aquaplaneDrift = 70;
+
+  /// Xe máy không mặc áo mưa: ướt dần, lạnh run, tỉnh táo tụt nhanh hơn.
+  static const double soakPerSecond = 0.05;
+  static const double soakAlertFactor = 1.8;
+  static const int raincoatLixi = 1;
+
+  /// Trời mưa tối thêm bao nhiêu (cộng vào mức tối ban đêm).
+  static const double rainDarkness = 0.32;
+
+  // ------------------------------------------------------------- CSGT
+  /// Chốt CSGT trên quốc lộ: bao nhiêu km quốc lộ có một chốt.
+  static const double checkpointEveryKm = 45;
+
+  /// Biển hạn chế tốc độ đặt trước chốt; súng bắn tốc độ đứng trước lều.
+  static const double speedSignAhead = 750;
+  static const double radarAhead = 200;
+
+  /// Vượt quá biển bao nhiêu km/h mới bị thổi.
+  static const double speedTolerance = 3;
+
+  /// Vùng cấm quay đầu quanh chốt (± quanh lều).
+  static const double noUTurnReach = 950;
+
+  /// Bị vẫy vào: phải dừng trong quãng này sau súng bắn tốc độ, không thì
+  /// CSGT đuổi theo.
+  static const double pullOverReach = 650;
+
+  /// Ngã tư trong phố có biển cấm quay đầu (camera phạt nguội).
+  static const double noUTurnJunctionChance = 0.4;
+  static const int coldFineLixi = 3;
+
+  /// Mức phạt theo lỗi (lì xì, phút bị giữ).
+  static const int speedingFineLixi = 4;
+  static const double speedingFineMinutes = 12;
+  static const int uTurnFineLixi = 3;
+  static const double uTurnFineMinutes = 10;
 }

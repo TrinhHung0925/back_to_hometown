@@ -118,6 +118,128 @@ def synth_firecrackers(path, seconds=2.6, seed=7):
     write_wav(path, [v / peak * 0.9 for v in mix])
 
 
+def _noise(n, seed):
+    rnd = random.Random(seed)
+    return [rnd.uniform(-1, 1) for _ in range(n)]
+
+
+def _lowpass(samples, k):
+    """Lọc thông thấp một cực: k nhỏ thì tiếng trầm, đục."""
+    out, y = [], 0.0
+    for s in samples:
+        y += k * (s - y)
+        out.append(y)
+    return out
+
+
+def _normalize(samples, peak=0.85):
+    m = max(abs(s) for s in samples) or 1
+    return [s / m * peak for s in samples]
+
+
+def synth_tire_hiss(path, seconds=1.3):
+    """Lốp xì hơi: tiếng 'bụp' nhỏ rồi xì kéo dài, nhỏ dần."""
+    n = int(RATE * seconds)
+    noise = _noise(n, 3)
+    hiss = [noise[i] - 0.85 * (noise[i - 1] if i else 0) for i in range(n)]
+    out = []
+    for i, s in enumerate(hiss):
+        t = i / RATE
+        env = min(1, t / 0.03) * (1 - t / seconds) ** 1.4
+        pop = math.exp(-t * 60) * math.sin(2 * math.pi * 90 * t) * 1.6
+        out.append(s * env * 0.7 + pop)
+    write_wav(path, _normalize(out, 0.8))
+
+
+def synth_whistle(path):
+    """Còi CSGT 'toét toét': tiếng huýt cao có rung (hạt bi trong còi), một
+    tiếng ngắn rồi một tiếng dài."""
+    blasts = [(0.0, 0.22), (0.32, 0.62)]
+    seconds = 1.0
+    n = int(RATE * seconds)
+    out = [0.0] * n
+    phase = 0.0
+    for i in range(n):
+        t = i / RATE
+        amp = 0.0
+        for start, length in blasts:
+            if start <= t < start + length:
+                local = t - start
+                amp = min(1, local / 0.015) * min(1, (start + length - t) / 0.04)
+        if amp == 0:
+            continue
+        trill = math.sin(2 * math.pi * 28 * t)
+        freq = 2950 + 260 * trill
+        phase += 2 * math.pi * freq / RATE
+        tone = math.sin(phase) + 0.18 * math.sin(2 * phase)
+        out[i] = tone * amp * (0.75 + 0.25 * trill)
+    write_wav(path, _normalize(out, 0.6))
+
+
+def synth_sputter(path, seconds=0.9):
+    """Máy khục khặc thiếu xăng: vài tiếng nổ khục trầm, ngắt quãng."""
+    n = int(RATE * seconds)
+    out = [0.0] * n
+    rnd = random.Random(5)
+    noise = _lowpass(_noise(n, 9), 0.08)
+    for start in (0.0, 0.16, 0.27, 0.52, 0.7):
+        f = rnd.uniform(55, 85)
+        for i in range(int(start * RATE), min(n, int((start + 0.14) * RATE))):
+            t = i / RATE - start
+            env = math.exp(-t * 28)
+            out[i] += (math.sin(2 * math.pi * f * t) * 0.8 + noise[i] * 3) * env
+    write_wav(path, _normalize(out, 0.75))
+
+
+def synth_fuel_pump(path, seconds=1.5):
+    """Cột bơm xăng chạy: tiếng mô-tơ rì rì, kết thúc bằng tiếng 'tách' ngắt cò."""
+    n = int(RATE * seconds)
+    noise = _lowpass(_noise(n, 11), 0.2)
+    out = []
+    for i in range(n):
+        t = i / RATE
+        env = min(1, t / 0.08) * (1 if t < seconds - 0.25 else max(0, (seconds - t) / 0.25))
+        hum = math.sin(2 * math.pi * 118 * t) + 0.5 * math.sin(2 * math.pi * 236 * t) + 0.25 * math.sin(2 * math.pi * 354 * t)
+        s = (hum * 0.35 + noise[i] * 1.2) * env
+        click_t = t - (seconds - 0.12)
+        if 0 <= click_t < 0.05:
+            s += math.exp(-click_t * 120) * math.sin(2 * math.pi * 1800 * click_t) * 1.2
+        out.append(s)
+    write_wav(path, _normalize(out, 0.7))
+
+
+def synth_rain(path, seconds=4.0):
+    """Tiếng mưa rơi lặp liền mạch: rào rào (nhiễu lọc) + lộp độp hạt to."""
+    n = int(RATE * seconds)
+    base = _lowpass(_noise(n, 21), 0.35)
+    hiss = [a - b for a, b in zip(base, _lowpass(base, 0.05))]
+    out = [h * 0.8 for h in hiss]
+    rnd = random.Random(4)
+    for _ in range(int(seconds * 60)):
+        start = rnd.randrange(n)
+        f = rnd.uniform(1800, 4200)
+        amp = rnd.uniform(0.15, 0.5)
+        for j in range(int(0.012 * RATE)):
+            i = (start + j) % n
+            t = j / RATE
+            out[i] += math.sin(2 * math.pi * f * t) * math.exp(-t * 400) * amp
+    # Nối đuôi vào đầu cho lặp không giật.
+    fade = int(0.3 * RATE)
+    for j in range(fade):
+        k = j / fade
+        out[j] = out[j] * k + out[n - fade + j] * (1 - k)
+    write_wav(path, _normalize(out[: n - fade], 0.6))
+
+
+def synth_new():
+    """Các tiếng tự tổng hợp cho tình huống dọc đường (không cần nguồn ngoài)."""
+    synth_tire_hiss(f'{OUT}/sfx_tire_hiss.wav')
+    synth_whistle(f'{OUT}/sfx_whistle.wav')
+    synth_sputter(f'{OUT}/sfx_sputter.wav')
+    synth_fuel_pump(f'{OUT}/sfx_fuel_pump.wav')
+    synth_rain(f'{OUT}/sfx_rain.wav')
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     # Tiếng máy (Kenney Starter Kit Racing, CC0) — WAV để lặp liền mạch.
@@ -143,6 +265,7 @@ def main():
     # Tự tổng hợp.
     synth_siren(f'{OUT}/sfx_siren.wav')
     synth_firecrackers(f'{OUT}/sfx_firecrackers.wav')
+    synth_new()
     # Nhạc (Spring Spring, CC0) và jingle kết thúc (MintoDog, CC0) — M4A cho nhẹ.
     to_m4a(f'{SRC}/audio_oga_chipnese/chipnese_2.ogg', 'music_main')
     to_m4a(f'{SRC}/audio_oga_chayna/CH-AY-NA_0.ogg', 'music_chase')
@@ -153,4 +276,9 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    import sys
+    if '--synth-only' in sys.argv:
+        os.makedirs(OUT, exist_ok=True)
+        synth_new()
+    else:
+        main()

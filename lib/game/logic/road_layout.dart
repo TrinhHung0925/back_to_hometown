@@ -3,6 +3,7 @@ import 'dart:math';
 import '../../model/trip.dart';
 import '../game_config.dart';
 import 'road_path.dart';
+import 'roadside.dart';
 
 /// Một đoạn liên tục cùng loại đường, tính theo quãng s của chặng.
 class RoadZone {
@@ -19,13 +20,16 @@ enum LightColor { green, yellow, red }
 
 /// Ngã tư có đèn giao thông. Thời gian tính bằng giây chơi kể từ lúc vào chặng.
 class TrafficLight {
-  const TrafficLight({required this.s, required this.offset});
+  const TrafficLight({required this.s, required this.offset, this.noUTurn = false});
 
   /// Tim đường cắt ngang.
   final double s;
 
   /// Lệch pha của chu kỳ đèn (giây).
   final double offset;
+
+  /// Có biển cấm quay đầu (camera phạt nguội ghi hình).
+  final bool noUTurn;
 
   static const double green = GameConfig.lightGreenSeconds;
   static const double yellow = GameConfig.lightYellowSeconds;
@@ -97,6 +101,26 @@ class TollPlaza {
   }
 }
 
+/// Chốt CSGT ven quốc lộ: lều, bàn, súng bắn tốc độ, cọc tiêu. Phía trước có
+/// biển hạn chế tốc độ; quanh chốt cấm quay đầu.
+class Checkpoint {
+  const Checkpoint({required this.s, required this.limitKmh, required this.seed});
+
+  /// Chỗ dựng lều (bên phải chiều về quê).
+  final double s;
+  final int limitKmh;
+  final int seed;
+
+  /// Biển hạn chế tốc độ (mỗi chiều một biển, đặt trước chốt).
+  double get signS => s - GameConfig.speedSignAhead;
+  double get oncomingSignS => s + GameConfig.speedSignAhead;
+
+  /// Chỗ đứng bắn tốc độ theo chiều đi [dir].
+  double radarS(int dir) => s - dir * GameConfig.radarAhead;
+
+  bool inNoUTurnZone(double at) => (at - s).abs() < GameConfig.noUTurnReach;
+}
+
 /// Điểm đón khách (chế độ xe khách): nhà chờ ở lề phải, vài người đứng đợi.
 class BusStop {
   BusStop({required this.s, required this.passengers, required this.seed});
@@ -113,7 +137,17 @@ class BusStop {
 /// Bố cục một chặng: các đoạn phố / quốc lộ / cao tốc nối nhau, ngã tư có
 /// đèn ở đoạn phố, trạm thu phí ở quốc lộ và cao tốc.
 class RoadLayout {
-  RoadLayout._(this.zones, this.lights, this.tolls, this.startS, this.endS, {this.busStops = const []});
+  RoadLayout._(
+    this.zones,
+    this.lights,
+    this.tolls,
+    this.startS,
+    this.endS, {
+    this.busStops = const [],
+    this.stalls = const [],
+    this.checkpoints = const [],
+    this.nails = const [],
+  });
 
   factory RoadLayout.build({
     required List<StageSection> sections,
@@ -143,7 +177,11 @@ class RoadLayout {
     for (final zone in zones.where((z) => z.kind == RoadKind.city)) {
       var at = max(zone.startS, startS + GameConfig.firstLightAfterStart) + GameConfig.lightZoneMargin;
       while (at < zone.endS - GameConfig.lightZoneMargin) {
-        lights.add(TrafficLight(s: at, offset: random.nextDouble() * TrafficLight.cycle));
+        lights.add(TrafficLight(
+          s: at,
+          offset: random.nextDouble() * TrafficLight.cycle,
+          noUTurn: random.nextDouble() < GameConfig.noUTurnJunctionChance,
+        ));
         at += GameConfig.lightSpacingMin + random.nextDouble() * (GameConfig.lightSpacingMax - GameConfig.lightSpacingMin);
       }
     }
@@ -166,13 +204,27 @@ class RoadLayout {
         }
       }
     }
-    final layout = RoadLayout._(zones, lights, tolls, startS, endS);
-    if (!withBusStops) return layout;
+    // Chốt CSGT: giữa các đoạn quốc lộ đủ dài, tránh trạm thu phí.
+    final checkpoints = <Checkpoint>[];
+    final plain = RoadLayout._(zones, lights, tolls, startS, endS);
+    for (final zone in zones.where((z) => z.kind == RoadKind.highway)) {
+      final km = (zone.endS - zone.startS) / GameConfig.unitsPerKm;
+      final count = (km / GameConfig.checkpointEveryKm + random.nextDouble() * 0.6).floor();
+      for (var i = 0; i < count; i++) {
+        var at = zone.startS + (zone.endS - zone.startS) * (i + 0.3 + random.nextDouble() * 0.4) / count;
+        while (plain.nearFeature(at, margin: GameConfig.speedSignAhead + 200) && at < zone.endS - 1500) {
+          at += 300;
+        }
+        if (at < startS + 3000 || at > zone.endS - 1500 || at > endS - 2000) continue;
+        checkpoints.add(Checkpoint(s: at, limitKmh: random.nextBool() ? 60 : 50, seed: random.nextInt(1 << 20)));
+      }
+    }
+    final layout = RoadLayout._(zones, lights, tolls, startS, endS, checkpoints: checkpoints);
 
     // Điểm đón khách: rải đều trên phố và quốc lộ (cao tốc không đón khách),
     // tránh ngã tư và trạm thu phí.
     final stops = <BusStop>[];
-    final eligible = zones.where((z) => z.kind != RoadKind.expressway).toList();
+    final eligible = withBusStops ? zones.where((z) => z.kind != RoadKind.expressway).toList() : <RoadZone>[];
     final total = eligible.fold<double>(0, (a, z) => a + z.endS - z.startS);
     final count = (total / GameConfig.unitsPerKm / GameConfig.busStopEveryKm).round().clamp(2, 6);
     for (var i = 0; i < count && total > 0; i++) {
@@ -193,13 +245,39 @@ class RoadLayout {
         break;
       }
     }
-    return RoadLayout._(zones, lights, tolls, startS, endS, busStops: stops);
+    // Quán ven đường, cây xăng, bãi đinh: tránh ngã tư, trạm thu phí, chốt
+    // CSGT, điểm đón khách.
+    final roadside = placeRoadside(
+      zones: [for (final z in zones) (kind: z.kind, startS: z.startS, endS: z.endS)],
+      startS: startS,
+      endS: endS,
+      // Quán không chắn biển báo của chốt CSGT (biển tốc độ, cấm quay đầu).
+      blocked: (s) =>
+          layout.nearFeature(s, margin: 260) ||
+          stops.any((b) => (b.s - s).abs() < 320) ||
+          checkpoints.any((c) => (c.s - s).abs() < GameConfig.speedSignAhead + 140),
+      random: Random(random.nextInt(1 << 30)),
+    );
+    return RoadLayout._(
+      zones,
+      lights,
+      tolls,
+      startS,
+      endS,
+      busStops: stops,
+      stalls: roadside.stalls,
+      checkpoints: checkpoints,
+      nails: roadside.nails,
+    );
   }
 
   final List<RoadZone> zones;
   final List<TrafficLight> lights;
   final List<TollPlaza> tolls;
   final List<BusStop> busStops;
+  final List<Stall> stalls;
+  final List<Checkpoint> checkpoints;
+  final List<NailPatch> nails;
   final double startS;
   final double endS;
 
@@ -224,6 +302,27 @@ class RoadLayout {
 
   Iterable<TrafficLight> lightsBetween(double a, double b) => lights.where((l) => l.s >= a && l.s <= b);
 
+  Iterable<Stall> stallsBetween(double a, double b) => stalls.where((t) => t.s >= a && t.s <= b);
+
+  /// Quãng [s] phía [side] có vướng khu quán nào (hoặc chốt CSGT) không,
+  /// để cảnh vật né ra.
+  bool nearStall(double s, int side, {double margin = 0}) =>
+      stalls.any((t) => t.side == side && (t.s - s).abs() < t.halfLength + margin) ||
+      (side > 0 && checkpoints.any((c) => (c.s - s).abs() < 120 + margin));
+
+  Iterable<NailPatch> nailsBetween(double a, double b) => nails.where((n) => n.s >= a && n.s <= b);
+
+  Iterable<Checkpoint> checkpointsBetween(double a, double b) =>
+      checkpoints.where((c) => c.s + GameConfig.speedSignAhead >= a && c.s - GameConfig.speedSignAhead <= b);
+
+  /// Chốt CSGT có vùng cấm quay đầu chứa [s] (null nếu không có).
+  Checkpoint? checkpointNear(double s) {
+    for (final c in checkpoints) {
+      if (c.inNoUTurnZone(s)) return c;
+    }
+    return null;
+  }
+
   Iterable<TollPlaza> tollsBetween(double a, double b) => tolls.where((t) => t.plazaEnd >= a && t.plazaStart <= b);
 
   TollPlaza? tollAt(double s) {
@@ -242,6 +341,9 @@ class RoadLayout {
     for (final t in tolls) {
       if (s > t.plazaStart - margin && s < t.plazaEnd + margin) return true;
     }
+    for (final c in checkpoints) {
+      if ((c.s - s).abs() < 220 + margin) return true;
+    }
     return false;
   }
 
@@ -254,6 +356,10 @@ class RoadLayout {
     }
     for (final t in tolls) {
       if (t.plazaEnd + margin > a && t.plazaStart - margin < b) return true;
+    }
+    // Chốt CSGT đứng ở đoạn thẳng, nhìn thấy từ xa.
+    for (final c in checkpoints) {
+      if (c.s + 400 + margin > a && c.s - 600 - margin < b) return true;
     }
     return false;
   }

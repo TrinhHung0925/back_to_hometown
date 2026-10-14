@@ -4,12 +4,11 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 
 import 'route.dart';
-import 'service/audio_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await GetStorage.init();
-  await AudioService.shared.init();
+  // Âm thanh và hình trong game nạp ở màn splash (có thanh tiến độ).
   runApp(const MyApp());
 }
 
