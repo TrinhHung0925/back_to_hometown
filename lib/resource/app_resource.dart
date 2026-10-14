@@ -85,7 +85,26 @@ abstract class Img {
 
   static const String imgBusPlayer = '$assetsImgPath/img_bus_player.png';
 
+  // Bóng đổ theo dáng từng xe của mình (ảnh 3D render sẵn), khung vừa đúng
+  // chỗ VehicleSprite vẽ bóng.
+  static const String imgShadowScooterPlayer = '$assetsImgPath/img_shadow_scooter_player.png';
+  static const String imgShadowScooterRaincoat = '$assetsImgPath/img_shadow_scooter_player_raincoat.png';
+  static const String imgShadowScooterParked = '$assetsImgPath/img_shadow_scooter_parked.png';
+  static const String imgShadowCarPlayer = '$assetsImgPath/img_shadow_car_player.png';
+  static const String imgShadowBusPlayer = '$assetsImgPath/img_shadow_bus_player.png';
+
+  static String playerShadow(VehicleKind kind) => switch (kind) {
+        VehicleKind.motorbike => imgShadowScooterPlayer,
+        VehicleKind.car => imgShadowCarPlayer,
+        VehicleKind.bus => imgShadowBusPlayer,
+      };
+
   static List<String> get vehicles => [
+        imgShadowScooterPlayer,
+        imgShadowScooterRaincoat,
+        imgShadowScooterParked,
+        imgShadowCarPlayer,
+        imgShadowBusPlayer,
         imgBusPlayer,
         imgScooterPlayer,
         imgScooterPolice,

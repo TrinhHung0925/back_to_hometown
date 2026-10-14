@@ -399,6 +399,8 @@ Chia hai tay giống game MOBA: **tay trái đặt liên tục trên cần lái*
   - Cây xăng có màn hình cột bơm LED và đồng hồ bình E–F.
 - **Bộ icon** vẽ bằng code, cùng một kiểu: cốc, cột bơm, chai, lốp, cờ lê, điện thoại, áo mưa, mây mưa, còi…
 
+**Xe của mình là mô hình 3D:** xe máy (Wave, người lái đội mũ bảo hiểm, áo chống nắng; bản mặc áo mưa cánh dơi; bản dựng chân chống), ô tô sedan đỏ, xe khách — dựng bằng khối 3D trong `tool/asset_pipeline/build_vehicles_3d.py` (raymarching: bóng mềm, che khuất môi trường, sơn bóng phản chiếu trời, kính tối thấy lờ mờ nội thất) rồi render sẵn thành ảnh nhìn từ trên xuống, kèm ảnh bóng đổ theo đúng dáng từng xe. Game vẫn vẽ 2D nên chạy mượt. Chạy script này sau cùng (các script cũ cũng ghi đè các file ảnh này).
+
 **Gà vịt chó qua đường (quốc lộ):** thỉnh thoảng ngay phía trước có đàn vịt lạch bạch nối đuôi qua đường (người chăn cầm sào đi sau), gà chạy ngang — có con khựng lại, có con quay đầu chạy ngược — hoặc chó chạy rông đứng giữa đường. Miền Nam nhiều vịt, miền Bắc nhiều gà, chó. Xe AI dừng chờ. **Bóp còi** thì chúng giật mình vỗ cánh chạy nhanh. Quệt phải gà vịt: lông bay, xe khựng, chủ chạy ra — đền 1 lì xì, mất 4 phút (mỗi đàn một lần). Chó lao ra: xe khựng mạnh, xe máy loạng choạng.
 
 **Hiệu ứng cho sống động:** khói pô phụt dày khi vặn ga (xe tải, xe khách phụt khói đen); phanh gấp / trượt cua in vệt lốp xuống mặt đường, mờ dần; quệt lề toé tia lửa; đường ướt bánh xe tung bụi nước; va chạm văng mảnh vỡ kính, nhựa, bốc khói bụi; nhặt lì xì / trả phí hiện chữ nổi "+1", "−2"; chạy nhanh camera lùi ra một chút. Từ 22:30 đêm giao thừa trời bắt đầu có pháo hoa, càng sát nửa đêm càng dày; về tới nhà ở chặng cuối thì pháo hoa nổ rộ.

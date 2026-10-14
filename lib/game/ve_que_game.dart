@@ -145,6 +145,9 @@ class VeQueGame extends FlameGame {
   late final Sprite _parkedSprite;
   late final Sprite _raincoatSprite;
   late final Sprite _walkerSprite;
+  late final Sprite _riderShadow;
+  late final Sprite _parkedShadow;
+  late final Sprite _raincoatShadow;
   late final CheckpointLayer _checkpoints;
   late final NailLayer _nailLayer;
   late final RainGroundLayer _rainGround;
@@ -310,13 +313,24 @@ class VeQueGame extends FlameGame {
     _rainStreaks = RainStreaks();
     _crew = CrewLayer(road: road, images: images);
     _animalLayer = AnimalLayer(road: road, animals: animals, images: images);
+    _riderShadow = Sprite(images.fromCache(Img.playerShadow(spec.kind)));
+    _parkedShadow = spec.kind == VehicleKind.motorbike ? Sprite(images.fromCache(Img.imgShadowScooterParked)) : _riderShadow;
+    _raincoatShadow = spec.kind == VehicleKind.motorbike ? Sprite(images.fromCache(Img.imgShadowScooterRaincoat)) : _riderShadow;
     _playerSprite = VehicleSprite(
       sprite: _riderSprite,
-      shadow: Sprite(images.fromCache(Img.imgShadowBox)),
+      shadow: _riderShadow,
       width: spec.width * (spec.kind == VehicleKind.motorbike ? GameConfig.motorbikeVisualScale : 1),
       priority: 6,
       motorbike: spec.kind == VehicleKind.motorbike,
     );
+    if (spec.kind == VehicleKind.motorbike) {
+      // Đèn, xi-nhan khớp với xe Wave dựng 3D: đèn pha ở đầu ghi-đông.
+      _playerSprite
+        ..headY = 0.22
+        ..tailY = 0.93
+        ..blinkX = 0.38
+        ..frontBlinkY = 0.21;
+    }
     _police = PoliceComponent(
       sprite: Sprite(images.fromCache(Img.imgScooterPolice)),
       shadow: Sprite(images.fromCache(Img.imgShadowBox)),
@@ -2575,6 +2589,9 @@ class VeQueGame extends FlameGame {
       ..sprite = _riderOff || pushing || (resting && _job != null && spec.kind == VehicleKind.motorbike)
           ? _parkedSprite
           : (raincoat ? _raincoatSprite : _riderSprite)
+      ..shadow = _riderOff || pushing || (resting && _job != null && spec.kind == VehicleKind.motorbike)
+          ? _parkedShadow
+          : (raincoat ? _raincoatShadow : _riderShadow)
       ..placeOn(
         road,
         player.s,

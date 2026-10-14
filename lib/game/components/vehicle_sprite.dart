@@ -22,8 +22,15 @@ class VehicleSprite extends PositionComponent {
         );
 
   Sprite sprite;
-  final Sprite shadow;
+  Sprite shadow;
   final bool motorbike;
+
+  /// Xe máy: chỗ đèn pha, đèn hậu (tỉ lệ chiều dài từ mũi xe) và xi-nhan
+  /// (tỉ lệ chiều ngang) — theo đúng hình xe đang dùng.
+  double headY = 0.09;
+  double tailY = 0.88;
+  double blinkX = 0.22;
+  double frontBlinkY = 0.12;
 
   bool braking = false;
 
@@ -75,7 +82,7 @@ class VehicleSprite extends PositionComponent {
       c.render(canvas, position: Vector2(w / 2 - cw / 2, cy - cw / 2), size: Vector2.all(cw));
     }
 
-    final rearY = h - (motorbike ? h * 0.12 : 3);
+    final rearY = motorbike ? h * tailY : h - 3;
     if (braking || lightsOn) {
       final paint = braking ? _brake : _tail;
       for (final x in motorbike ? [w / 2] : [w * 0.2, w * 0.8]) {
@@ -85,13 +92,13 @@ class VehicleSprite extends PositionComponent {
     }
     if (lightsOn) {
       for (final x in motorbike ? [w / 2] : [w * 0.22, w * 0.78]) {
-        canvas.drawCircle(Offset(x, motorbike ? h * 0.09 : 4), motorbike ? 2.2 : 3, _head);
+        canvas.drawCircle(Offset(x, motorbike ? h * headY : 4), motorbike ? 2.2 : 3, _head);
       }
     }
     if ((blinker != 0 || hazard) && (_t * 2.6).floor().isEven) {
-      final left = w * (motorbike ? 0.22 : 0.05), right = w * (motorbike ? 0.78 : 0.95);
+      final left = w * (motorbike ? blinkX : 0.05), right = w * (motorbike ? 1 - blinkX : 0.95);
       for (final x in hazard ? [left, right] : [blinker > 0 ? right : left]) {
-        for (final y in [motorbike ? h * 0.12 : 6.0, rearY]) {
+        for (final y in [motorbike ? h * frontBlinkY : 6.0, rearY]) {
           canvas.drawCircle(Offset(x, y), 6, _blinkGlow);
           canvas.drawCircle(Offset(x, y), 2.4, _blink);
         }
