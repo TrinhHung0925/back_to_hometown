@@ -224,6 +224,12 @@ class Violation {
 enum RoadAction {
   /// Ghé quán / đổ xăng / mua xăng lẻ / vá xe (nhãn theo kiểu quán).
   visit,
+
+  /// Quán phía trước: bấm để xe tự giảm tốc, tấp vào lề, dừng trước quán.
+  approach,
+
+  /// Đang tự tấp vào quán: thôi không ghé, tự lái tiếp.
+  cancelApproach,
   uTurn,
 
   /// Hết xăng (xe máy): nghiêng xe dồn xăng, dắt bộ, thôi dắt.
@@ -344,6 +350,8 @@ class HudData {
     this.canUTurn = false,
     this.stallPrompt,
     this.stallKind,
+    this.stallMeters,
+    this.driverSeat = false,
     this.reversed = false,
     this.fuel = 1,
     this.fuelKm = 0,
@@ -397,11 +405,18 @@ class HudData {
   /// Đang đủ chậm, đủ chỗ để hiện nút Quay đầu.
   final bool canUTurn;
 
-  /// Tên quán đang dừng ngay trước mặt (hiện nút Ghé quán), null nếu không.
+  /// Tên quán đang dừng ngay trước mặt (hiện nút Ghé quán), hoặc quán phía
+  /// trước đang bấm được "Vào quán" / đang tự tấp vào; null nếu không.
   final String? stallPrompt;
 
-  /// Kiểu quán đang dừng trước mặt (để đặt nhãn nút: Đổ xăng, Vá xe…).
+  /// Kiểu quán đó (để đặt nhãn nút: Đổ xăng, Vá xe…).
   final StallKind? stallKind;
+
+  /// Quán phía trước còn cách bao nhiêu mét (null khi đã ở ngay trước quán).
+  final int? stallMeters;
+
+  /// Đang hiện góc nhìn ghế lái (cần lái kéo ngang).
+  final bool driverSeat;
 
   /// Đã quay đầu, đang đi ngược về phía điểm xuất phát.
   final bool reversed;
@@ -461,6 +476,8 @@ class HudData {
       other.canUTurn == canUTurn &&
       other.stallPrompt == stallPrompt &&
       other.stallKind == stallKind &&
+      other.stallMeters == stallMeters &&
+      other.driverSeat == driverSeat &&
       other.reversed == reversed &&
       other.fuel == fuel &&
       other.fuelKm == fuelKm &&
@@ -481,7 +498,7 @@ class HudData {
   @override
   int get hashCode => Object.hashAll([
         kmDone, kmTotal, speedKmh, cruiseKmh, spareMinutes, clockLabel, minutesLeft, lixi, cargo, danger, light, curve, headlightsOn, night, //
-        alert, drowse, canUTurn, stallPrompt, stallKind, reversed, fuel, fuelKm, tire, spare, rain, rainKind, raincoat,
+        alert, drowse, canUTurn, stallPrompt, stallKind, stallMeters, driverSeat, reversed, fuel, fuelKm, tire, spare, rain, rainKind, raincoat,
         soaked, speedLimit, pullOver, outOfFuel, pushing, fuelAhead, repairAhead, Object.hashAll(actions),
       ]);
 }

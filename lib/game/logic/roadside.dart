@@ -71,6 +71,14 @@ enum StallKind {
   bool get sellsFuel => this == xang || this == xangLe;
 
   bool get fixesTires => this == vaXe;
+
+  /// Nhãn nút bấm để xe tự tấp vào.
+  String get enterLabel => switch (this) {
+        xang => 'Vào đổ xăng',
+        xangLe => 'Mua xăng lẻ',
+        vaXe => 'Vào vá xe',
+        _ => 'Vào quán',
+      };
 }
 
 /// Một quán ven đường. [side] = 1: bên phải chiều về quê, -1: bên kia đường.

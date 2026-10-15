@@ -286,6 +286,12 @@ abstract class GameConfig {
   static const double stallStopWindow = 95;
   static const double stallStopSpeed = 25;
 
+  /// Nút "Vào quán / Vào đổ xăng" hiện khi quán cùng phía còn cách chừng
+  /// này (≈ 2,9 km) và vẫn đủ quãng phanh; bấm là xe tự tấp vào với tốc độ
+  /// không quá [stallApproachSpeed], giảm dần để dừng đúng trước quán.
+  static const double stallApproachReach = 1300;
+  static const double stallApproachSpeed = 180;
+
   /// Dừng xe bao nhiêu phút trong game dù chưa gọi món (dựng xe, ngồi xuống).
   static const double stallBaseMinutes = 2;
 

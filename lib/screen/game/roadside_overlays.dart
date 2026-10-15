@@ -69,6 +69,24 @@ class _ActionSpec {
           StallKind.vaXe => _ActionSpec('Vá xe', hud.stallPrompt, RoadGlyph.wrench, AppColors.ff3A78A8, highlighted: true),
           _ => _ActionSpec('Ghé quán', hud.stallPrompt, RoadGlyph.cup, AppColors.ffD62828, highlighted: true),
         },
+      RoadAction.approach => _ActionSpec(
+          hud.stallKind?.enterLabel ?? 'Vào quán',
+          [if (hud.stallPrompt != null) hud.stallPrompt!, if (hud.stallMeters != null) _distance(hud.stallMeters!)].join(' · '),
+          switch (hud.stallKind) {
+            StallKind.xang => RoadGlyph.pump,
+            StallKind.xangLe => RoadGlyph.bottle,
+            StallKind.vaXe => RoadGlyph.wrench,
+            _ => RoadGlyph.cup,
+          },
+          hud.stallKind?.sellsFuel ?? false ? AppColors.ffEE9B2F : AppColors.ffD62828,
+          highlighted: true,
+        ),
+      RoadAction.cancelApproach => _ActionSpec(
+          'Thôi, không ghé',
+          hud.stallMeters == null ? 'tự lái tiếp' : 'đang tấp vào · ${_distance(hud.stallMeters!)}',
+          RoadGlyph.steering,
+          AppColors.ff5B6169,
+        ),
       RoadAction.uTurn => _ActionSpec(
           hud.reversed ? 'Quay đầu' : 'Quay đầu',
           hud.reversed ? 'về quê' : 'đi ngược lại',
@@ -103,6 +121,10 @@ class _ActionSpec {
     };
   }
 }
+
+/// 650 m, 1,2 km.
+String _distance(int meters) =>
+    meters < 1000 ? '$meters m' : '${(meters / 1000).toStringAsFixed(1).replaceAll('.', ',')} km';
 
 class _ActionPill extends StatelessWidget {
   const _ActionPill({required this.spec, required this.onPressed});
@@ -388,7 +410,7 @@ class StallSheet extends StatelessWidget {
                     children: [
                       Expanded(child: _FooterStatus(hud: hud, fuelFirst: stall.kind.sellsFuel)),
                       SizedBox(width: 12.h),
-                      AppButton(label: 'Lên đường', icon: Img.icPlay, onPressed: controller.leaveStall),
+                      AppButton(label: 'Đi tiếp', icon: Img.icPlay, onPressed: controller.leaveStall),
                     ],
                   ),
                 ],

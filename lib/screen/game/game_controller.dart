@@ -303,6 +303,10 @@ class GameController extends GetxController {
     switch (action) {
       case RoadAction.visit:
         game.stopAtStall();
+      case RoadAction.approach:
+        game.approachStall();
+      case RoadAction.cancelApproach:
+        game.cancelApproach();
       case RoadAction.uTurn:
         game.uTurn();
       case RoadAction.tiltBike:

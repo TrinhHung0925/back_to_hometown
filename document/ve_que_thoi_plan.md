@@ -222,6 +222,9 @@ Chia hai tay giống game MOBA: **tay trái đặt liên tục trên cần lái*
 - Vào cua không quá tốc độ khuyên dùng thì xe **tự ôm cua** (người lái nghiêng theo cua), không phải bẻ lái. Chỉ khi chạy nhanh quá thì xe mới bị văng ra phía ngoài.
 - Xe di chuyển liên tục chứ không nhảy từng làn, nên xe máy lách được khe giữa hai xe.
 - **Cần lái nổi:** chạm chỗ nào trong vùng dưới-trái thì cần lái hiện ra ở đó, nên không phải nhìn xuống tìm nút.
+- **Hướng kéo theo góc nhìn:**
+  - Nhìn từ trên (đường chạy ngang màn hình): kéo lên/xuống.
+  - Ngồi ghế lái: kéo trái/phải như xoay vô-lăng. Người chơi thử thấy kéo dọc ở góc ghế lái không thuận tay.
 - **Vì sao để bên trái chứ không ở trong cụm nút bên phải:** ngón cái đã đặt liên tục trên cần lái thì không bấm được ga, phanh. Để chung một góc thì không thể vừa lái vừa phanh. Chia hai tay giống cách game MOBA để cần di chuyển bên trái, nút kỹ năng bên phải.
 
 **Cụm nút — góc dưới bên phải (như ảnh tham khảo):**
@@ -327,15 +330,19 @@ Chia hai tay giống game MOBA: **tay trái đặt liên tục trên cần lái*
 - Biển hiệu đọc xuôi theo chiều đi của phía quán.
 
 **Ghé quán**
-1. Đi chậm sát lề phải, dừng hẳn trước quán (trong khoảng ±95). Nút **Ghé quán** hiện lên.
-2. Bấm nút: xe tấp hẳn vào lề và tắt máy; xe máy đổi sang hình xe dựng không người.
+1. Có hai cách ghé:
+   - **Tự tấp vào:** khi một quán ở phía bên phải còn cách chừng 3 km trở lại, và vẫn đủ quãng để phanh, nút **Vào quán** / **Vào đổ xăng** hiện lên (kèm tên quán và khoảng cách).
+     - **Mua xăng lẻ** chỉ hiện khi xe máy sắp cạn xăng; **Vào vá xe** chỉ hiện khi lốp có chuyện.
+     - Bấm nút: xe tự nhả ga, tạt sát lề phải, giảm tốc dần và dừng đúng trước quán (cây xăng thì chạy vào cạnh cột bơm). Đang tấp vào có nút **Thôi, không ghé**; vặn ga hoặc đánh lái mạnh cũng là tự lái tiếp.
+   - **Tự dừng:** đi chậm sát lề phải, dừng hẳn trước quán (trong khoảng ±95), bấm nút **Ghé quán**.
+2. Xe tấp hẳn vào lề và tắt máy; xe máy đổi sang hình xe dựng không người.
 3. Người lái xuống xe, đi bộ vào ngồi ghế (ở quán cà phê võng thì nằm võng). Camera phóng to và dời sang để quán nằm ở nửa phải màn hình.
 4. Bảng quán hiện bên trái:
    - biển quán, tên quán, số lì xì
    - chuyện trò đổi dần mỗi ~4 giây
    - thực đơn có nút **Gọi**
    - thanh tỉnh táo, giờ trong game
-   - nút **Lên đường**
+   - nút **Đi tiếp**
 5. Dựng xe tốn sẵn 2 phút; mỗi món tốn thêm số phút của món đó. Đồng hồ giao thừa không chạy theo thời gian thật lúc ngồi quán, chỉ cộng theo món đã gọi.
 6. **Chuyện ở quán** vừa cho không khí Tết vừa có tin thật về đoạn đường phía trước:
    - còn bao nhiêu cây tới trạm thu phí
@@ -344,7 +351,7 @@ Chia hai tay giống game MOBA: **tay trái đặt liên tục trên cần lái*
    - còn bao xa về tới nơi
    - trời tối nhớ bật đèn
    - "mắt đỏ hết rồi kìa" khi đang buồn ngủ
-7. Lên đường: người lái đi ra xe, xe nổ máy và lăn bánh ra làn.
+7. **Đi tiếp:** người lái đi ra xe, xe nổ máy và lăn bánh ra làn, rồi người chơi tự lái tiếp (xe đang lăn chậm, vặn ga để tăng tốc).
 
 **Tỉnh táo, ngủ gật**
 - **Mức tỉnh táo:** vào chặng ở 82/100. Khi đang chạy, mỗi giây chơi tụt 0,24; ban đêm tụt nhanh gấp 1,7. Một chặng khoảng 5 phút chơi, tức là lái liền chừng 2 tiếng.

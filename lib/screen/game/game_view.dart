@@ -110,7 +110,7 @@ class _GameViewState extends State<GameView> {
                       height: MediaQuery.sizeOf(context).height * 0.62,
                       child: Obx(() => controller.phase.value == GamePhase.resting
                           ? const SizedBox.shrink()
-                          : SteeringStick(onChanged: controller.onSteer)),
+                          : SteeringStick(onChanged: controller.onSteer, horizontal: controller.hud.value?.driverSeat ?? false)),
                     ),
                     // Đồng hồ tốc độ sát bên trái nút Phanh; nút theo tình huống
                     // xếp tiếp bên trái đồng hồ.

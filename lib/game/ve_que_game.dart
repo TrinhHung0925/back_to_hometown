@@ -224,6 +224,9 @@ class VeQueGame extends FlameGame {
 
   // Ghé quán
   Stall? _restStall;
+
+  /// Quán đang tự tấp vào (bấm nút "Vào quán").
+  Stall? _approach;
   _RestStep _restStep = _RestStep.parking;
   double _restT = 0;
   List<String> _restChatter = const [];
@@ -420,9 +423,16 @@ class VeQueGame extends FlameGame {
   double get _visibleHeight => size.y / camera.viewfinder.zoom;
 
   // ------------------------------------------------------------ Đầu vào
-  void setThrottle(bool on) => player.throttle = on;
+  void setThrottle(bool on) {
+    player.throttle = on;
+    if (on && _approach != null) cancelApproach();
+  }
   void setBrake(bool on) => player.brake = on;
-  void setSteer(double value) => player.steer = value;
+  void setSteer(double value) {
+    player.steer = value;
+    // Đánh lái mạnh lúc xe đang tự tấp vào quán: tự lái tiếp.
+    if (value.abs() > 0.7 && _approach != null) cancelApproach();
+  }
 
   /// Bóp còi xin đường. Trả về false nếu còi đang hồi.
   bool honk() {
@@ -540,6 +550,7 @@ class VeQueGame extends FlameGame {
       player.curvature = road.at(player.s).curvature;
       _stepAlert(dt);
       _stepCondition(dt);
+      _stepApproach(dt);
       player.update(dt);
     }
     _afterMove((player.s - prevS).abs());
@@ -1189,7 +1200,7 @@ class VeQueGame extends FlameGame {
       if (!(alert < 60 || _stallTips < 2) || (!mine && alert >= 50)) continue;
       if (_notice(
         'stall${t.seed}/$dir',
-        mine ? '${t.kind.title} bên phải phía trước — tấp sát lề, dừng hẳn để ghé' : '${t.kind.title} bên kia đường — muốn ghé thì quay đầu',
+        mine ? '${t.kind.title} bên phải phía trước — bấm "${t.kind.enterLabel}" để xe tự tấp vào' : '${t.kind.title} bên kia đường — muốn ghé thì quay đầu',
         NoticeKind.info,
       )) {
         _stallTips++;
@@ -1197,12 +1208,86 @@ class VeQueGame extends FlameGame {
     }
   }
 
-  /// Ghé quán: tấp xe vào lề (cây xăng thì chạy vào cạnh cột bơm), quán nước
-  /// và tiệm vá xe thì xuống xe đi vào ghế ngồi; cây xăng, xăng lẻ thì người
-  /// bán ra tận xe.
+  /// Quán cùng phía phía trước, còn đủ quãng để giảm tốc tấp vào: hiện nút
+  /// "Vào quán" / "Vào đổ xăng"… (quán gần nhất).
+  Stall? get stallAhead {
+    if (phase != GamePhase.driving || _uTurn != null || _approach != null || fuel.empty || _wavedBy != null) return null;
+    final stopping = player.speed * player.speed / (2 * _approachDecel);
+    final a = player.s, b = player.s + dir * GameConfig.stallApproachReach;
+    Stall? best;
+    var bestAhead = double.infinity;
+    for (final t in layout.stallsBetween(min(a, b), max(a, b))) {
+      if (t.side != dir || (t.kind == StallKind.xangLe && spec.kind != VehicleKind.motorbike)) continue;
+      // Tiệm vá xe chỉ mời khi lốp có chuyện; xăng lẻ chỉ khi sắp cạn bình.
+      if ((t.kind == StallKind.vaXe && tires.ok) || (t.kind == StallKind.xangLe && !fuel.low)) continue;
+      final ahead = (t.s - player.s) * dir;
+      if (ahead < stopping + 20 || ahead >= bestAhead) continue;
+      best = t;
+      bestAhead = ahead;
+    }
+    return best;
+  }
+
+  /// Giảm tốc êm khi tự tấp vào quán.
+  double get _approachDecel => 0.55 * spec.brakeDecel;
+
+  /// Bấm "Vào quán": xe tự nhả ga, tạt sát lề phải, giảm tốc dần và dừng
+  /// đúng trước quán rồi ghé. Vặn ga hoặc đánh lái mạnh là tự lái tiếp.
+  void approachStall() {
+    final t = stallAhead;
+    if (t == null) return;
+    _approach = t;
+    onNotice(GameNotice('Xe tự tấp vào ${t.name} — vặn Ga hoặc đánh lái mạnh để tự lái tiếp', kind: NoticeKind.info));
+  }
+
+  void cancelApproach() {
+    if (_approach == null) return;
+    _approach = null;
+    player.steer = 0;
+    onNotice(const GameNotice('Thôi không ghé — tự lái tiếp', kind: NoticeKind.info));
+  }
+
+  void _stepApproach(double dt) {
+    final t = _approach;
+    if (t == null) return;
+    if (fuel.empty || _wavedBy != null) {
+      _approach = null;
+      return;
+    }
+    final ahead = (t.s - player.s) * dir;
+    if (ahead < -t.halfLength) {
+      _approach = null;
+      onNotice(GameNotice('Lỡ mất ${t.name} rồi', kind: NoticeKind.warning));
+      return;
+    }
+    // Ga giảm dần theo quãng còn lại để dừng ngay trước quán.
+    final decel = _approachDecel;
+    final want = min(GameConfig.stallApproachSpeed, sqrt(2 * decel * max(0.0, ahead - 6)));
+    player
+      ..throttle = false
+      ..cruise = want;
+    if (player.speed > want) player.speed = max(want, player.speed - 1.6 * decel * dt);
+    // Tạt sát lề phải.
+    final right = dir * player.d;
+    player.steer = ((player.maxOffset - 10 - right) / 26).clamp(-1.0, 1.0);
+    if (player.speed <= GameConfig.stallStopSpeed && ahead < 120) {
+      _approach = null;
+      _enterStall(t);
+    }
+  }
+
+  /// Ghé quán đang dừng ngay trước mặt (nút "Ghé quán").
   void stopAtStall() {
     final stall = stallHere;
     if (stall == null) return;
+    _enterStall(stall);
+  }
+
+  /// Ghé quán: tấp xe vào lề (cây xăng thì chạy vào cạnh cột bơm), quán nước
+  /// và tiệm vá xe thì xuống xe đi vào ghế ngồi; cây xăng, xăng lẻ thì người
+  /// bán ra tận xe.
+  void _enterStall(Stall stall) {
+    _approach = null;
     phase = GamePhase.resting;
     player
       ..stop()
@@ -1221,7 +1306,9 @@ class VeQueGame extends FlameGame {
       final local = plan.bayFor(stall.side * (player.s - stall.s));
       _parkTo = plan.toRoad(local);
     } else {
-      _parkTo = (player.s + dir * 30, stall.side * (GameConfig.roadHalfWidth + spec.width / 2 - 4));
+      // Còn cách quán một quãng (tự tấp vào) thì lượn tới tận cửa quán.
+      final ahead = (stall.s - player.s) * dir;
+      _parkTo = (ahead > 40 ? stall.s - dir * 10 : player.s + dir * 30, stall.side * (GameConfig.roadHalfWidth + spec.width / 2 - 4));
     }
     _restChatter = _chatter(stall);
     clock.addPenalty(GameConfig.stallBaseMinutes);
@@ -2937,8 +3024,10 @@ class VeQueGame extends FlameGame {
     if (phase != GamePhase.driving) return const [];
     final stopped = _stopped;
     final moto = spec.kind == VehicleKind.motorbike;
+    final here = stallHere;
     return [
-      if (stallHere != null) RoadAction.visit,
+      if (here != null) RoadAction.visit,
+      if (_approach != null) RoadAction.cancelApproach else if (here == null && stallAhead != null) RoadAction.approach,
       if (fuel.empty && stopped && moto && !_tiltUsed) RoadAction.tiltBike,
       if (fuel.empty && stopped && moto && !pushing) RoadAction.push,
       if (fuel.empty && player.speed < 8 && _uTurn == null) RoadAction.callFuel,
@@ -2950,6 +3039,8 @@ class VeQueGame extends FlameGame {
 
   void _pushHud() {
     final here = stallHere;
+    final ahead = here == null ? (_approach ?? stallAhead) : null;
+    final shown = here ?? ahead;
     final hud = HudData(
       kmDone: ((player.s - _startS) / GameConfig.unitsPerKm).clamp(0, setup.lengthKm).floor(),
       kmTotal: setup.lengthKm.round(),
@@ -2968,8 +3059,10 @@ class VeQueGame extends FlameGame {
       alert: alert.round(),
       drowse: (_drowse * 20).round() / 20,
       canUTurn: canUTurn,
-      stallPrompt: here?.name,
-      stallKind: here?.kind,
+      stallPrompt: shown?.name,
+      stallKind: shown?.kind,
+      driverSeat: _driverShown,
+      stallMeters: ahead == null ? null : (max(0.0, (ahead.s - player.s) * dir) / GameConfig.unitsPerKm * 100).round() * 10,
       reversed: dir < 0,
       fuel: (fuel.level * 100).ceil() / 100,
       fuelKm: fuel.kmLeft.round(),

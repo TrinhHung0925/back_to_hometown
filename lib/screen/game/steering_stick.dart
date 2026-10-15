@@ -4,15 +4,20 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../resource/app_resource.dart';
 
 /// Cần lái nổi ở góc dưới bên trái: chạm chỗ nào trong vùng thì cần lái
-/// hiện ra ở đó, ngón cái giữ liên tục và kéo lên/xuống để đánh lái.
+/// hiện ra ở đó, ngón cái giữ liên tục và kéo để đánh lái — nhìn từ trên
+/// (đường chạy ngang màn hình) thì kéo lên/xuống, ngồi ghế lái thì kéo
+/// trái/phải như xoay vô-lăng.
 ///
 /// Dùng [Listener] (cử chỉ kéo, không phải tap) để theo đúng một ngón tay
 /// trong khi tay phải đang bấm cụm nút.
 class SteeringStick extends StatefulWidget {
-  const SteeringStick({super.key, required this.onChanged});
+  const SteeringStick({super.key, required this.onChanged, this.horizontal = false});
 
-  /// -1 (kéo hết lên) .. 1 (kéo hết xuống).
+  /// -1 (kéo hết lên / sang trái) .. 1 (kéo hết xuống / sang phải).
   final ValueChanged<double> onChanged;
+
+  /// Kéo ngang (góc nhìn ghế lái) thay vì kéo dọc.
+  final bool horizontal;
 
   @override
   State<SteeringStick> createState() => _SteeringStickState();
@@ -57,7 +62,8 @@ class _SteeringStickState extends State<SteeringStick> {
   }
 
   void _update(Offset position) {
-    final raw = ((position.dy - _origin!.dy) / _travel).clamp(-1.0, 1.0);
+    final delta = position - _origin!;
+    final raw = ((widget.horizontal ? delta.dx : delta.dy) / _travel).clamp(-1.0, 1.0);
     setState(() => _value = raw);
     // Vùng chết ở giữa để đi thẳng không bị lệch tay; gần giữa thì nhẹ tay
     // (chỉnh làn từng chút), kéo xa mới đánh lái gắt.
@@ -85,12 +91,16 @@ class _SteeringStickState extends State<SteeringStick> {
               top: center.dy - _padSize / 2,
               child: Opacity(
                 opacity: active ? 0.95 : 0.6,
-                child: Image.asset(Img.icJoystickPad, width: _padSize, height: _padSize),
+                // Mũi tên trên đế xoay theo hướng kéo.
+                child: RotatedBox(
+                  quarterTurns: widget.horizontal ? 1 : 0,
+                  child: Image.asset(Img.icJoystickPad, width: _padSize, height: _padSize),
+                ),
               ),
             ),
             Positioned(
-              left: center.dx - _nubSize / 2,
-              top: center.dy - _nubSize / 2 + _value * _travel,
+              left: center.dx - _nubSize / 2 + (widget.horizontal ? _value * _travel : 0),
+              top: center.dy - _nubSize / 2 + (widget.horizontal ? 0 : _value * _travel),
               child: Opacity(
                 opacity: active ? 1 : 0.7,
                 child: Image.asset(Img.icJoystickNub, width: _nubSize, height: _nubSize),
