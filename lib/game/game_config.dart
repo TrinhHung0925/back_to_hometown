@@ -170,28 +170,29 @@ abstract class GameConfig {
   /// Quy đổi tốc độ hiển thị: [normalSpeed] ↔ 50 km/h.
   static const double displayKmhPerUnitSpeed = 50 / normalSpeed;
 
-  /// Quy đổi quãng đường: 100 km chạy ở [normalSpeed] mất 5 phút chơi.
-  static const double unitsPerKm = normalSpeed * 300 / 100;
+  /// Quy đổi quãng đường: 100 km chạy ở [normalSpeed] mất 2,5 phút chơi
+  /// (chạy nhanh như người chơi thật thì chừng 2 phút).
+  static const double unitsPerKm = normalSpeed * 150 / 100;
 
   // --------------------------------------------------------- Đồng hồ Tết
   /// Một giây chơi bằng bao nhiêu giây trong game. Chạy thường 100 km mất
-  /// 5 phút chơi ↔ 2 giờ trong game (50 km/h).
-  static const double gameSecondsPerPlaySecond = 2 * 3600 / 300;
+  /// 2,5 phút chơi ↔ 2 giờ trong game (50 km/h).
+  static const double gameSecondsPerPlaySecond = 2 * 3600 / 150;
 
   /// Thời gian cho phép = thời gian ước tính × hệ số này.
   /// Dư nhiều cho những chuyện dọc đường (ghé quán, đổ xăng, vá xe, bị phạt).
   static const double timeBudgetFactor = 1.6;
 
   // ------------------------------------------------------- Lộ trình
-  /// Mỗi km quốc lộ mất bao nhiêu giây chơi (100 km ≈ 5 phút).
-  static const double playSecondsPerKm = 3;
+  /// Mỗi km quốc lộ mất bao nhiêu giây chơi (100 km ≈ 2,5 phút).
+  static const double playSecondsPerKm = 1.5;
 
   /// Đường phố chậm hơn (đèn đỏ, xe đông), cao tốc nhanh hơn.
   static const double cityPaceFactor = 1.7;
   static const double expresswayPaceFactor = 0.65;
 
   /// Mỗi lần ra/vào thành phố đi bao nhiêu km đường phố.
-  static const double cityKmPerSide = 3;
+  static const double cityKmPerSide = 6;
 
   /// Độ dài một chặng chơi.
   static const double stageMinKm = 60;
@@ -255,7 +256,9 @@ abstract class GameConfig {
 
   // ------------------------------------------------- Xe khách đón khách
   /// Bao nhiêu km phố/quốc lộ có một điểm đón; điểm đầu tiên cách xuất phát.
-  static const double busStopEveryKm = 18;
+  /// (Các khoảng cách tính bằng km dưới đây đặt theo nhịp chơi: 1 km ≈ 1,5
+  /// giây chạy thường.)
+  static const double busStopEveryKm = 36;
   static const double firstBusStopAfterStart = 1500;
 
   /// Dừng cách tâm điểm đón tối đa bao xa, dừng bao lâu thì khách lên xong.
@@ -268,10 +271,10 @@ abstract class GameConfig {
   // ------------------------------------------------- Quán ven đường
   /// Khoảng cách giữa hai quán (km) trên quốc lộ / trong phố; quán đầu tiên
   /// cách điểm xuất phát.
-  static const double stallGapHighwayKmMin = 1.0;
-  static const double stallGapHighwayKmMax = 2.6;
-  static const double stallGapCityKmMin = 0.7;
-  static const double stallGapCityKmMax = 1.5;
+  static const double stallGapHighwayKmMin = 2.0;
+  static const double stallGapHighwayKmMax = 5.2;
+  static const double stallGapCityKmMin = 1.4;
+  static const double stallGapCityKmMax = 3.0;
   static const double firstStallAfterStart = 1200;
 
   /// Lề đất trước quán để dựng xe; khu bàn ghế sâu vào trong bao nhiêu.
@@ -295,6 +298,9 @@ abstract class GameConfig {
 
   /// Dưới mức này: ngáp, mép màn hình tối dần.
   static const double alertDrowsy = 45;
+
+  /// Nhân viên cây xăng tặng chai nước lúc tán gẫu: tỉnh táo thêm.
+  static const double chatWaterAlert = 12;
 
   /// Dưới mức này: ngủ gật (mắt nhắm, xe tự dạt), càng thấp càng hay gật.
   static const double alertMicrosleep = 25;
@@ -381,9 +387,9 @@ abstract class GameConfig {
 
   // ------------------------------------------------------------ Xăng
   /// Đầy bình chạy được bao nhiêu km (ở tốc độ thường, không chở gì).
-  static const double fuelRangeKmMotorbike = 140;
-  static const double fuelRangeKmCar = 420;
-  static const double fuelRangeKmBus = 560;
+  static const double fuelRangeKmMotorbike = 280;
+  static const double fuelRangeKmCar = 840;
+  static const double fuelRangeKmBus = 1120;
 
   /// Chuyến mới: bình còn khoảng này (đi vội chưa kịp đổ đầy).
   static const double fuelTripStartMin = 0.42;
@@ -417,29 +423,29 @@ abstract class GameConfig {
 
   /// Khoảng cách giữa hai cây xăng (km): quốc lộ, phố, cao tốc (trạm dừng
   /// nghỉ); xăng lẻ ven quốc lộ.
-  static const double gasGapHighwayKmMin = 8;
-  static const double gasGapHighwayKmMax = 14;
-  static const double gasGapCityKmMin = 5;
-  static const double gasGapCityKmMax = 8;
-  static const double gasGapExpresswayKmMin = 22;
-  static const double gasGapExpresswayKmMax = 32;
-  static const double bottleGapKmMin = 2.5;
-  static const double bottleGapKmMax = 5;
+  static const double gasGapHighwayKmMin = 16;
+  static const double gasGapHighwayKmMax = 28;
+  static const double gasGapCityKmMin = 10;
+  static const double gasGapCityKmMax = 16;
+  static const double gasGapExpresswayKmMin = 44;
+  static const double gasGapExpresswayKmMax = 64;
+  static const double bottleGapKmMin = 5;
+  static const double bottleGapKmMax = 10;
 
   /// Cây xăng rộng hơn quán nước (mái che, chòi bán hàng).
   static const double gasPlotHalfLength = 125;
 
   // ------------------------------------------------------------- Lốp
   /// Tiệm vá xe: khoảng cách giữa hai tiệm (km).
-  static const double tireShopGapHighwayKmMin = 4;
-  static const double tireShopGapHighwayKmMax = 7;
-  static const double tireShopGapCityKmMin = 3;
-  static const double tireShopGapCityKmMax = 5;
+  static const double tireShopGapHighwayKmMin = 8;
+  static const double tireShopGapHighwayKmMax = 14;
+  static const double tireShopGapCityKmMin = 6;
+  static const double tireShopGapCityKmMax = 10;
 
   /// Đinh tặc: bao nhiêu km quốc lộ có một bãi đinh, xác suất xì lốp khi cán
   /// qua theo loại xe.
-  static const double nailGapKmMin = 18;
-  static const double nailGapKmMax = 34;
+  static const double nailGapKmMin = 36;
+  static const double nailGapKmMax = 68;
   static const double nailPatchLength = 70;
   static const double nailFlatChanceMotorbike = 0.65;
   static const double nailFlatChanceCar = 0.5;
@@ -454,7 +460,7 @@ abstract class GameConfig {
   static const double flatSpeedFactor = 0.45;
   static const double ruinedSpeedFactor = 0.32;
   static const double flatPull = 20;
-  static const double flatRuinKm = 1.5;
+  static const double flatRuinKm = 3;
 
   /// Thay lốp dự phòng bên lề (ô tô, xe khách): phút trong game.
   static const double spareMinutesCar = 15;
@@ -494,7 +500,7 @@ abstract class GameConfig {
 
   // ------------------------------------------------------------- CSGT
   /// Chốt CSGT trên quốc lộ: bao nhiêu km quốc lộ có một chốt.
-  static const double checkpointEveryKm = 45;
+  static const double checkpointEveryKm = 90;
 
   /// Biển hạn chế tốc độ đặt trước chốt; súng bắn tốc độ đứng trước lều.
   static const double speedSignAhead = 750;

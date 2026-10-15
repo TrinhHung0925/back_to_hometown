@@ -6,7 +6,7 @@
 > **Các ý đã chốt (cập nhật 14/10):**
 > - **Chỉ làm màn hình ngang.**
 > - **Cách về quê:** tự lái xe hoặc đi xe khách. **Làm tự lái xe trước**, xe khách để sau.
-> - **Lên lộ trình bằng bản đồ:** chọn điểm xuất phát, điểm đến, loại xe (xe máy / ô tô) → vẽ đường đi → đo quãng đường và ước tính thời gian chơi (ví dụ 100 km ≈ 5 phút).
+> - **Lên lộ trình bằng bản đồ:** chọn điểm xuất phát, điểm đến, loại xe (xe máy / ô tô) → vẽ đường đi → đo quãng đường và ước tính thời gian chơi (ví dụ 100 km ≈ 2,5 phút).
 > - **Đường không thẳng mãi:** có khúc cong, có ngã tư đèn xanh đèn đỏ, có trạm thu phí.
 > - Đường **2 chiều 4 làn**, **ít xe thôi**: có xe cùng chiều, xe ngược chiều, xe vượt từ phía sau, nhiều tình huống.
 > - **Điều khiển:** cụm nút kiểu game MOBA (ga, phanh, còi, đèn); **cần lái để ngón tay đặt lên liên tục**, kéo để đổi hướng.
@@ -51,8 +51,11 @@ Splash → Menu ─┬─ Về quê → Chọn cách về ─┬─ Tự lái xe
 - Nút **Xuất phát** để bắt đầu chặng 1.
 
 ### Quy đổi thời gian
-- **Thời gian chơi tính theo quãng đường và loại đường.** Mốc gốc: 100 km quốc lộ ≈ 5 phút chơi. Cao tốc nhanh hơn, nội thành chậm hơn. Tỷ lệ này để trong `game_config.dart` để chỉnh.
-- **Chia chặng:** mỗi chặng khoảng 3–5 phút (60–100 km), ưu tiên cắt ở các thành phố trên đường. Chuyến dài thì có nhiều chặng. Ví dụ TP.HCM → Hà Nội khoảng 1.700 km, tức khoảng 85 phút chơi, sẽ chia thành hơn 20 chặng và có thể chơi trong nhiều lần.
+- **Thời gian chơi tính theo quãng đường và loại đường.** Mốc gốc: 100 km quốc lộ ≈ 2,5 phút chơi ở tốc độ thường (người chơi chạy nhanh thì chừng 2 phút; trước đây là 5 phút — người chơi thấy lâu quá, chơi mãi không thắng). Cao tốc nhanh hơn, nội thành chậm hơn. Tỷ lệ này để trong `game_config.dart` để chỉnh.
+  - Đồng hồ trong game vẫn khớp đồng hồ tốc độ (100 km ở 50 km/h = 2 giờ trong game), nên 1 giây chơi = 48 giây trong game.
+  - Các khoảng cách tính bằng km (quán, cây xăng, tiệm vá, bãi đinh, chốt CSGT, điểm đón, tầm xăng một bình) nhân đôi theo, để nhịp gặp chuyện mỗi giây chơi vẫn như cũ — chuyến đi chỉ ngắn lại, ít sự cố hơn, dễ về kịp hơn.
+  - Đo bằng bot tự lái chặng 100 km: 2,5–3 phút chơi; thời gian dùng 0,94–1,47 lần ước tính (dư 1,6 lần), kể cả bot xe khách đâm 5 lần.
+- **Chia chặng:** mỗi chặng khoảng 1,5–3 phút (60–110 km), ưu tiên cắt ở các thành phố trên đường. Chuyến dài thì có nhiều chặng. Ví dụ TP.HCM → Hà Nội khoảng 1.700 km, tức khoảng 42 phút chơi, sẽ chia thành hơn 20 chặng và có thể chơi trong nhiều lần.
 - **Giờ xuất phát tính ngược từ giao thừa:** thời gian cho phép = thời gian ước tính × 1,25. Ví dụ chuyến 6 tiếng thì xuất phát lúc 16:30 chiều 30 Tết, phải về trước 24:00. Chuyến rất dài thì xuất phát từ 29 Tết.
 - Đồng hồ trong game chạy theo giờ trong ngày, nên **trời tối dần theo giờ thật của chuyến đi**: chuyến dài xuất phát ban ngày, về cuối mới tối và mới cần bật đèn.
 
@@ -248,7 +251,7 @@ Chia hai tay giống game MOBA: **tay trái đặt liên tục trên cần lái*
 Đường về quê dịp Tết ngoài đời: lái liền mấy tiếng thì mỏi, buồn ngủ; ven quốc lộ cứ một đoạn lại có quán nước. Ai cũng từng tấp vào uống cốc trà đá, hay lỡ quán thì quay đầu lại. Game làm đúng như vậy.
 
 **Quán ven đường**
-- Quốc lộ cứ 1–2,6 km có một quán; trong phố cứ 0,7–1,5 km có quán trà đá vỉa hè. Cao tốc không có quán, chỉ có trạm dừng nghỉ (cây xăng bên phải).
+- Quốc lộ cứ 2–5,2 km có một quán; trong phố cứ 1,4–3 km có quán trà đá vỉa hè. Cao tốc không có quán, chỉ có trạm dừng nghỉ (cây xăng bên phải).
 - Khoảng 6/10 quán nằm bên phải chiều về, số còn lại ở bên kia đường.
 - Quán không đặt sát ngã tư, trạm thu phí, điểm đón khách. Nhà, cây, cột điện tự né khu quán.
 - Các kiểu quán (vẽ từ trên xuống, đổ bóng theo khối như xe):
@@ -326,10 +329,12 @@ Chia hai tay giống game MOBA: **tay trái đặt liên tục trên cần lái*
   - **Nghiêng xe** (xe máy, mỗi lần cạn một lần): dồn được chừng 3 km xăng.
   - **Dắt bộ** (xe máy): người lái xuống dắt xe đi bên cạnh, giữ Ga để đẩy, tối đa ~12 km/h.
   - **Gọi xăng / Gọi cứu hộ:** xe ôm hoặc xe cứu hộ chạy tới đỗ sau xe, đổ một can (+20% bình). Xe máy 2 lì xì + 15 phút; ô tô 4 lì xì, xe khách 6 lì xì + 25 phút. Không đủ tiền thì đưa hết, chờ thêm 10 phút.
-- **Cây xăng:** quốc lộ 8–14 km một cây, phố 5–8 km, cao tốc 22–32 km (trạm dừng nghỉ).
+- **Cây xăng:** quốc lộ 16–28 km một cây, phố 10–16 km, cao tốc 44–64 km (trạm dừng nghỉ).
   - Dừng sát lề trước cây xăng → nút **Đổ xăng**. Xe lượn vào đỗ cạnh đảo bơm, mái che mờ đi để thấy cột bơm, nhân viên ra tận xe.
+  - **Tán gẫu với nhân viên:** nhân viên ra tới xe là bắt chuyện (bảng thoại góc phải). Mỗi lần ghé tán được 3 chuyện; mỗi chuyện chọn 1 trong 3 câu trả lời, nhân viên đáp lại. Nhân viên gọi khách là "sếp", nói theo trend mạng (đỉnh nóc kịch trần, còn cái nịt, chằm Zn, chill guy, ét o ét, hẹ hẹ hẹ, mê chữ ê kéo dài, khum, kiếp nạn thứ 82, Bắc Bling, xăng E10…) và chuyện Tết (thưởng Tết hộp bánh, bị hỏi lương, "bao giờ cưới", bánh chưng). 18 chuyện trong `lib/game/logic/gas_chat.dart`, không lặp lại trong một chặng.
+  - Vài câu trả lời có quà: chai nước suối (tỉnh táo +12), lì xì lấy may (+1 lì xì), hoặc nhân viên mách tin đường phía trước (chốt bắn tốc độ, cua gắt, trạm thu phí, sắp vào phố).
   - Bảng cột bơm có màn LED số lít, phần trăm bình chạy lên khi bơm. Chọn **Đổ 1 lì xì** hoặc **Đổ đầy bình**. Một lì xì được 50% bình xe máy, 20% ô tô, 14% xe khách.
-- **Xăng lẻ:** kệ chai xăng ven quốc lộ, 2,5–5 km một kệ, chỉ bán cho xe máy: 1 lì xì một chai (+25%), đắt hơn cây xăng.
+- **Xăng lẻ:** kệ chai xăng ven quốc lộ, 5–10 km một kệ, chỉ bán cho xe máy: 1 lì xì một chai (+25%), đắt hơn cây xăng.
 - **Trạm dừng nghỉ giữa các chặng** có nút **Đổ đầy** (giá như cây xăng, mất 5 phút).
 
 **Thủng lốp, đinh tặc**

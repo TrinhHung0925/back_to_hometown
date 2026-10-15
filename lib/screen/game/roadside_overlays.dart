@@ -9,6 +9,7 @@ import 'package:get/get.dart';
 import '../../common/app_button.dart';
 import '../../common/lixi_icon.dart';
 import '../../game/game_config.dart';
+import '../../game/logic/gas_chat.dart';
 import '../../game/logic/roadside.dart';
 import '../../game/logic/vehicle_condition.dart';
 import '../../game/stage.dart';
@@ -617,6 +618,133 @@ class _StallChatterState extends State<StallChatter> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Tán gẫu với nhân viên cây xăng: câu hỏi, ba câu trả lời để chọn, rồi
+/// câu mình nói và câu nhân viên đáp; được hỏi tiếp vài lượt.
+class GasChatPanel extends StatelessWidget {
+  const GasChatPanel({super.key, required this.chat, required this.onAnswer, required this.onMore});
+
+  final GasChatState chat;
+  final ValueChanged<ChatReply> onAnswer;
+  final VoidCallback onMore;
+
+  @override
+  Widget build(BuildContext context) {
+    final to = Get.find<GameController>().setup.toName;
+    return Container(
+      width: 266.h,
+      padding: EdgeInsets.fromLTRB(10.h, 8.h, 10.h, 10.h),
+      decoration: BoxDecoration(
+        color: AppColors.ffFFFBF2,
+        borderRadius: BorderRadius.circular(16.h),
+        border: Border.all(color: AppColors.ff1B1D22, width: 2.h),
+        boxShadow: [BoxShadow(color: AppColors.ff000000.withValues(alpha: 0.25), blurRadius: 12.h, offset: Offset(0, 4.h))],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 26.h,
+                height: 26.h,
+                alignment: Alignment.center,
+                decoration: const BoxDecoration(color: AppColors.ffC1121F, shape: BoxShape.circle),
+                child: RoadIcon(RoadGlyph.pump, size: 15.h, color: AppColors.ffFFFFFF, accent: AppColors.ffC1121F),
+              ),
+              SizedBox(width: 7.h),
+              Expanded(child: AppText.manrope('Nhân viên cây xăng', fontSize: 11.5.h, fontWeight: FontWeight.w800, color: AppColors.ffB4231E)),
+              AppText.manrope('${chat.round}/${GasChat.maxRounds}', fontSize: 10.h, fontWeight: FontWeight.w700, color: AppColors.ff9A9385),
+            ],
+          ),
+          SizedBox(height: 6.h),
+          _ChatBubble(text: chat.topic.ask),
+          if (!chat.answered) ...[
+            SizedBox(height: 7.h),
+            for (final reply in chat.topic.replies)
+              Padding(
+                padding: EdgeInsets.only(top: 4.h),
+                child: CupertinoButton(
+                  padding: EdgeInsets.zero,
+                  minimumSize: Size.zero,
+                  onPressed: () => onAnswer(reply),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 10.h, vertical: 6.h),
+                    decoration: BoxDecoration(
+                      color: AppColors.ffFFFFFF,
+                      borderRadius: BorderRadius.circular(10.h),
+                      border: Border.all(color: AppColors.ffEE9B2F, width: 1.5.h),
+                    ),
+                    child: Row(
+                      children: [
+                        Image.asset(Img.icChat, height: 13.h, color: AppColors.ffEE9B2F),
+                        SizedBox(width: 6.h),
+                        Expanded(
+                          child: AppText.manrope(reply.text.replaceAll('{to}', to),
+                              fontSize: 11.5.h, fontWeight: FontWeight.w700, maxLines: 2, color: AppColors.ff1B1D22),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+          ] else ...[
+            SizedBox(height: 5.h),
+            _ChatBubble(text: chat.mine!, mine: true),
+            SizedBox(height: 5.h),
+            _ChatBubble(text: chat.react!),
+            if (chat.canMore) ...[
+              SizedBox(height: 7.h),
+              Align(
+                alignment: Alignment.centerRight,
+                child: CupertinoButton(
+                  padding: EdgeInsets.zero,
+                  minimumSize: Size.zero,
+                  onPressed: onMore,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12.h, vertical: 6.h),
+                    decoration: BoxDecoration(color: AppColors.ffEE9B2F, borderRadius: BorderRadius.circular(10.h)),
+                    child: AppText.manrope('Tán tiếp ›', fontSize: 12.h, fontWeight: FontWeight.w800, color: AppColors.ffFFFFFF),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Một câu thoại: của nhân viên (trái, nền kem) hoặc của mình (phải, nền cam).
+class _ChatBubble extends StatelessWidget {
+  const _ChatBubble({required this.text, this.mine = false});
+
+  final String text;
+  final bool mine;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        constraints: BoxConstraints(maxWidth: 222.h),
+        padding: EdgeInsets.fromLTRB(10.h, 6.h, 10.h, 7.h),
+        decoration: BoxDecoration(
+          color: mine ? AppColors.ffFFE3A1 : AppColors.ffF1E7D2,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(12.h),
+            topRight: Radius.circular(12.h),
+            bottomLeft: Radius.circular(mine ? 12.h : 3.h),
+            bottomRight: Radius.circular(mine ? 3.h : 12.h),
+          ),
+        ),
+        child: AppText.manrope(text, fontSize: 12.h, fontWeight: FontWeight.w700, maxLines: 4, color: AppColors.ff1B1D22),
       ),
     );
   }

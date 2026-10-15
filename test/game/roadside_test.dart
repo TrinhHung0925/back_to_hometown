@@ -86,16 +86,16 @@ void main() {
 
   group('Quán ven đường', () {
     const sections = [
-      StageSection(RoadKind.city, 3),
-      StageSection(RoadKind.highway, 40),
-      StageSection(RoadKind.expressway, 20),
-      StageSection(RoadKind.highway, 10),
+      StageSection(RoadKind.city, 6),
+      StageSection(RoadKind.highway, 80),
+      StageSection(RoadKind.expressway, 40),
+      StageSection(RoadKind.highway, 20),
     ];
 
     test('quán dày trên quốc lộ; cao tốc chỉ có cây xăng bên phải; tránh ngã tư / trạm / chốt / điểm đón', () {
       for (var seed = 0; seed < 8; seed++) {
         final l = RoadLayout.build(sections: sections, startS: 400, tollBooths: 2, random: Random(seed), withBusStops: seed.isEven);
-        const highwayKm = 50.0;
+        const highwayKm = 100.0;
         final food = l.stalls.where((t) => t.kind.food && l.kindAt(t.s) == RoadKind.highway).length;
         expect(food, greaterThan(highwayKm / GameConfig.stallGapHighwayKmMax * 0.6));
         for (final t in l.stalls) {
@@ -118,7 +118,7 @@ void main() {
     });
 
     test('cây xăng, tiệm vá xe, xăng lẻ đủ dày để đi tìm được', () {
-      const long = [StageSection(RoadKind.highway, 100)];
+      const long = [StageSection(RoadKind.highway, 200)];
       for (var seed = 0; seed < 6; seed++) {
         final l = RoadLayout.build(sections: long, startS: 400, tollBooths: 1, random: Random(seed));
         final gas = l.stalls.where((t) => t.kind == StallKind.xang).toList();

@@ -26,6 +26,7 @@ import 'logic/animals.dart';
 import 'logic/chase.dart';
 import 'logic/collision.dart';
 import 'logic/cross_traffic.dart';
+import 'logic/gas_chat.dart';
 import 'logic/player_physics.dart';
 import 'logic/road_layout.dart';
 import 'logic/road_path.dart';
@@ -1277,6 +1278,53 @@ class VeQueGame extends FlameGame {
     clock.addPenalty(2);
     onSound(GameSound.gift);
     onNotice(const GameNotice('Mặc áo mưa cánh dơi vào — hết lo ướt!', kind: NoticeKind.money));
+  }
+
+  /// Tán gẫu với nhân viên cây xăng (bảng thoại riêng trên màn hình): mình
+  /// trả lời [reply]; nhân viên đáp lại, có khi tặng chai nước, lì xì lấy may
+  /// hay mách tin đường phía trước. Trả về (câu mình, câu đáp).
+  (String, String) chatAnswer(ChatReply reply) {
+    if (!_served || _restStall?.kind != StallKind.xang) return ('', '');
+    final mine = reply.text.replaceAll('{to}', setup.toName);
+    final react = reply.react.replaceAll('{tip}', _roadTip());
+    switch (reply.perk) {
+      case ChatPerk.water:
+        alert = min(100, alert + GameConfig.chatWaterAlert);
+        onSound(GameSound.gift);
+        onNotice(GameNotice('Được tặng chai nước suối · tỉnh táo +${GameConfig.chatWaterAlert.round()}', kind: NoticeKind.money));
+      case ChatPerk.lixi:
+        lixi += 1;
+        _popAt(player.s, player.d, '+1', const Color(0xffFFD54F));
+        onSound(GameSound.gift);
+        onNotice(const GameNotice('Nhân viên lì xì lấy may đầu năm · +1 lì xì', kind: NoticeKind.money));
+      case ChatPerk.tip:
+      case ChatPerk.none:
+        break;
+    }
+    return (mine, react);
+  }
+
+  /// Tin đường phía trước nhân viên mách (chuyện gần nhất trước).
+  String _roadTip() {
+    final s = player.s;
+    int km(double at) => max(1, ((at - s) / GameConfig.unitsPerKm).round());
+    final cp = layout.checkpoints.where((c) => c.s > s).firstOrNull;
+    if (cp != null && cp.s - s < 60 * GameConfig.unitsPerKm) {
+      return 'Chừng ${km(cp.s)} cây nữa có chốt bắn tốc độ đó, giữ tốc độ cho lành nha sếp!';
+    }
+    road.ensureAhead(s + 12 * GameConfig.unitsPerKm);
+    if (road.curvesBetween(s, s + 12 * GameConfig.unitsPerKm).any((c) => c.sharp)) {
+      return 'Đoạn trước có khúc cua gắt lắm, tới biển báo là nhả ga nha sếp!';
+    }
+    final toll = layout.tolls.where((t) => t.s > s).firstOrNull;
+    if (toll != null && toll.s - s < 60 * GameConfig.unitsPerKm) {
+      return 'Thêm ${km(toll.s)} cây là tới trạm thu phí, để sẵn lì xì mà trả nha!';
+    }
+    final city = layout.zones.where((z) => z.startS > s && z.kind == RoadKind.city).firstOrNull;
+    if (city != null && city.startS - s < 40 * GameConfig.unitsPerKm) {
+      return 'Thêm ${km(city.startS)} cây là vào phố, đèn đỏ nhiều lắm, đừng vượt ẩu nha!';
+    }
+    return 'Đường phía trước thông thoáng, mà xe khách chạy ẩu lắm, đi cẩn thận nha sếp!';
   }
 
   /// Đứng dậy đi ra xe, lên đường.

@@ -262,16 +262,16 @@ void main() {
   });
 
   group('TripClock', () {
-    test('quy đổi: 5 phút chơi ở tốc độ thường = 2 giờ trong game', () {
+    test('quy đổi: 2,5 phút chơi ở tốc độ thường = 2 giờ trong game', () {
       final clock = TripClock(minutes: 20 * 60);
-      clock.advance(300);
+      clock.advance(150);
       expect(clock.minutes, closeTo(22 * 60, 1e-9));
       expect(clock.label, '22:00');
     });
 
     test('giờ xuất phát = giao thừa trừ thời gian ước tính × hệ số', () {
-      // 300 giây chơi ước tính = 120 phút trong game → được 192 phút.
-      expect(TripClock.departureFor(300), closeTo(24 * 60 - 192, 1e-9));
+      // 150 giây chơi ước tính = 120 phút trong game → được 192 phút.
+      expect(TripClock.departureFor(150), closeTo(24 * 60 - 192, 1e-9));
     });
 
     test('quá giao thừa là hết giờ', () {

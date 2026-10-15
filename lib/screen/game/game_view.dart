@@ -158,10 +158,13 @@ class _GameViewState extends State<GameView> {
                     Obx(() {
                       final visit = controller.stallVisit.value;
                       if (visit == null) return const SizedBox.shrink();
+                      final chat = controller.gasChat.value;
                       return Positioned(
                         right: 20.h,
                         bottom: 18.h,
-                        child: StallChatter(key: ValueKey(visit.stall), chatter: visit.chatter),
+                        child: chat != null
+                            ? GasChatPanel(key: ValueKey(chat.round), chat: chat, onAnswer: controller.answerChat, onMore: controller.nextChat)
+                            : StallChatter(key: ValueKey(visit.stall), chatter: visit.chatter),
                       );
                     }),
                     Positioned(

@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import '../../game/debug/autopilot.dart';
 import '../../game/debug/debug_launch.dart';
 import '../../game/game_config.dart';
+import '../../game/logic/gas_chat.dart';
 import '../../game/logic/roadside.dart';
 import '../../game/logic/vehicle_condition.dart';
 import '../../game/stage.dart';
@@ -52,6 +53,11 @@ class GameController extends GetxController {
 
   /// Lần đổ xăng gần nhất: mức bình trước / sau (bảng cột bơm chạy số).
   final pump = Rxn<(double, double)>();
+
+  /// Tán gẫu với nhân viên cây xăng (null khi không đứng ở cây xăng).
+  final gasChat = Rxn<GasChatState>();
+  final Set<int> _chatUsed = {};
+  Timer? _chatTimer;
 
   /// Tăng mỗi lần bóp còi thành công — nút Còi chạy vòng hồi chiêu.
   final hornTick = 0.obs;
@@ -122,6 +128,8 @@ class GameController extends GetxController {
     stallVisit.value = null;
     job.value = null;
     pump.value = null;
+    _endChat();
+    _chatUsed.clear();
     game = VeQueGame(
       setup: setup,
       onHud: (data) {
@@ -131,7 +139,14 @@ class GameController extends GetxController {
       },
       onRest: (visit) {
         stallVisit.value = visit;
-        if (visit == null) pump.value = null;
+        if (visit == null) {
+          pump.value = null;
+          _endChat();
+        } else if (visit.seated && visit.stall.kind == StallKind.xang && gasChat.value == null) {
+          // Nhân viên ra tới xe thì bắt chuyện.
+          _chatTimer?.cancel();
+          _chatTimer = Timer(const Duration(milliseconds: 900), nextChat);
+        }
       },
       onJob: (value) => job.value = value,
       onPhaseChanged: (value) {
@@ -236,6 +251,28 @@ class GameController extends GetxController {
     if (added > 0) pump.value = (before, game.fuel.level);
   }
 
+  /// Nhân viên cây xăng hỏi chuyện tiếp (tối đa [GasChat.maxRounds] lượt).
+  void nextChat() {
+    final round = (gasChat.value?.round ?? 0) + 1;
+    if (round > GasChat.maxRounds || stallVisit.value?.seated != true) return;
+    final i = GasChat.pick(_random, _chatUsed);
+    _chatUsed.add(i);
+    final topic = GasChat.topics[i];
+    gasChat.value = GasChatState(topic: topic, round: round);
+  }
+
+  void answerChat(ChatReply reply) {
+    final chat = gasChat.value;
+    if (chat == null || chat.answered) return;
+    final (mine, react) = game.chatAnswer(reply);
+    if (mine.isNotEmpty) gasChat.value = chat.answer(mine, react);
+  }
+
+  void _endChat() {
+    _chatTimer?.cancel();
+    gasChat.value = null;
+  }
+
   /// Nút theo tình huống.
   void onAction(RoadAction action) {
     switch (action) {
@@ -323,6 +360,7 @@ class GameController extends GetxController {
   void onClose() {
     _noticeTimer?.cancel();
     _cruiseTipTimer?.cancel();
+    _chatTimer?.cancel();
     _autopilot?.stop();
     _audio.stopEngine();
     _audio.stopSiren();
