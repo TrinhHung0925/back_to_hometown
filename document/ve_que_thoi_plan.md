@@ -136,8 +136,8 @@ Cả hai xe đều phải về kịp được; khác nhau ở cách chơi: xe m�
 ### Bản đồ và trời
 Người chơi chê bản đồ cũ đơn điệu, không giống thật. Dòng **Bản đồ … Đổi ›** có ở ba chỗ. Chọn xong là lưu ngay.
 
-- **Màn lên lộ trình:** dưới dòng chọn xe. Áp cho các chặng sắp chơi.
-- **Trạm dừng nghỉ:** cuối thẻ chặng tiếp theo, đổi trước khi đi tiếp.
+- **Màn lên lộ trình** (chỗ chọn điểm đi, điểm về): dưới dòng chọn xe có một hàng gồm ô **Bản đồ ›** và ba nút trời **Theo giờ / Ngày / Đêm**. Trời bấm là chọn luôn, không phải mở hộp. Áp cho các chặng sắp chơi.
+- **Trạm dừng nghỉ:** cùng hàng đó ở cuối thẻ chặng tiếp theo, đổi trước khi đi tiếp.
 - **Menu tạm dừng khi đang chơi:** người chơi đi tiếp chuyến thì không qua màn lên lộ trình, nên từng tưởng mất chỗ chọn.
   - Cột bên phải có ba nút trời, bấm là đổi ngay.
   - Bên dưới là dòng bản đồ. Đổi sang bản đồ khác thì chơi lại chặng đó từ đầu với cảnh mới.

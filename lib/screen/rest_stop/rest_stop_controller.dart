@@ -5,8 +5,10 @@ import '../../game/game_config.dart';
 import '../../game/logic/vehicle_condition.dart';
 import '../../resource/app_resource.dart';
 import '../../service/audio_service.dart';
+import '../../model/map_theme.dart';
 import '../../model/trip.dart';
 import '../../route.dart';
+import '../../service/local_service.dart';
 import '../../service/trip_service.dart';
 
 class RestStopController extends GetxController {
@@ -17,11 +19,18 @@ class RestStopController extends GetxController {
   final fuel = 0.0.obs;
 
   /// Bản đồ, trời cho chặng sắp đi (đổi được trước khi lên đường).
-  final mapSummary = MapPickerDialog.summary().obs;
+  final mapTheme = LocalService.shared.getMapTheme().obs;
+  final sky = LocalService.shared.getSkyMode().obs;
 
   Future<void> pickMap() async {
     await MapPickerDialog.open();
-    mapSummary.value = MapPickerDialog.summary();
+    mapTheme.value = LocalService.shared.getMapTheme();
+    sky.value = LocalService.shared.getSkyMode();
+  }
+
+  void setSky(SkyMode value) {
+    LocalService.shared.saveSkyMode(value);
+    sky.value = value;
   }
 
   @override

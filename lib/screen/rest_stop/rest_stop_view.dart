@@ -325,7 +325,7 @@ class _NextStageCard extends StatelessWidget {
             color: AppColors.ff5B6169,
           ),
           SizedBox(height: 8.h),
-          Obx(() => MapRow(summary: controller.mapSummary.value, onPressed: controller.pickMap)),
+          Obx(() => MapSkyRow(theme: controller.mapTheme.value, sky: controller.sky.value, onPickMap: controller.pickMap, onSky: controller.setSky)),
         ],
       ),
     );

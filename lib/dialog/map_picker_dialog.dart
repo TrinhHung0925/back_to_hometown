@@ -200,6 +200,13 @@ class _ThemeCard extends StatelessWidget {
       };
 }
 
+/// Hai màu chấm bầu trời của một lựa chọn trời.
+(Color, Color) skyColors(SkyMode sky) => switch (sky) {
+      SkyMode.clock => (const Color(0xff7FB2E5), const Color(0xff27324F)),
+      SkyMode.day => (const Color(0xff8EC5F0), const Color(0xffFCE7B2)),
+      SkyMode.night => (const Color(0xff0E1630), const Color(0xff2E3B66)),
+    };
+
 /// Một lựa chọn trời: chấm màu bầu trời, tên, mô tả ([compact] bỏ mô tả).
 class SkyChip extends StatelessWidget {
   const SkyChip({super.key, required this.sky, required this.selected, required this.onTap, this.compact = false});
@@ -211,11 +218,7 @@ class SkyChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (a, b) = switch (sky) {
-      SkyMode.clock => (const Color(0xff7FB2E5), const Color(0xff27324F)),
-      SkyMode.day => (const Color(0xff8EC5F0), const Color(0xffFCE7B2)),
-      SkyMode.night => (const Color(0xff0E1630), const Color(0xff2E3B66)),
-    };
+    final (a, b) = skyColors(sky);
     return CupertinoButton(
       padding: EdgeInsets.zero,
       minimumSize: Size.zero,
@@ -261,13 +264,15 @@ class SkyChip extends StatelessWidget {
   }
 }
 
-/// Dòng "Bản đồ · Tự động · Theo giờ — Đổi ›" (màn lên lộ trình, trạm dừng
-/// nghỉ, menu tạm dừng); bấm để mở [MapPickerDialog].
+/// Dòng "Bản đồ · Tự động · Theo giờ — Đổi ›" (menu tạm dừng); bấm để mở
+/// [MapPickerDialog]. [compact]: hai dòng nhỏ "Bản đồ" / "Tự động ›" để
+/// đứng cạnh [SkySwitch].
 class MapRow extends StatelessWidget {
-  const MapRow({super.key, required this.summary, required this.onPressed});
+  const MapRow({super.key, required this.summary, required this.onPressed, this.compact = false});
 
   final String summary;
   final VoidCallback onPressed;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -276,18 +281,128 @@ class MapRow extends StatelessWidget {
       minimumSize: Size.zero,
       onPressed: onPressed,
       child: Container(
-        height: 30.h,
-        padding: EdgeInsets.symmetric(horizontal: 10.h),
+        height: compact ? 36.h : 30.h,
+        padding: EdgeInsets.symmetric(horizontal: compact ? 8.h : 10.h),
         decoration: BoxDecoration(color: AppColors.ffF2F3F5, borderRadius: BorderRadius.circular(10.h)),
-        child: Row(
-          children: [
-            AppText.manrope('Bản đồ', fontSize: 11.h, fontWeight: FontWeight.w700, color: AppColors.ff6B7280),
-            SizedBox(width: 8.h),
-            Expanded(child: AppText.manrope(summary, fontSize: 12.5.h, fontWeight: FontWeight.w800, maxLines: 1, color: AppColors.ff1B1D22)),
-            AppText.manrope('Đổi ›', fontSize: 12.h, fontWeight: FontWeight.w800, color: AppColors.ffD62828),
-          ],
-        ),
+        child: compact
+            ? Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        AppText.manrope('Bản đồ', fontSize: 9.5.h, fontWeight: FontWeight.w700, color: AppColors.ff6B7280),
+                        AppText.manrope(summary, fontSize: 12.5.h, fontWeight: FontWeight.w800, maxLines: 1, color: AppColors.ff1B1D22),
+                      ],
+                    ),
+                  ),
+                  AppText.manrope('›', fontSize: 18.h, fontWeight: FontWeight.w800, color: AppColors.ffD62828),
+                ],
+              )
+            : Row(
+                children: [
+                  AppText.manrope('Bản đồ', fontSize: 11.h, fontWeight: FontWeight.w700, color: AppColors.ff6B7280),
+                  SizedBox(width: 8.h),
+                  Expanded(child: AppText.manrope(summary, fontSize: 12.5.h, fontWeight: FontWeight.w800, maxLines: 1, color: AppColors.ff1B1D22)),
+                  AppText.manrope('Đổi ›', fontSize: 12.h, fontWeight: FontWeight.w800, color: AppColors.ffD62828),
+                ],
+              ),
       ),
+    );
+  }
+}
+
+/// Ba nút trời liền nhau — Theo giờ / Ngày / Đêm — bấm là chọn luôn.
+class SkySwitch extends StatelessWidget {
+  const SkySwitch({super.key, required this.value, required this.onChanged});
+
+  final SkyMode value;
+  final ValueChanged<SkyMode> onChanged;
+
+  static String _label(SkyMode sky) => switch (sky) {
+        SkyMode.clock => 'Theo giờ',
+        SkyMode.day => 'Ngày',
+        SkyMode.night => 'Đêm',
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 36.h,
+      padding: EdgeInsets.all(3.h),
+      decoration: BoxDecoration(color: AppColors.ffF2F3F5, borderRadius: BorderRadius.circular(10.h)),
+      child: Row(
+        children: [
+          for (final sky in SkyMode.values)
+            Expanded(
+              flex: sky == SkyMode.clock ? 14 : 10,
+              child: CupertinoButton(
+                padding: EdgeInsets.zero,
+                minimumSize: Size.zero,
+                onPressed: () {
+                  AudioService.shared.click();
+                  onChanged(sky);
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 160),
+                  height: double.infinity,
+                  decoration: BoxDecoration(
+                    color: sky == value ? AppColors.ffD62828 : AppColors.ffF2F3F5,
+                    borderRadius: BorderRadius.circular(8.h),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 11.h,
+                        height: 11.h,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: LinearGradient(
+                            colors: [skyColors(sky).$1, skyColors(sky).$2],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          border: Border.all(color: AppColors.ffFFFFFF, width: 1.5.h),
+                        ),
+                      ),
+                      SizedBox(width: 3.h),
+                      AppText.manrope(
+                        _label(sky),
+                        fontSize: 11.h,
+                        fontWeight: FontWeight.w800,
+                        maxLines: 1,
+                        color: sky == value ? AppColors.ffFFFFFF : AppColors.ff1B1D22,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Hàng "Bản đồ ›" + [SkySwitch] trên bảng lên lộ trình và trạm dừng nghỉ.
+class MapSkyRow extends StatelessWidget {
+  const MapSkyRow({super.key, required this.theme, required this.sky, required this.onPickMap, required this.onSky});
+
+  final MapTheme theme;
+  final SkyMode sky;
+  final VoidCallback onPickMap;
+  final ValueChanged<SkyMode> onSky;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(flex: 8, child: MapRow(summary: theme.title, onPressed: onPickMap, compact: true)),
+        SizedBox(width: 6.h),
+        Expanded(flex: 19, child: SkySwitch(value: sky, onChanged: onSky)),
+      ],
     );
   }
 }

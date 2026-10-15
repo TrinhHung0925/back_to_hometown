@@ -313,7 +313,7 @@ class _Panel extends StatelessWidget {
                 ? const _CoachInfo()
                 : _VehicleSwitch(value: controller.vehicle.value, onChanged: controller.setVehicle),
             SizedBox(height: 6.h),
-            MapRow(summary: controller.mapSummary.value, onPressed: controller.pickMap),
+            MapSkyRow(theme: controller.mapTheme.value, sky: controller.sky.value, onPickMap: controller.pickMap, onSky: controller.setSky),
             SizedBox(height: 8.h),
             Container(height: 1.h, color: AppColors.ffE3E5E9),
             SizedBox(height: 8.h),
@@ -336,7 +336,6 @@ class _Panel extends StatelessWidget {
   }
 }
 
-/// Dòng chọn bản đồ: cảnh hai bên đường và trời.
 class _PlaceField extends StatelessWidget {
   const _PlaceField({
     required this.tag,
@@ -629,7 +628,7 @@ class _PlanSummary extends StatelessWidget {
           Row(
             children: [
               stat('${plan.km.round()} km', 'quãng đường'),
-              stat('~$playMinutes′', 'phút chơi'),
+              stat('~$playMinutes', 'phút chơi'),
               stat('${plan.stages.length}', 'chặng'),
             ],
           ),
