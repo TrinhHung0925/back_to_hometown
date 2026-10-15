@@ -887,7 +887,7 @@ class _DriverView extends Component {
       VehicleKind.bus => 'cockpit_bus',
     };
     final img = a.cockpits[key];
-    final dim = 1 - 0.6 * game.darkness;
+    final dim = 1 - 0.75 * game.darkness;
     final paint = Paint()
       ..filterQuality = FilterQuality.medium
       ..colorFilter = ColorFilter.mode(Color.fromRGBO((255 * dim).round(), (255 * dim).round(), (255 * dim).round(), 1), BlendMode.modulate);
