@@ -228,6 +228,9 @@ abstract class Img {
   static const String imgScooterParked = '$assetsImgPath/img_scooter_parked.png';
   static final List<String> scootersParked = [for (var i = 1; i <= 3; i++) '$assetsImgPath/img_scooter_parked_$i.png'];
   static const String imgDriverMoto = '$assetsImgPath/img_driver_moto.png';
+
+  /// Ảnh mẹ đang gọi điện (thẻ cuộc gọi).
+  static const String imgPortraitMom = '$assetsImgPath/img_portrait_mom.png';
   static const String imgDriverCar = '$assetsImgPath/img_driver_car.png';
   static const List<String> stools = ['$assetsImgPath/img_stool_red.png', '$assetsImgPath/img_stool_blue.png'];
   static const List<String> tables = ['$assetsImgPath/img_table_1.png', '$assetsImgPath/img_table_2.png'];
@@ -420,6 +423,13 @@ abstract class AppAudio {
   static const String sfxFuelPump = 'sfx_fuel_pump.wav';
   static const String sfxRain = 'sfx_rain.wav';
 
+  /// Chuông điện thoại, gió biển giật, còi hơi xe tải, pháo hoa giao thừa
+  /// (tổng hợp bằng tool/asset_pipeline/build_event_audio.py).
+  static const String sfxPhoneRing = 'sfx_phone_ring.wav';
+  static const String sfxWindGust = 'sfx_wind_gust.wav';
+  static const String sfxTruckHorn = 'sfx_truck_horn.wav';
+  static const String sfxFireworks = 'sfx_fireworks.wav';
+
   static const String musicMain = 'music_main.m4a';
   static const String musicChase = 'music_chase.m4a';
   static const String jingleWin = 'jingle_win.m4a';
@@ -427,6 +437,10 @@ abstract class AppAudio {
 
   /// Nạp sẵn để lần phát đầu không bị trễ.
   static const List<String> preload = [
+    sfxPhoneRing,
+    sfxWindGust,
+    sfxTruckHorn,
+    sfxFireworks,
     sfxEngineMoto,
     sfxEngineCar,
     sfxSkid,

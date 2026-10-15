@@ -146,6 +146,19 @@
   "length_m": 8.11,
   "width_m": 2.47
  },
+ "ferry": {
+  "front": {
+   "w": 806,
+   "h": 546,
+   "center_ground": [
+    403.0,
+    417.3
+   ]
+  },
+  "length_m": 30.0,
+  "width_m": 10.0,
+  "note": "bottom row = waterline at the ramp end hull; top-down sprite assets/images/img_ferry.png at 47 px/m, bow up"
+ },
  "mini_van": {
   "rear": {
    "w": 178,
@@ -257,6 +270,42 @@
   },
   "length_m": 5.28,
   "width_m": 1.9
+ },
+ "player_bus": {
+  "side": {
+   "w": 732,
+   "h": 297,
+   "center_ground": [
+    366.0,
+    285.6
+   ]
+  },
+  "length_m": 8.5,
+  "width_m": 2.5
+ },
+ "player_car": {
+  "side": {
+   "w": 366,
+   "h": 129,
+   "center_ground": [
+    183.0,
+    120.6
+   ]
+  },
+  "length_m": 4.45,
+  "width_m": 1.82
+ },
+ "player_moto": {
+  "side": {
+   "w": 188,
+   "h": 145,
+   "center_ground": [
+    94.0,
+    144.6
+   ]
+  },
+  "length_m": 1.99,
+  "width_m": 0.72
  },
  "scooter_ai_1": {
   "rear": {

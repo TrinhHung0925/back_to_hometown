@@ -66,6 +66,9 @@ class PlayerPhysics {
   /// cua phải.
   double curvature = 0;
 
+  /// Đang mải nghe điện thoại (0..1): tay lái kém nhạy hẳn đi.
+  double distraction = 0;
+
   /// Đang bị văng tì vào mép đường / dải phân cách (quệt lề).
   bool scraping = false;
 
@@ -80,7 +83,8 @@ class PlayerPhysics {
   }
 
   /// Sức kéo ngang tối đa của cần lái ở tốc độ hiện tại.
-  double get steerAuthority => spec.lateralSpeed * handling * (speed / (0.5 * GameConfig.normalSpeed)).clamp(0.0, 1.0);
+  double get steerAuthority =>
+      spec.lateralSpeed * handling * (1 - 0.45 * distraction) * (speed / (0.5 * GameConfig.normalSpeed)).clamp(0.0, 1.0);
 
   double get handling => spec.handlingFactor(cargo);
 

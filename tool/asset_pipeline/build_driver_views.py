@@ -289,7 +289,10 @@ LAMP_NONE, LAMP_TAIL, LAMP_HEAD = 0, 1, 2
 
 
 def lamp_of(m):
-    return {'tail': LAMP_TAIL, 'head': LAMP_HEAD}.get(getattr(m, 'lamp', None), LAMP_NONE)
+    tag = getattr(m, 'lamp', None)
+    if tag and tag.startswith('mirror'):
+        return 10 + int(tag[6:])
+    return {'tail': LAMP_TAIL, 'head': LAMP_HEAD}.get(tag, LAMP_NONE)
 
 
 def materials(objs, oid, p, nrm):
@@ -2100,10 +2103,84 @@ def pitch_for(horizon_row, fov, size=CP_SIZE, shift_y=0.0):
     return math.degrees(math.atan((horizon_row - cy) / fl))
 
 
-def render_cockpit(scene, cam, ss=SS_COCKPIT, near=0.05, sun=(-0.35, 0.25, 0.90), fill=()):
+def render_cockpit(scene, cam, ss=SS_COCKPIT, near=0.05, sun=(-0.35, 0.25, 0.90), fill=(), mirrors=None):
+    """Vẽ khoang lái. Mặt gương (nhãn 'mirrorK') tô phẳng màu MIRROR_FLAT; nếu
+    [mirrors] là list thì thêm khung bao (x, y, w, h) từng mặt gương thấy được."""
     with sun_from(sun):
-        rgb, alpha, depth, _ = render_cam(scene, cam, ss=ss, near=near, fill=fill)
-    return finish_v(rgb, alpha, *cam.size, ss)
+        rgb, alpha, depth, lamp = render_cam(scene, cam, ss=ss, near=near, fill=fill)
+    img = finish_v(rgb, alpha, *cam.size, ss)
+    w, h = cam.size
+    arr = np.asarray(img).astype(np.float64)
+    flat = np.array(MIRROR_FLAT, np.float64)
+    for k in range(10, 16):
+        m = (lamp == k) & (alpha > 0.5)
+        if not m.any():
+            continue
+        f = m.reshape(h, ss, w, ss).mean((1, 3))
+        a = np.maximum(arr[..., 3] / 255.0, 1e-6)
+        fr = np.clip(f / a, 0, 1)[..., None]
+        arr[..., :3] = arr[..., :3] * (1 - fr) + flat * fr
+        if mirrors is not None:
+            ys, xs = np.nonzero(f > 0.5)
+            if xs.size > 4:
+                mirrors.append((k - 10, [int(xs.min()), int(ys.min()), int(xs.max() - xs.min() + 1), int(ys.max() - ys.min() + 1)]))
+    return Image.fromarray(np.clip(arr + 0.5, 0, 255).astype(np.uint8))
+
+
+def dial_json(cam, to_world, geom, kind, vmax):
+    """Toạ độ khung hình của tâm kim, độ dài kim, góc 0 / góc max (độ, 0 =
+    sang phải, dương = theo chiều kim đồng hồ) — chiếu từ vân mặt số."""
+    W, H = geom['W'], geom['H']
+    cx, cy, R = geom['cx'] * W, geom['cy'] * H, geom['R'] * (H if W != H else W)
+    a0, a1 = geom['a0'], geom['a1']
+
+    def scr(px, py):
+        return np.array(cam.project(to_world(px / W, py / H)))
+    c = scr(cx, cy)
+    angs, lens = [], []
+    for t in np.linspace(0, 1, 25):
+        a = math.radians(a0 + (a1 - a0) * t)
+        tip = scr(cx + 0.86 * R * math.cos(a), cy + 0.86 * R * math.sin(a))
+        d = tip - c
+        angs.append(math.degrees(math.atan2(d[1], d[0])))
+        lens.append(float(np.hypot(*d)))
+    angs = np.degrees(np.unwrap(np.radians(angs)))
+    return {'kind': kind, 'center': [round(float(c[0]), 1), round(float(c[1]), 1)], 'length': round(float(np.mean(lens)), 1),
+            'angle0_deg': round(float(angs[0]), 1), 'angle1_deg': round(float(angs[-1]), 1), 'max': vmax}
+
+
+def cluster_to_world(G, cx_u):
+    """Vân mặt số tròn (u, v ∈ [0, 1]) → điểm 3D trên mặt cụm đồng hồ ô tô / xe khách."""
+    def f(tu, tv):
+        u = cx_u + (tu - 0.5) * G['scale']
+        zz = (0.5 - tv) * G['scale']
+        dy, dz = rot(0.004, zz, -G['tilt'])
+        return (G['dx'] + u, G['GY'] + dy, G['GZ'] + dz)
+    return f
+
+
+def cluster_extras(cam, G):
+    dials = [dial_json(cam, cluster_to_world(G, G['dials'][0]), CLUSTER_DIAL, 'speed', 180),
+             dial_json(cam, cluster_to_world(G, G['dials'][1]), CLUSTER_DIAL, 'rpm', 8)]
+    iu, iz, ir = G['ind']
+    pts = []
+    for su in (-1, 1):
+        dy, dz = rot(0.004, iz, -G['tilt'])
+        pts.append(np.array(cam.project((G['dx'] + su * iu, G['GY'] + dy, G['GZ'] + dz))))
+        dy2, dz2 = rot(0.004, iz + ir, -G['tilt'])
+    top = np.array(cam.project((G['dx'] + iu, G['GY'] + dy2, G['GZ'] + dz2)))
+    size = round(float(2 * np.hypot(*(top - pts[1]))), 1)
+    ind = {'left': [round(float(pts[0][0]), 1), round(float(pts[0][1]), 1)],
+           'right': [round(float(pts[1][0]), 1), round(float(pts[1][1]), 1)], 'size': size}
+    return dials, ind
+
+
+def mirror_json(found, shapes):
+    out = []
+    for k, rect in sorted(found):
+        shape = shapes.get(k, 'rrect')
+        out.append({'shape': shape, 'rect': rect, 'radius': 0 if shape == 'ellipse' else round(min(rect[2], rect[3]) * 0.3, 1)})
+    return out
 
 
 # đèn phụ trong khoang ô tô / xe khách: trời qua kính sau (sau lưng người lái),
@@ -2155,7 +2232,7 @@ def moto_arms(jacket, glove=GLOVE):
             Obj('gloves', hands, gl, tint=hand_tint)]
 
 
-def dial_tex(kind='moto', needle=40.0, size=512):
+def dial_tex(kind='moto', needle=None, size=512):
     """Vân mặt đồng hồ vẽ bằng PIL (RGB 0..1): vạch, số, kim, đèn báo.
     'moto': đồng hồ xe số (0-120 km/h, cung trên, đồng hồ xăng bên phải);
     'speed' / 'rpm': hai mặt tròn của ô tô / xe khách."""
@@ -2206,16 +2283,19 @@ def dial_tex(kind='moto', needle=40.0, size=512):
         dr.rectangle([fx - W * 0.012, lvl, fx + W * 0.008, f1], fill=(255, 150, 40))
         dr.text((fx + W * 0.03, f0 - H * 0.07), 'F', fill=(236, 238, 242), font=small)
         dr.text((fx + W * 0.03, f1 - H * 0.07), 'E', fill=(235, 60, 50), font=small)
-        for k, (col, lx) in enumerate((((40, 210, 90), 0.06), ((60, 120, 255), 0.14), ((40, 210, 90), 0.22))):
+        # đèn báo: xi-nhan trái / phải (xanh tối, game tự bật), pha (xanh dương), số N
+        for col, lx in (((18, 60, 30), MOTO_IND[0]), ((60, 120, 255), 0.14), ((40, 210, 90), 0.22), ((18, 60, 30), MOTO_IND[1])):
             dr.ellipse([W * lx - H * 0.045, H * 0.06, W * lx + H * 0.045, H * 0.15], fill=col)
         bb = dr.textbbox((0, 0), 'N', font=small)
-        dr.text((W * 0.06 - (bb[2] - bb[0]) / 2, H * 0.105 - (bb[3] + bb[1]) / 2), 'N', fill=(10, 30, 10), font=small)
+        dr.text((W * 0.22 - (bb[2] - bb[0]) / 2, H * 0.105 - (bb[3] + bb[1]) / 2), 'N', fill=(10, 30, 10), font=small)
     else:
         txt = '012345' if kind == 'speed' else 'D'
         bb = dr.textbbox((0, 0), txt, font=small)
         dr.rectangle([cx - (bb[2] - bb[0]) / 2 - 6, cy + R * 0.42, cx + (bb[2] - bb[0]) / 2 + 6, cy + R * 0.42 + (bb[3] - bb[1]) + 12],
                      fill=(30, 40, 46))
         dr.text((cx - (bb[2] - bb[0]) / 2, cy + R * 0.42 + 6 - bb[1]), txt, fill=(150, 230, 255), font=small)
+    if needle is None:  # game tự vẽ kim
+        return np.asarray(img, np.float64) / 255.0
     # kim
     a = math.radians(a0 + (a1 - a0) * min(needle, vmax) / vmax)
     tip = (cx + R * 0.86 * math.cos(a), cy + R * 0.86 * math.sin(a))
@@ -2224,6 +2304,10 @@ def dial_tex(kind='moto', needle=40.0, size=512):
     hub = R * 0.07
     dr.ellipse([cx - hub, cy - hub, cx + hub, cy + hub], fill=(40, 42, 46))
     return np.asarray(img, np.float64) / 255.0
+
+
+MOTO_IND = (0.06, 0.78)   # u của hai đèn xi-nhan trên mặt đồng hồ xe số (v = 0,105)
+MOTO_DIAL = dict(W=512, H=256, cx=0.43, cy=0.97, R=0.80, a0=196.0, a1=344.0, vmax=120)
 
 
 def sample_rgb(tex, u, v):
@@ -2269,7 +2353,7 @@ def moto_cowl_cp(body):
         low = z < 0.925
         return np.where(bezel, 1, np.where(low, 2, 0)).astype(np.int32)
     obj = Obj('cowl', cowl, [pt, Mat((16, 16, 18), rough=0.35, spec=0.6), BLACK_PLASTIC], pick=pick)
-    tex = dial_tex('moto', needle=38)
+    tex = dial_tex('moto')
 
     def face_sdf(p):
         x, y, z = p
@@ -2314,14 +2398,14 @@ def moto_cockpit_scene():
                 xr, yr = rot(q[0] - 0.355, q[1] - 0.18, -0.35)
                 return np.minimum(stalk, ellipsoid((xr, yr, q[2]), (0, 0, 1.21), (0.068, 0.034, 0.042)))
             o.sdf = msdf
-            o.mats = [SATIN_BLACK, CHROME, Mat((96, 106, 122), rough=0.02, metal=1.0)]
+            o.mats = [SATIN_BLACK, CHROME, mirror_mat(0), mirror_mat(1)]
 
             def mpick(p, n):
                 x, y, z = p
                 xr, yr = rot(np.abs(x) - 0.355, y - 0.18, -0.35)
                 idx = ((z < 1.155) & (z > 1.02)).astype(np.int32)
                 glass = (z > 1.17) & (yr > 0.010) & (((xr / 0.060) ** 2 + ((z - 1.21) / 0.035) ** 2) < 1)
-                idx[glass] = 2
+                idx[glass] = np.where(x < 0, 2, 3)[glass]
                 return idx
             o.pick = mpick
     parts += moto_arms(v3.PLAYER_JACKET)
@@ -2413,6 +2497,18 @@ TRIM_FABRIC = fabric((160, 156, 148), rough=0.9, sheen=0.3)
 SILVER_TRIM = Mat((168, 170, 175), rough=0.25, metal=0.85)
 
 
+# hình học mặt đồng hồ (để xuất toạ độ kim / đèn báo): tâm cụm (y, z), độ
+# ngửa, x người lái, tâm hai mặt số (u), cỡ mặt số, mặt nhô (yy), đèn xi-nhan
+CAR_GAUGE = dict(GY=1.90, GZ=1.035, tilt=0.35, dx=-0.37, dials=(-0.085, 0.085), scale=0.112, ind=(0.035, 0.040, 0.0065))
+BUS_GAUGE = dict(GY=0.72, GZ=2.16, tilt=0.55, dx=-0.62, dials=(-0.10, 0.10), scale=0.132, ind=(0.040, 0.050, 0.0075))
+CLUSTER_DIAL = dict(W=512, H=512, cx=0.5, cy=0.5, R=0.44, a0=135.0, a1=405.0)
+MIRROR_FLAT = (58, 68, 84)   # mặt gương phẳng xám xanh (game vẽ ảnh phản chiếu đè lên)
+
+
+def mirror_mat(k):
+    return tagged(Mat(MIRROR_FLAT, rough=1.0, spec=0.0), f'mirror{k}')
+
+
 class CarCabin:
     """Khoang lái sedan (vô-lăng bên trái) dựng riêng quanh mắt ảo [eye]:
     kính lái từ chân (yb, zb) lên mép trần (yh, zh), cột A, trần nỉ, tấm che
@@ -2480,8 +2576,7 @@ class CarCabin:
             u, v = rot(x - mc[0], y - mc[1], -0.22)
             glass = (v > 0.012) & (np.abs(u) < 0.112) & (np.abs(z - mc[2]) < 0.024)
             return glass.astype(np.int32)
-        objs.append(Obj('rv_mirror', mirror, [Mat((28, 28, 30), rough=0.4, spec=0.5), Mat((120, 128, 140), rough=0.02, metal=1.0)],
-                        pick=mirror_pick))
+        objs.append(Obj('rv_mirror', mirror, [Mat((28, 28, 30), rough=0.4, spec=0.5), mirror_mat(0)], pick=mirror_pick))
 
         # táp-lô
         zt = zb + 0.10
@@ -2543,7 +2638,7 @@ class CarCabin:
         objs.append(lit(Obj('dash', dash, dash_mats, pick=dash_pick, tint=dash_tint), 0.8))
 
         # mặt cụm đồng hồ: tốc độ (trái), vòng tua (phải) trong lòng ụ
-        spd, rpm = dial_tex('speed', needle=45), dial_tex('rpm', needle=2.2)
+        spd, rpm = dial_tex('speed'), dial_tex('rpm')
         fy, fz = GY + 0.0, GZ
         tilt = 0.35
 
@@ -2565,6 +2660,8 @@ class CarCabin:
                     out[m] = c
             mid = (np.abs(u) < 0.022) & (np.abs(zz) < 0.03)
             out[mid] = lin((40, 70, 90))
+            ind = length2(np.abs(u) - CAR_GAUGE['ind'][0], zz - CAR_GAUGE['ind'][1]) < CAR_GAUGE['ind'][2]
+            out[ind] = lin((18, 60, 30))
             return out
         objs.append(Obj('gauges', gauge, Mat((10, 10, 12), rough=0.1, spec=0.8, coat=0.8, emit=0.55), tint=gauge_tint))
 
@@ -2623,9 +2720,12 @@ class CarCabin:
 
         def wing_pick(p, n):
             q = np.abs(p[0])
-            return ((n[1] > 0.55) & (p[1] > yb + 0.15)).astype(np.int32) + ((q > hb + 0.2) & (n[1] <= 0.55)).astype(np.int32) * 2
-        objs.append(Obj('wing', wing, [Mat((24, 24, 26), rough=0.4), Mat((110, 118, 130), rough=0.02, metal=1.0),
-                                       paint((168, 9, 17))], pick=wing_pick))
+            glass = (n[1] > 0.55) & (p[1] > yb + 0.15)
+            idx = ((q > hb + 0.2) & (n[1] <= 0.55)).astype(np.int32) * 2
+            idx[glass] = np.where(p[0] < 0, 1, 3)[glass]
+            return idx
+        objs.append(Obj('wing', wing, [Mat((24, 24, 26), rough=0.4), mirror_mat(1), paint((168, 9, 17)), mirror_mat(2)],
+                        pick=wing_pick))
         return objs
 
     def wheel_parts(self):
@@ -2651,14 +2751,27 @@ def build_cockpit_moto(out, info):
     t0 = time.time()
     c = MOTO_CAM
     cam = PinholeCam(c['eye'], c['yaw'], c['pitch'], c['fov'], CP_SIZE)
-    img = render_cockpit(moto_cockpit_scene(), cam)
+    found = []
+    img = render_cockpit(moto_cockpit_scene(), cam, mirrors=found)
     img.save(f'{out}/cockpit_moto.png', optimize=True)
+
+    def to_world(u, v):
+        x, yy, zz = u * 0.140 - 0.070, v * 0.094 - 0.047, 0.002
+        dy, dz = rot(yy, zz, -0.55)
+        return (x, 0.33 + dy, 1.035 + dz)
+    G = MOTO_DIAL
+    dials = [dial_json(cam, to_world, G, 'speed', 120)]
+    pl = [np.array(cam.project(to_world(u, 0.105))) for u in MOTO_IND]
+    top = np.array(cam.project(to_world(MOTO_IND[1], 0.105 - 0.045)))
+    ind = {'left': [round(float(pl[0][0]), 1), round(float(pl[0][1]), 1)], 'right': [round(float(pl[1][0]), 1), round(float(pl[1][1]), 1)],
+           'size': round(float(2 * np.hypot(*(top - pl[1]))), 1)}
     info['moto'] = {'image': 'cockpit_moto.png', 'size': list(CP_SIZE),
                     'camera': {'eye_m': list(c['eye']), 'pitch_deg': c['pitch'], 'hfov_deg': c['fov']},
                     'horizon_row': None,
                     'note': 'virtual camera ~10 cm behind the rider eyes pitched down 35 deg; its own horizon is above '
                             'the frame, so the overlay is a stylised lower-periphery view: just draw it full-screen over '
-                            'the road (horizon 40 %). Rider head/torso hidden; speedometer needle fixed at ~38 km/h.'}
+                            'the road (horizon 40 %). Rider head/torso hidden; no needles (draw them from "dials").',
+                    'dials': dials, 'mirrors': mirror_json(found, {0: 'ellipse', 1: 'ellipse'}), 'indicators': ind}
     print(f'cockpit_moto: {time.time() - t0:.1f}s')
 
 
@@ -2668,8 +2781,10 @@ def build_cockpit_car(out, info):
     cab, cam = car_cockpit(CP_SIZE, fov)
     parts, wheel = cab.parts(), cab.wheel_parts()
     sc = Scene(parts, cab.bounds(), 1500.0, (0, 0), (1, 1), ao_scale=1.6)
-    img = render_cockpit(sc, cam, near=0.05, sun=CAR_SUN, fill=CABIN_FILL)
+    found = []
+    img = render_cockpit(sc, cam, near=0.05, sun=CAR_SUN, fill=CABIN_FILL, mirrors=found)
     img.save(f'{out}/cockpit_car.png', optimize=True)
+    dials, ind = cluster_extras(cam, CAR_GAUGE)
     # vô-lăng riêng: khung sát quanh vành (có thể thò xuống dưới mép 740)
     wf = cab.wf
     ang = np.linspace(0, math.tau, 96, endpoint=False)
@@ -2693,7 +2808,8 @@ def build_cockpit_car(out, info):
                    'wheel': {'image': 'cockpit_car_wheel.png', 'pos': [x0, y0], 'size': [w, h],
                              'pivot': [round(px, 1), round(py, 1)],
                              'note': 'draw at pos (top-left, cockpit frame px), rotate around pivot; the wheel faces the '
-                                     'eye so a 2D rotation is exact; it extends below the 740 px frame'}}
+                                     'eye so a 2D rotation is exact; it extends below the 740 px frame'},
+                   'dials': dials, 'mirrors': mirror_json(found, {1: 'ellipse', 2: 'ellipse'}), 'indicators': ind}
     print(f'cockpit_car: {time.time() - t0:.1f}s')
 
 
@@ -2759,8 +2875,7 @@ class BusCabin:
             x, y, z = p
             u, v = rot(x - mc[0], y - mc[1], -0.30)
             return ((v > 0.014) & (np.abs(u) < 0.155) & (np.abs(z - mc[2]) < 0.037)).astype(np.int32)
-        objs.append(Obj('rv_mirror', mirror, [Mat((28, 28, 30), rough=0.4, spec=0.5), Mat((120, 128, 140), rough=0.02, metal=1.0)],
-                        pick=mirror_pick))
+        objs.append(Obj('rv_mirror', mirror, [Mat((28, 28, 30), rough=0.4, spec=0.5), mirror_mat(0)], pick=mirror_pick))
         lx, ly, lz = 0.06, 0.64, 2.62
 
         def lantern(p):
@@ -2828,7 +2943,7 @@ class BusCabin:
         objs.append(lit(Obj('dash', dash, [Mat((52, 52, 56), rough=0.72, spec=0.35), DASH_LOW, Mat((34, 34, 37), rough=0.5)],
                             pick=dash_pick, tint=dash_tint), 0.8))
 
-        spd, rpm = dial_tex('speed', needle=62), dial_tex('rpm', needle=1.6)
+        spd, rpm = dial_tex('speed'), dial_tex('rpm')
         tilt = 0.55
 
         def gauge(p):
@@ -2847,6 +2962,8 @@ class BusCabin:
                     out[m] = sample_rgb(tex, (u[m] - cx) / 0.132 + 0.5, 0.5 - zz[m] / 0.132) ** 2.2
             mid = (np.abs(u) < 0.026) & (np.abs(zz) < 0.035)
             out[mid] = lin((40, 70, 90))
+            ind = length2(np.abs(u) - BUS_GAUGE['ind'][0], zz - BUS_GAUGE['ind'][1]) < BUS_GAUGE['ind'][2]
+            out[ind] = lin((18, 60, 30))
             return out
         objs.append(Obj('gauges', gauge, Mat((10, 10, 12), rough=0.1, spec=0.8, coat=0.8, emit=0.55), tint=gauge_tint))
         H = self.wf.H
@@ -2889,12 +3006,14 @@ def build_cockpit_bus(out, info):
     cam = PinholeCam(cab.eye, 0.0, pitch_for(CP_HORIZON * CP_SIZE[1], fov), fov, CP_SIZE)
     parts, wheel = cab.parts(), cab.wheel_parts()
     sc = Scene(parts, cab.bounds(), 1500.0, (0, 0), (1, 1), ao_scale=1.6)
-    render_cockpit(sc, cam, near=0.05, sun=CAR_SUN, fill=CABIN_FILL).save(f'{out}/cockpit_bus.png', optimize=True)
+    found = []
+    render_cockpit(sc, cam, near=0.05, sun=CAR_SUN, fill=CABIN_FILL, mirrors=found).save(f'{out}/cockpit_bus.png', optimize=True)
+    dials, ind = cluster_extras(cam, BUS_GAUGE)
     wl = wheel_layer(cab, cam, parts, wheel, fov, cab.R, out, 'cockpit_bus_wheel.png', CAR_SUN, cab.bounds())
     info['bus'] = {'image': 'cockpit_bus.png', 'size': list(CP_SIZE), 'horizon_row': round(cam.horizon_row(), 1),
                    'camera': {'eye_m': [float(v) for v in cab.eye], 'hfov_deg': fov, 'pitch_deg': round(pitch_for(296, fov), 3),
                               'eye_height_m': float(cab.eye[2])},
-                   'wheel': wl}
+                   'wheel': wl, 'dials': dials, 'mirrors': mirror_json(found, {}), 'indicators': ind}
     print(f'cockpit_bus: {time.time() - t0:.1f}s')
 
 
@@ -2910,7 +3029,273 @@ def build_cockpits(out, names):
         json.dump(info, f, indent=1)
 
 
-GROUPS = ('moto', 'car', 'bus', 'truck', 'cockpit')
+# ============================================ Xe người chơi (cảnh về quê)
+def travel_bag_parts(y0=1.42, z0=0.80):
+    """Túi du lịch vải xanh than nằm dọc baga, hai dây chằng đen."""
+    def bag(p):
+        x, y, z = p
+        body = rbox((x * 1.15, y, z), (0, y0, z0 + 0.13), (0.15, 0.17, 0.12), 0.09)
+        handle = length2(length2(x, z - (z0 + 0.25)) - 0.04, y - y0) - 0.008
+        return np.minimum(body, smax(handle, z0 + 0.25 - z, 0.005))
+
+    def tint(p, n, alb, idx):
+        x, y, z = p
+        strap = (np.abs(y - (y0 - 0.08)) < 0.012) | (np.abs(y - (y0 + 0.08)) < 0.012)
+        zip_ = (np.abs(x) < 0.006) & (z > z0 + 0.20)
+        out = np.where(strap[:, None], lin((18, 18, 20)), alb)
+        return np.where(zip_[:, None], lin((160, 160, 164)), out)
+    return [Obj('bag', bag, fabric((40, 58, 104), rough=0.85, sheen=0.4), tint=tint,
+                bump=v3.fabric_bump(60, 0.0012, 13))]
+
+
+def player_moto_model():
+    parts = v3.bike_parts(v3.PLAYER_BODY)
+    parts += tr.person_parts(tr.WAVE_RIDER, v3.PLAYER_HELMET, v3.PLAYER_JACKET, v3.PLAYER_PANTS, gloves=GLOVE, seed=7)
+    parts += moto_running_gear('so', 'silver', disc=True)
+    parts += face_parts(tr.WAVE_RIDER.head, MASKS[0])
+    parts += travel_bag_parts()
+    parts += tr.peach_parts((0.0, 1.52, 0.95), (0.24, 0.12, 0.26), 0.85, seed=9, branches=6)
+    tag_moto(parts, ['59-X1', '268.79'], 'so')
+    return moto_model(parts, 'so', ztop=2.4)
+
+
+def build_player_sides(out, meta):
+    for name, make in (('player_moto', player_moto_model),
+                       ('player_car', lambda: car_model(sedan_v((168, 9, 17), 0.55, plate=('51K-888.68',)), SEDAN_V, 0.91)),
+                       ('player_bus', lambda: bus_v((196, 22, 28), (246, 190, 48), metal=0.55, plate=('51B-999.99',),
+                                                    route='SAI GON - QUE NHA'))):
+        t0 = time.time()
+        m = make()
+        img, info = shoot(m, 'side')
+        img.save(f'{out}/{name}_side.png', optimize=True)
+        meta[name] = {'side': info, 'length_m': round(m.y_span[1] - m.y_span[0], 3), 'width_m': round(2 * m.half_w, 3)}
+        print(f'{name}_side: {time.time() - t0:.1f}s {img.size}')
+
+
+# ====================================================== Phà sông Mê Kông
+# Phà chở ô tô kiểu phà Cần Thơ / Mỹ Thuận ngày xưa: boong thép phẳng dài 30 m,
+# rộng 10 m sơn xám xanh, vạch làn vàng, ca-bin lái trắng một bên, lan can,
+# cầu dẫn có bản lề hai đầu, phao cứu sinh đỏ trắng, gỉ sét. Toạ độ như xe:
+# x sang phải, y từ mũi (đầu cầu dẫn trên ảnh) về lái, z lên trời (z = 0 mặt nước).
+FERRY_L, FERRY_W = 30.0, 10.0
+FERRY_DECK = 1.10
+FERRY_PPM = v3.CAR_PPM   # cùng 47 px/m như ảnh ô tô nhìn từ trên
+
+
+class CoarseScene(Scene):
+    """Cảnh lớn: tìm hộp bao từng bộ phận trên lưới thưa 8 cm."""
+
+    def _fit_boxes(self, objs):
+        (x0, y0, z0), (x1, y1, z1) = self.bounds
+        h = 0.08
+        g = np.meshgrid(np.arange(x0, x1 + h, h), np.arange(y0, y1 + h, h), np.arange(z0, z1 + h, h), indexing='ij')
+        gx, gy, gz = (a.ravel() for a in g)
+        for o in objs:
+            d = o.sdf((gx, gy, gz))
+            m = d < h * 1.6
+            if not m.any():
+                o.lo, o.hi = np.array([1e9] * 3), np.array([-1e9] * 3)
+                continue
+            o.lo = np.array([gx[m].min(), gy[m].min(), gz[m].min()]) - h * 1.8
+            o.hi = np.array([gx[m].max(), gy[m].max(), gz[m].max()]) + h * 1.8
+
+
+def rust(x, y, z, k=1.0):
+    """Mảng gỉ: nhiễu mịn, đậm ở mép dưới các vách."""
+    return smoothstep(0.58, 0.80, fbm(x * 1.7 + z * 2.0, y * 1.7 - z * 1.3, 77, 4)) * k
+
+
+def ferry_parts():
+    L, W, D = FERRY_L, FERRY_W, FERRY_DECK
+    y0, y1 = 1.8, L - 1.8
+    steel = Mat((92, 112, 100), rough=0.65, spec=0.4)
+    hull_m = Mat((38, 58, 70), rough=0.55, spec=0.4)
+    rustc = lin((120, 62, 34))
+    parts = []
+
+    def hull(p):
+        x, y, z = p
+        body = rbox(p, (0, (y0 + y1) / 2, D / 2), (W / 2, (y1 - y0) / 2, D / 2 + 0.3), 0.12)
+        return smax(body, -z, 0.01)
+
+    def hull_pick(p, n):
+        return (n[2] < 0.6).astype(np.int32)
+
+    def hull_tint(p, n, alb, idx):
+        x, y, z = p
+        ax = np.abs(x)
+        out = alb * (0.9 + 0.2 * fbm(x * 0.8, y * 0.8, 3, 3))[:, None]
+        top = idx == 0
+        lane = top & ((np.abs(ax - 3.55) < 0.06) | ((np.abs(x) < 0.06) & (((y - y0) % 2.0) < 1.1)))
+        lane |= top & (np.abs(ax - 4.45) < 0.03)
+        # ô gạch chéo vàng ở hai đầu boong (vùng cấm đỗ)
+        ends = top & ((y < y0 + 1.2) | (y > y1 - 1.2)) & (ax < 3.5) & (np.sin((x + y) * 6.0) > 0.3)
+        out = np.where((lane | ends)[:, None], lin((222, 186, 40)) * (0.85 + 0.15 * fbm(x * 3, y * 3, 9, 2))[:, None], out)
+        # đường hàn tấm boong, vết bánh xe mòn
+        seam = top & ((np.abs(((y - y0) % 1.5) - 0.75) > 0.74) | (np.abs(((x + 5) % 2.0) - 1.0) > 0.99))
+        out = np.where(seam[:, None], out * 0.75, out)
+        wear = top & (np.abs(np.abs(np.abs(x) - 1.75) - 0.75) < 0.25)
+        out = np.where(wear[:, None], out * 0.85, out)
+        r = rust(x, y, z, 0.8 if True else 0) * np.where(top, 0.6, 1.0)
+        r = np.maximum(r, np.where(~top, smoothstep(0.9, 0.2, z) * 0.5, 0))
+        return out * (1 - r[:, None]) + rustc * r[:, None]
+    parts.append(Obj('hull', hull, [steel, hull_m], pick=hull_pick, tint=hull_tint))
+
+    # cầu dẫn có bản lề hai đầu (hơi nâng), gân chống trượt
+    def ramps(p):
+        x, y, z = p
+        d = None
+        for yh, sgn in ((y0, -1), (y1, 1)):
+            u = (y - yh) * sgn
+            uu, zz = rot(u, z - D, -0.10)
+            plate = rbox((x, uu, zz), (0, 0.85, 0.04), (3.9, 0.85, 0.06), 0.03)
+            hinge = capsule(p, (-3.8, yh, D + 0.02), (3.8, yh, D + 0.02), 0.09)
+            v = np.minimum(plate, hinge)
+            d = v if d is None else np.minimum(d, v)
+        return d
+
+    def ramp_tint(p, n, alb, idx):
+        x, y, z = p
+        ribs = np.sin(np.minimum(np.abs(y - y0), np.abs(y - y1)) * 40) > 0.6
+        edge = np.abs(np.abs(x) - 3.8) < 0.12
+        out = np.where(ribs[:, None], alb * 0.7, alb)
+        out = np.where(edge[:, None], lin((222, 186, 40)), out)
+        r = rust(x, y, z, 1.0)
+        return out * (1 - r[:, None]) + rustc * r[:, None]
+    parts.append(Obj('ramps', ramps, Mat((86, 90, 88), rough=0.6, metal=0.3), tint=ramp_tint))
+
+    # thành mạn + lan can ống
+    def bulwark(p):
+        x, y, z = p
+        q = (np.abs(x), y, z)
+        wall = rbox(q, (W / 2 - 0.12, (y0 + y1) / 2, D + 0.35), (0.10, (y1 - y0) / 2, 0.35), 0.03)
+        rail = capsule(q, (W / 2 - 0.12, y0 + 0.1, D + 1.05), (W / 2 - 0.12, y1 - 0.1, D + 1.05), 0.035)
+        k = np.round((y - y0) / 1.5)
+        yy = y - (y0 + k * 1.5)
+        post = capsule((q[0], yy, z), (W / 2 - 0.12, 0, D + 0.7), (W / 2 - 0.12, 0, D + 1.05), 0.03)
+        post = np.where((y > y0) & (y < y1), post, 1.0)
+        return np.minimum(np.minimum(wall, rail), post)
+
+    def bulwark_tint(p, n, alb, idx):
+        x, y, z = p
+        r = np.maximum(rust(x, y, z, 1.0), smoothstep(D + 0.25, D, z) * 0.6 * (fbm(y * 2, z * 9, 5, 3) > 0.45))
+        return alb * (1 - r[:, None]) + rustc * r[:, None]
+    parts.append(Obj('bulwark', bulwark, Mat((210, 214, 210), rough=0.5, spec=0.4), tint=bulwark_tint))
+
+    # ca-bin lái trắng bên phải, kính đen, cột đèn có cờ đỏ sao vàng
+    cx, cy0, cy1 = 3.75, 12.0, 16.5
+
+    def cabin(p):
+        x, y, z = p
+        box = rbox(p, (cx, (cy0 + cy1) / 2, (D + 3.55) / 2), (0.95, (cy1 - cy0) / 2, (3.55 - D) / 2), 0.06)
+        roof = rbox(p, (cx, (cy0 + cy1) / 2, 3.62), (1.08, (cy1 - cy0) / 2 + 0.15, 0.07), 0.04)
+        mast = capsule(p, (cx, cy0 + 1.0, 3.6), (cx, cy0 + 1.0, 5.4), 0.04)
+        light = sphere(p, (cx + 0.5, cy1 - 0.6, 3.82), 0.14) if False else ellipsoid(p, (cx + 0.4, cy1 - 0.6, 3.80), (0.15, 0.15, 0.12))
+        return np.minimum(np.minimum(box, roof), np.minimum(mast, light))
+
+    def cabin_pick(p, n):
+        x, y, z = p
+        idx = np.zeros(x.shape, np.int32)
+        win = (z > 2.55) & (z < 3.30) & (n[2] < 0.5) & (np.abs(n[0]) + np.abs(n[1]) > 0.5)
+        mull = (np.abs(((y - cy0) % 0.9) - 0.45) > 0.42) & (np.abs(n[0]) > 0.5)
+        idx[win & ~mull] = 1
+        door = (np.abs(x - (cx - 0.95)) < 0.05) & (np.abs(y - 13.4) < 0.4) & (z < 3.1)
+        idx[door] = 2
+        idx[(z > 3.55) & (n[2] > 0.6)] = 3
+        return idx
+
+    def cabin_tint(p, n, alb, idx):
+        x, y, z = p
+        r = rust(x, y, z, 0.5) * (idx == 0)
+        streak = (idx == 0) & (np.sin(y * 9 + fbm(y, z, 2, 2) * 4) > 0.8) & (z < 2.5)
+        out = np.where(streak[:, None], alb * 0.85, alb)
+        return out * (1 - r[:, None]) + rustc * r[:, None]
+    parts.append(Obj('cabin', cabin, [Mat((236, 236, 230), rough=0.45, spec=0.5), Mat((16, 20, 24), rough=0.05, spec=1.0, coat=1.0),
+                                      Mat((60, 66, 70), rough=0.5), Mat((200, 202, 198), rough=0.6)],
+                     pick=cabin_pick, tint=cabin_tint))
+
+    def flag(p):
+        return rbox(p, (cx, cy0 + 1.0 + 0.36, 5.15), (0.012, 0.34, 0.22), 0.01)
+
+    def flag_tint(p, n, alb, idx):
+        x, y, z = p
+        u, v = (y - (cy0 + 1.36)) / 0.34, (z - 5.15) / 0.22
+        ang = np.arctan2(v, u) + math.pi / 2
+        r = length2(u, v * 1.5)
+        star = r < 0.30 * (0.55 + 0.45 * np.cos(5 * ang) ** 8) ** 0.5
+        return np.where(star[:, None], lin((250, 214, 40)), alb)
+    parts.append(Obj('flag', flag, Mat((206, 24, 28), rough=0.7, sheen=0.4), tint=flag_tint))
+
+    # phao cứu sinh đỏ trắng treo nghiêng trên lan can, cột bích buộc dây
+    buoys = [(-W / 2 + 0.35, 5.0), (-W / 2 + 0.35, 15.0), (-W / 2 + 0.35, 25.0), (W / 2 - 0.35, 6.0),
+             (W / 2 - 0.35, 23.5), (cx - 1.0, 15.6)]
+
+    def buoy_sdf(p):
+        x, y, z = p
+        d = None
+        for bx, by in buoys:
+            sx = 1.0 if bx > 0 else -1.0
+            a, c = rot((x - bx) * sx, z - (D + 0.95), 0.9)
+            v = length2(length2(c, y - by) - 0.30, a) - 0.075
+            d = v if d is None else np.minimum(d, v)
+        return d
+
+    def buoy_tint(p, n, alb, idx):
+        x, y, z = p
+        k = np.zeros(x.shape)
+        for bx, by in buoys:
+            k += np.where(length3(x - bx, y - by, (z - D - 0.95) * 0.5) < 0.45, np.arctan2(z - (D + 0.95), y - by), 0)
+        red = np.cos(k * 2) > 0
+        return np.where(red[:, None], lin((214, 30, 28)), alb)
+    parts.append(Obj('buoys', buoy_sdf, Mat((238, 236, 230), rough=0.45, spec=0.5), tint=buoy_tint))
+
+    def bollards(p):
+        x, y, z = p
+        q = (np.abs(x), np.abs(y - L / 2), z)
+        return capsule(q, (W / 2 - 0.55, L / 2 - 2.6, D), (W / 2 - 0.55, L / 2 - 2.6, D + 0.45), 0.16)
+    parts.append(Obj('bollards', bollards, Mat((26, 26, 28), rough=0.4, spec=0.6)))
+    return parts
+
+
+def sphere(p, c, r):
+    return v3.sphere(p, c, r)
+
+
+def build_ferry(out_driver, out_top, meta):
+    t0 = time.time()
+    # ảnh nhìn từ trên (cùng bộ dò tia thẳng đứng của build_vehicles_3d)
+    w = int(math.ceil(FERRY_W * FERRY_PPM)) + 12
+    h = int(math.ceil(FERRY_L * FERRY_PPM)) + 10
+    sc = CoarseScene(ferry_parts(), ((-5.3, -0.2, 0.0), (5.3, FERRY_L + 0.2, 5.6)), FERRY_PPM, (w / 2, 5.0), (w, h),
+                     ao_scale=3.0)
+    rgb, alpha, _ = v3.render(sc)
+    v3.finish(rgb, alpha, w, h).save(f'{out_top}/img_ferry.png', optimize=True)
+    print(f'img_ferry: {time.time() - t0:.1f}s {w}x{h}')
+    t0 = time.time()
+    bsc = CoarseScene(ferry_parts(), ((-5.3, -0.2, 0.0), (5.3, FERRY_L + 0.2, 5.6)), BB_PPM, (0, 0), (1, 1), ao_scale=3.0)
+    m = Model(bsc, [(0.0, 1.8, 0.0)], (0.0, FERRY_L), FERRY_W / 2, 'ferry')
+    img, info = shoot(m, 'front')
+    img.save(f'{out_driver}/ferry_front.png', optimize=True)
+    info.pop('lamps', None)
+    meta['ferry'] = {'front': info, 'length_m': FERRY_L, 'width_m': FERRY_W,
+                     'note': 'bottom row = waterline at the ramp end hull; top-down sprite assets/images/img_ferry.png at 47 px/m, bow up'}
+    print(f'ferry_front: {time.time() - t0:.1f}s {img.size}')
+
+
+def build_extras(out, sel):
+    meta = load_json(f'{out}/billboards.json')
+    info = meta.pop('_info', None)
+    if 'player' in sel:
+        build_player_sides(out, meta)
+    if 'ferry' in sel:
+        build_ferry(out, os.path.join(os.path.dirname(out.rstrip('/')), '') if out.rstrip('/').endswith('driver') else out, meta)
+    if info is not None:
+        meta = {'_info': info, **dict(sorted(meta.items()))}
+    with open(f'{out}/billboards.json', 'w') as f:
+        json.dump(meta, f, indent=1)
+
+
+GROUPS = ('moto', 'car', 'bus', 'truck', 'cockpit', 'player', 'ferry')
 
 if __name__ == '__main__':
     args = sys.argv[1:]
@@ -2924,3 +3309,5 @@ if __name__ == '__main__':
     build_billboards(out, sel & set(GROUPS[:4]), sel)
     if sel & {'cockpit', 'cockpit_moto', 'cockpit_car', 'cockpit_bus'}:
         build_cockpits(out, sel)
+    if sel & {'player', 'ferry'}:
+        build_extras(out, sel)

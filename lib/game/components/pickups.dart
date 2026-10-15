@@ -5,7 +5,15 @@ import 'package:flame/components.dart';
 
 import '../logic/road_path.dart';
 
-enum PickupKind { lixi, pothole, gift, puddle }
+enum PickupKind {
+  lixi,
+  pothole,
+  gift,
+  puddle,
+
+  /// Cát biển gió thổi tràn ra mặt đường (bản đồ ven biển): trơn trượt.
+  sand,
+}
 
 /// Lì xì, quà Tết hoặc ổ gà nằm yên trên đường.
 class Pickup {
@@ -21,12 +29,14 @@ class Pickup {
         PickupKind.pothole => 34,
         PickupKind.gift => 34,
         PickupKind.puddle => 64,
+        PickupKind.sand => 80,
       };
   double get width => switch (kind) {
         PickupKind.lixi => 18,
         PickupKind.pothole => 28,
         PickupKind.gift => 34,
         PickupKind.puddle => 34,
+        PickupKind.sand => 42,
       };
 }
 
@@ -131,4 +141,47 @@ void placeOnRoad(PositionComponent c, RoadPath road, double s, double d) {
   final (x, y) = road.worldAt(s, d);
   c.position.setValues(x, y);
   c.angle = road.at(s).heading + pi / 2;
+}
+
+/// Doi cát gió biển thổi tràn ra mặt đường: vệt cát loang theo chiều gió,
+/// gợn sóng nhỏ.
+class SandPatchComponent extends PositionComponent {
+  SandPatchComponent(int seed) : super(size: Vector2(96, 54), anchor: Anchor.center, priority: 2) {
+    final r = Random(seed);
+    final points = <Offset>[];
+    for (var i = 0; i < 16; i++) {
+      final a = i * 2 * pi / 16;
+      final k = 0.62 + r.nextDouble() * 0.38;
+      points.add(Offset(48 + cos(a) * 46 * k, 27 + sin(a) * 25 * k));
+    }
+    _shape = Path()..addPolygon(points, true);
+    _ripples = [for (var i = 0; i < 5; i++) 10 + i * 8 + r.nextDouble() * 4];
+  }
+
+  late final Path _shape;
+  late final List<double> _ripples;
+
+  static final Paint _fill = Paint()
+    ..shader = Gradient.radial(const Offset(48, 27), 50, const [Color(0xd9E3D2A6), Color(0x99D7C394), Color(0x00D7C394)], const [0, 0.7, 1]);
+  static final Paint _ripple = Paint()
+    ..color = const Color(0x40A88F5E)
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1.6;
+
+  @override
+  void render(Canvas canvas) {
+    canvas.drawPath(_shape, _fill);
+    canvas.save();
+    canvas.clipPath(_shape);
+    for (final y in _ripples) {
+      canvas.drawPath(
+        Path()
+          ..moveTo(0, y)
+          ..quadraticBezierTo(24, y - 4, 48, y)
+          ..quadraticBezierTo(72, y + 4, 96, y),
+        _ripple,
+      );
+    }
+    canvas.restore();
+  }
 }

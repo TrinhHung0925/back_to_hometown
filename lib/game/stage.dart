@@ -28,6 +28,7 @@ class StageSetup {
     this.laterMinutes = 0,
     this.theme = MapTheme.delta,
     this.sky = SkyMode.clock,
+    this.startPeach = -1,
   });
 
   final VehicleKind vehicle;
@@ -66,6 +67,9 @@ class StageSetup {
   /// Trời theo giờ, luôn ngày hay luôn đêm.
   final SkyMode sky;
 
+  /// Cành đào buộc sau xe máy còn đẹp bao nhiêu (0..100); âm = không chở.
+  final double startPeach;
+
   double get lengthKm => sections.fold(0, (sum, s) => sum + s.km);
   double get lengthUnits => lengthKm * GameConfig.unitsPerKm;
 
@@ -86,6 +90,7 @@ class StageSetup {
         laterMinutes: laterMinutes,
         theme: theme,
         sky: sky,
+        startPeach: startPeach,
       );
 }
 
@@ -110,6 +115,7 @@ class StageResult {
     required this.clockMinutes,
     required this.minutesLeft,
     this.fuel = 0.6,
+    this.peach = -1,
   });
 
   final StageEndReason reason;
@@ -118,6 +124,9 @@ class StageResult {
 
   /// Xăng còn lại khi tới cuối chặng.
   final double fuel;
+
+  /// Cành đào còn đẹp bao nhiêu (0..100); âm = không chở.
+  final double peach;
   final double clockMinutes;
   final double minutesLeft;
 
@@ -131,7 +140,7 @@ class StageResult {
     return 1;
   }
 
-  int get score => won ? lixi * 100 + cargo * 300 + (minutesLeft * 10).round() : 0;
+  int get score => won ? lixi * 100 + cargo * 300 + (minutesLeft * 10).round() + (peach > 0 ? (peach * 3).round() : 0) : 0;
 }
 
 enum GamePhase {
@@ -193,7 +202,10 @@ enum IncidentKind {
 
   /// Đâm mạnh gây tai nạn: xe hỏng, chờ lập biên bản và sửa xe (không bỏ
   /// chạy được).
-  crash;
+  crash,
+
+  /// Vừa lái xe vừa nghe điện thoại, đi qua chốt CSGT.
+  phone;
 
   /// Tiền phạt (lì xì) và số phút bị giữ lại.
   int get fineLixi => switch (this) {
@@ -230,6 +242,12 @@ enum RoadAction {
 
   /// Đang tự tấp vào quán: thôi không ghé, tự lái tiếp.
   cancelApproach,
+
+  /// Người đứng vẫy xin đi nhờ phía trước: tấp vào cho lên xe.
+  pickUp,
+
+  /// Sắp tới chỗ khách đi nhờ xuống: tấp vào cho xuống.
+  dropOff,
   uTurn,
 
   /// Hết xăng (xe máy): nghiêng xe dồn xăng, dắt bộ, thôi dắt.
@@ -277,6 +295,12 @@ enum GameSound {
   whistle,
   sputter,
   fuelPump,
+
+  /// Chuông điện thoại, gió giật, còi hơi xe tải mất phanh, pháo hoa.
+  phoneRing,
+  windGust,
+  truckHorn,
+  fireworks,
 }
 
 enum NoticeKind { info, warning, money }
@@ -352,6 +376,12 @@ class HudData {
     this.stallKind,
     this.stallMeters,
     this.driverSeat = false,
+    this.hitchPrompt,
+    this.hitchMeters,
+    this.rider,
+    this.riderMeters,
+    this.peach,
+    this.fog = false,
     this.reversed = false,
     this.fuel = 1,
     this.fuelKm = 0,
@@ -418,6 +448,20 @@ class HudData {
   /// Đang hiện góc nhìn ghế lái (cần lái kéo ngang).
   final bool driverSeat;
 
+  /// Người vẫy xin đi nhờ phía trước (tên) và còn cách bao nhiêu mét.
+  final String? hitchPrompt;
+  final int? hitchMeters;
+
+  /// Khách đang chở đi nhờ (tên) và còn bao nhiêu mét tới chỗ xuống.
+  final String? rider;
+  final int? riderMeters;
+
+  /// Cành đào sau xe máy còn đẹp bao nhiêu phần trăm (null = không chở).
+  final int? peach;
+
+  /// Đang đi trong sương mù dày.
+  final bool fog;
+
   /// Đã quay đầu, đang đi ngược về phía điểm xuất phát.
   final bool reversed;
 
@@ -478,6 +522,12 @@ class HudData {
       other.stallKind == stallKind &&
       other.stallMeters == stallMeters &&
       other.driverSeat == driverSeat &&
+      other.hitchPrompt == hitchPrompt &&
+      other.hitchMeters == hitchMeters &&
+      other.rider == rider &&
+      other.riderMeters == riderMeters &&
+      other.peach == peach &&
+      other.fog == fog &&
       other.reversed == reversed &&
       other.fuel == fuel &&
       other.fuelKm == fuelKm &&
@@ -498,7 +548,57 @@ class HudData {
   @override
   int get hashCode => Object.hashAll([
         kmDone, kmTotal, speedKmh, cruiseKmh, spareMinutes, clockLabel, minutesLeft, lixi, cargo, danger, light, curve, headlightsOn, night, //
-        alert, drowse, canUTurn, stallPrompt, stallKind, stallMeters, driverSeat, reversed, fuel, fuelKm, tire, spare, rain, rainKind, raincoat,
+        alert, drowse, canUTurn, stallPrompt, stallKind, stallMeters, driverSeat, hitchPrompt, hitchMeters, rider, riderMeters, peach, fog, reversed, fuel, fuelKm, tire, spare, rain, rainKind, raincoat,
         soaked, speedLimit, pullOver, outOfFuel, pushing, fuelAhead, repairAhead, Object.hashAll(actions),
       ]);
+}
+
+/// Ai đang gọi và cuộc gọi tới đâu.
+enum CallStage {
+  /// Chuông đang reo, chờ bắt máy.
+  ringing,
+
+  /// Đang tự tấp vào lề để nghe.
+  pullingOver,
+  talking,
+}
+
+/// Cuộc điện thoại từ nhà (mẹ, bố) giữa đường.
+class PhoneCallState {
+  const PhoneCallState({
+    required this.caller,
+    required this.stage,
+    this.line,
+    this.mine = false,
+    this.driving = false,
+    this.attempt = 1,
+  });
+
+  final String caller;
+  final CallStage stage;
+
+  /// Câu đang nói (null khi chuông còn reo).
+  final String? line;
+
+  /// Câu [line] là của mình (không phải của người gọi).
+  final bool mine;
+
+  /// Đang vừa lái vừa nghe.
+  final bool driving;
+
+  /// Lần gọi thứ mấy (gọi lại sau khi lỡ máy).
+  final int attempt;
+
+  @override
+  bool operator ==(Object other) =>
+      other is PhoneCallState &&
+      other.caller == caller &&
+      other.stage == stage &&
+      other.line == line &&
+      other.mine == mine &&
+      other.driving == driving &&
+      other.attempt == attempt;
+
+  @override
+  int get hashCode => Object.hash(caller, stage, line, mine, driving, attempt);
 }

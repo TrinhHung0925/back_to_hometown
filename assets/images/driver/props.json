@@ -54,6 +54,74 @@
   "facing": "left",
   "depth_m": 0.21
  },
+ "family_dad_1": {
+  "h_m": 1.897,
+  "w_m": 1.02,
+  "kind": "family",
+  "depth_m": 0.42
+ },
+ "family_dad_2": {
+  "h_m": 1.9,
+  "w_m": 0.867,
+  "kind": "family",
+  "depth_m": 0.42
+ },
+ "family_dog_1": {
+  "h_m": 0.721,
+  "w_m": 0.971,
+  "kind": "animal",
+  "facing": "left",
+  "depth_m": 0.24
+ },
+ "family_dog_2": {
+  "h_m": 0.69,
+  "w_m": 1.105,
+  "kind": "animal",
+  "facing": "left",
+  "depth_m": 0.24
+ },
+ "family_grandma_1": {
+  "h_m": 1.477,
+  "w_m": 0.653,
+  "kind": "family",
+  "depth_m": 0.4
+ },
+ "family_grandma_2": {
+  "h_m": 1.467,
+  "w_m": 0.653,
+  "kind": "family",
+  "depth_m": 0.4
+ },
+ "family_kid_1": {
+  "h_m": 1.307,
+  "w_m": 0.547,
+  "kind": "family",
+  "depth_m": 0.27
+ },
+ "family_kid_2": {
+  "h_m": 1.437,
+  "w_m": 0.553,
+  "kind": "family",
+  "depth_m": 0.2
+ },
+ "family_mom_1": {
+  "h_m": 1.633,
+  "w_m": 0.813,
+  "kind": "family",
+  "depth_m": 0.31
+ },
+ "family_mom_2": {
+  "h_m": 1.643,
+  "w_m": 0.753,
+  "kind": "family",
+  "depth_m": 0.31
+ },
+ "ferry_booth": {
+  "h_m": 2.777,
+  "w_m": 2.169,
+  "kind": "prop",
+  "depth_m": 1.81
+ },
  "gas_canopy_fascia": {
   "h_m": 1.5,
   "w_m": 12.0,
@@ -95,6 +163,30 @@
   "w_m": 1.59,
   "kind": "pickup",
   "depth_m": 0.53
+ },
+ "hitch_1_1": {
+  "h_m": 1.797,
+  "w_m": 1.053,
+  "kind": "hitchhiker",
+  "depth_m": 0.47
+ },
+ "hitch_1_2": {
+  "h_m": 1.807,
+  "w_m": 0.887,
+  "kind": "hitchhiker",
+  "depth_m": 0.47
+ },
+ "hitch_2_1": {
+  "h_m": 1.663,
+  "w_m": 0.913,
+  "kind": "hitchhiker",
+  "depth_m": 0.38
+ },
+ "hitch_2_2": {
+  "h_m": 1.673,
+  "w_m": 0.82,
+  "kind": "hitchhiker",
+  "depth_m": 0.38
  },
  "lixi_float": {
   "h_m": 0.163,
@@ -246,9 +338,27 @@
   "kind": "sign",
   "depth_m": 0.3
  },
+ "sign_ferry": {
+  "h_m": 2.8,
+  "w_m": 1.4,
+  "kind": "sign",
+  "depth_m": 0.3
+ },
+ "sign_fog": {
+  "h_m": 2.6,
+  "w_m": 0.893,
+  "kind": "sign",
+  "depth_m": 0.3
+ },
  "sign_no_uturn": {
   "h_m": 2.9,
   "w_m": 0.867,
+  "kind": "sign",
+  "depth_m": 0.3
+ },
+ "sign_runaway_ramp": {
+  "h_m": 2.8,
+  "w_m": 1.4,
   "kind": "sign",
   "depth_m": 0.3
  },

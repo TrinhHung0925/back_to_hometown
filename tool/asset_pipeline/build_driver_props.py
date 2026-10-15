@@ -976,6 +976,22 @@ def hat_parts(fig, kind, color=None, seed=3):
             pk = peak(p) < 0.004
             return np.where(pk, 2, np.where(b, 1, 0)).astype(np.int32)
         return [Obj('kepi', lambda p: np.minimum(crown(p), peak(p)), [olive, band, visor], pick=pick)]
+    if kind == 'khanvan':
+        velvet = Mat(color or (72, 40, 30), rough=0.7, sheen=0.9, wrap=0.3, spec=0.3)
+        zc = hz + 0.05 * k
+
+        def sdf(p):
+            x, y, z = p
+            ring = length2(x - hx, (y - hy - 0.006) * 0.86) - 0.084 * k
+            tor = length2(ring, (z - zc) * 1.15) - 0.03 * k
+            return tor
+
+        def tint(p, n, alb, idx):
+            x, y, z = p
+            # các lớp khăn quấn chéo ở trán
+            band = np.sin((z - zc) * 260 / k + np.abs(x - hx) * 120 / k * (y < hy)) > 0.6
+            return np.where(band[:, None], alb * 0.7, alb)
+        return [Obj('khanvan', sdf, velvet, tint=tint)]
     if kind == 'flatcap':
         cl = fabric(color or (70, 66, 60), rough=0.85, sheen=0.4)
 
@@ -2031,11 +2047,18 @@ def chicken_parts(rooster=True):
 
 
 def dog_parts(frame=0):
+    """frame 0 / 1: phi; 2 / 3: đứng vẫy đuôi (đuôi phất lên / ra sau)."""
+    return _dog(frame)
+
+
+def _dog(frame):
     """Chó vàng ta (chó cỏ): lông vàng rơm, bụng / mõm nhạt, tai dựng, đuôi
     cong vắt lên lưng; hai khung hình phi (duỗi / thu chân)."""
     fur = Mat((184, 124, 58), rough=0.8, sheen=0.6, wrap=0.35, spec=0.3)
     arch = 0.0 if frame == 0 else 0.02
     lift = 0.04 if frame == 0 else 0.02
+    if frame >= 2:
+        arch, lift = 0.0, 0.0
 
     def L(c):
         return (c[0], c[1], c[2] + lift)
@@ -2069,6 +2092,11 @@ def dog_parts(frame=0):
               ((-0.15, 0.055, 0.40), (-0.22, 0.055, 0.26), (-0.32, 0.055, 0.14), (-0.36, 0.055, 0.10))]
         hl = [((0.22, -0.055, 0.43), (0.30, -0.055, 0.29), (0.42, -0.055, 0.18), (0.50, -0.055, 0.12)),
               ((0.22, 0.055, 0.43), (0.28, 0.055, 0.28), (0.38, 0.055, 0.17), (0.45, 0.055, 0.10))]
+    elif frame >= 2:
+        fl = [((-0.15, -0.055, 0.40), (-0.16, -0.055, 0.24), (-0.15, -0.055, 0.08), (-0.17, -0.055, 0.02)),
+              ((-0.15, 0.055, 0.40), (-0.14, 0.055, 0.24), (-0.13, 0.055, 0.08), (-0.15, 0.055, 0.02))]
+        hl = [((0.22, -0.055, 0.43), (0.27, -0.055, 0.28), (0.24, -0.055, 0.12), (0.23, -0.055, 0.02)),
+              ((0.22, 0.055, 0.43), (0.29, 0.055, 0.28), (0.26, 0.055, 0.12), (0.25, 0.055, 0.02))]
     else:
         fl = [((-0.15, -0.055, 0.40), (-0.12, -0.055, 0.25), (-0.04, -0.055, 0.10), (-0.01, -0.055, 0.05)),
               ((-0.15, 0.055, 0.40), (-0.16, 0.055, 0.25), (-0.10, 0.055, 0.10), (-0.07, 0.055, 0.06))]
@@ -2089,7 +2117,12 @@ def dog_parts(frame=0):
         comps.append((leg_sdf(ch, True), 0))
     for ch in hl:
         comps.append((leg_sdf(ch, False), 0))
-    tail = bezier_tube(L((0.29, 0, 0.50)), L((0.40, 0, 0.66)), L((0.29, 0, 0.68)), 0.034, 0.016, n=8)
+    if frame == 2:
+        tail = bezier_tube(L((0.29, 0, 0.50)), L((0.42, -0.03, 0.70)), L((0.33, -0.05, 0.78)), 0.034, 0.016, n=8)
+    elif frame == 3:
+        tail = bezier_tube(L((0.29, 0, 0.50)), L((0.47, 0.03, 0.62)), L((0.50, 0.05, 0.74)), 0.034, 0.016, n=8)
+    else:
+        tail = bezier_tube(L((0.29, 0, 0.50)), L((0.40, 0, 0.66)), L((0.29, 0, 0.68)), 0.034, 0.016, n=8)
     comps.append((tail, 0))
     ex, ez = -0.388, 0.638 + lift
 
@@ -3942,7 +3975,322 @@ FLAT = {
 }
 
 
+# ================================================================ Gia đình đón con về, người vẫy xin đi nhờ
+FAMILY_PPM = 300.0
+
+
+def wave_arm(f, side, frame, high=1.0):
+    """Tay vẫy: khuỷu giơ ngang vai, cẳng tay lắc qua lại giữa hai khung hình."""
+    s = f.s
+    sg = -1 if side == 'l' else 1
+    sh = f.j['sh_' + side]
+    el = (sh[0] + sg * 0.15 * s, -0.04, sh[2] + 0.06 * s * high)
+    if frame == 0:
+        wr = (el[0] + sg * 0.09 * s, -0.08, el[2] + 0.25 * s)
+    else:
+        wr = (el[0] - sg * 0.07 * s, -0.08, el[2] + 0.26 * s)
+    f.arm(side, el, wr, unit((wr[0] - el[0], -0.1, wr[2] - el[2])))
+
+
+def fam_mom(frame):
+    """Mẹ ~55 tuổi: áo len cardigan đỏ mận, tóc búi điểm bạc, vẫy tay."""
+    f = Fig(1.55, 'f', girth=1.08)
+    wave_arm(f, 'l', frame)
+    parts = person(f, (150, 52, 52), (52, 50, 56), kind='jacket', zipper=False, collar=True, skin='mid',
+                   hair=(64, 58, 54), hair_style='bun', seed=81)
+    # hàng khuy áo len, vân đan
+    for o in parts:
+        if o.name == 'upper':
+            old = o.tint
+
+            def tint(p, n, alb, idx, old=old):
+                out = old(p, n, alb, idx)
+                btn = (np.abs(p[0]) < 0.007) & (np.abs(((p[2] - 0.9) % 0.09) - 0.045) < 0.006) & (n[1] < -0.5)
+                knit = np.sin(p[2] * 900) * np.sin(p[0] * 300) > 0.7
+                out = np.where(knit[:, None], out * 0.9, out)
+                return np.where(btn[:, None], lin((220, 200, 160)), out)
+            o.tint = tint
+    return parts
+
+
+def fam_dad(frame):
+    """Bố: áo khoác dạ xám xanh, một tay giơ cao."""
+    f = Fig(1.69, 'm', girth=1.04)
+    s = f.s
+    sh = f.j['sh_r']
+    el = (sh[0] + 0.12 * s, -0.03, sh[2] + 0.17 * s)
+    wr = (el[0] + (0.08 if frame == 0 else -0.04) * s, -0.06, el[2] + 0.26 * s)
+    f.arm('r', el, wr, unit((wr[0] - el[0], -0.1, wr[2] - el[2])))
+    return person(f, (62, 74, 90), (46, 44, 42), kind='coat', collar=True, skin='tan', hair=(40, 36, 34),
+                  hair_style='crop', seed=82)
+
+
+def fam_grandma(frame):
+    """Bà: áo dài nâu, khăn vấn nhung, chống gậy, gật đầu (khung 2 cúi nhẹ)."""
+    f = Fig(1.47, 'f', girth=1.05)
+    s = f.s
+    f.arm('r', (0.21 * s, -0.03, 1.07 * s), (0.25 * s, -0.12, 0.86 * s), (0.05, -0.1, -1))
+    f.arm('l', (-0.20 * s, -0.02, 1.08 * s), (-0.12 * s, -0.12, 0.92 * s), (0.5, -0.3, -0.4))
+    if frame == 1:
+        hx, hy, hz = f.j['head']
+        f.j['head'] = (hx, hy - 0.03 * s, hz - 0.012 * s)
+        f.j['neck1'] = (hx, f.j['neck1'][1] - 0.012, f.j['neck1'][2])
+    parts = person(f, (112, 66, 44), (60, 44, 36), kind='aodai', aodai=(196, 160, 96), skin='old',
+                   hair=(150, 146, 140), hair_style='bun', hat='khanvan', shoes=(50, 36, 30), seed=83)
+    hand = f.j['wr_r']
+    tip = (hand[0] + 0.02, hand[1] - 0.06, 0.0)
+    parts.append(Obj('cane', lambda p: smin(capsule(p, (hand[0], hand[1] - 0.02, hand[2] - 0.02), tip, 0.012),
+                                            capsule(p, (hand[0] - 0.05, hand[1] - 0.02, hand[2]),
+                                                    (hand[0] + 0.01, hand[1] - 0.02, hand[2]), 0.013), 0.01),
+                     Mat((96, 62, 36), rough=0.4, spec=0.6, coat=0.4)))
+    return parts
+
+
+def fam_kid(frame):
+    """Bé ~7 tuổi áo dài đỏ, nhảy cẫng, giơ bao lì xì (khung 2 bật lên khỏi đất)."""
+    f = Fig(1.20, 'f', head=0.86)
+    s = f.s
+    f.arm('l', (-0.22 * s, -0.04, 1.36 * s), (-0.25 * s, -0.10, 1.66 * s), (0.0, -0.1, 1))
+    f.arm('r', (0.22 * s, -0.04, 1.36 * s), (0.27 * s, -0.08, 1.62 * s), (0.1, -0.1, 1))
+    lift = 0.0
+    if frame == 1:
+        lift = 0.13
+        for side, sg in (('l', -1), ('r', 1)):
+            f.leg(side, (sg * 0.11 * s, -0.12, 0.52 * s), (sg * 0.10 * s, 0.10, 0.20 * s), (0, -0.8, -0.3))
+    parts = person(f, (206, 24, 34), (240, 236, 226), kind='aodai', aodai=(246, 200, 80), skin='kid',
+                   hair_style='pony', shoes=(220, 60, 70), seed=84)
+    hand = add(f.j['wr_l'], unit(f.hand_dir['l']), 0.06)
+    parts += lixi_card((hand[0], hand[1] - 0.03, hand[2] + 0.04), yaw=0.1)
+    return placed(parts, dz=lift) if lift else parts
+
+
+def backpack(f, color=(40, 60, 110)):
+    """Ba lô sau lưng: quai đeo qua vai ra phía trước, thân ba lô ló hai bên."""
+    s = f.s
+    cz = f.chest[2]
+    m = Mat(color, rough=0.6, sheen=0.4, wrap=0.2, spec=0.4)
+
+    def straps(p):
+        q = (np.abs(p[0]), p[1], p[2])
+        a = capsule(q, (0.085 * s, 0.0, 1.43 * s), (0.10 * s, -0.115, cz + 0.05), 0.016)
+        b = capsule(q, (0.10 * s, -0.115, cz + 0.05), (0.12 * s, -0.10, cz - 0.22), 0.016)
+        return smin(a, b, 0.01)
+
+    def bag(p):
+        return rbox(p, (0, 0.20, cz - 0.02), (0.165, 0.09, 0.23), 0.05)
+    return [Obj('straps', straps, Mat((30, 30, 34), rough=0.5, spec=0.4)), Obj('backpack', bag, m)]
+
+
+def hitch_student(frame):
+    f = Fig(1.69, 'm', girth=0.93)
+    wave_arm(f, 'r', frame, high=1.3)
+    parts = person(f, (230, 230, 226), (40, 46, 70), kind='shirt', skin='light', hair_style='crop', seed=91)
+    parts += backpack(f)
+    return parts
+
+
+def hitch_woman(frame):
+    f = Fig(1.57, 'f')
+    s = f.s
+    wave_arm(f, 'l', frame, high=1.2)
+    f.arm('r', (0.20 * s, 0.03, 1.09 * s), (0.23 * s, -0.01, 0.86 * s))
+    parts = person(f, (70, 130, 110), (46, 46, 54), kind='jacket', zipper=False, collar=True, skin='mid',
+                   hair_style='bun', hat='conical', seed=92)
+    hand = add(f.j['wr_r'], unit(f.hand_dir['r']), 0.06)
+    parts += gift_bag(hand, color=(196, 26, 30), size=(0.12, 0.05, 0.14))
+    return parts
+
+
+# ------------------------------------------------------------ Biển mới
+def tex_runaway(w=900, h=700):
+    img = Image.new('RGBA', (w, h), (24, 84, 170, 255))
+    d = ImageDraw.Draw(img)
+    d.rounded_rectangle((10, 10, w - 11, h - 11), radius=30, outline=(248, 248, 244), width=12)
+    draw_center(d, 'ĐƯỜNG', 'xbold', (60, 50, w - 60, 200), (248, 248, 244))
+    draw_center(d, 'CỨU NẠN', 'xbold', (60, 210, w - 60, 380), (248, 248, 244))
+    # mũi tên chéo lên bên phải (rẽ vào làn cứu nạn)
+    c = (w / 2, 540)
+    d.line([(c[0] - 180, c[1] + 90), (c[0] + 120, c[1] - 60)], fill=(248, 248, 244), width=44)
+    d.polygon([(c[0] + 200, c[1] - 100), (c[0] + 60, c[1] - 110), (c[0] + 140, c[1] + 20)], fill=(248, 248, 244))
+    return img
+
+
+def tex_ferry(w=900, h=700):
+    img = Image.new('RGBA', (w, h), (24, 84, 170, 255))
+    d = ImageDraw.Draw(img)
+    d.rounded_rectangle((10, 10, w - 11, h - 11), radius=30, outline=(248, 248, 244), width=12)
+    wc = (248, 248, 244)
+    # phà: thân, cabin, ô cửa, sóng
+    d.polygon([(250, 260), (650, 260), (610, 320), (290, 320)], fill=wc)
+    d.rectangle((360, 200, 560, 260), fill=wc)
+    d.rectangle((400, 160, 440, 200), fill=wc)
+    for x in range(380, 560, 45):
+        d.rectangle((x, 215, x + 25, 240), fill=(24, 84, 170))
+    for k in range(2):
+        pts = [(220 + i * 12, 345 + k * 26 + 9 * math.sin(i * 0.9)) for i in range(40)]
+        d.line(pts, fill=wc, width=8)
+    draw_center(d, 'BẾN PHÀ', 'xbold', (60, 420, w - 60, 540), wc)
+    draw_center(d, '500m', 'xbold', (200, 555, w - 200, 650), wc)
+    return img
+
+
+def tex_fog(px=700):
+    H = int(px * math.sqrt(3) / 2)
+    img = Image.new('RGBA', (px, H), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    d.polygon([(px / 2, 0), (px, H), (0, H)], fill=(206, 24, 30, 255))
+    m = px * 0.11
+    d.polygon([(px / 2, m * 1.25), (px - m, H - m * 0.62), (m, H - m * 0.62)], fill=(250, 200, 30, 255))
+    for k, (x0, x1) in enumerate(((250, 450), (210, 490), (230, 470))):
+        y = 330 + k * 60
+        pts = [(x, y + 12 * math.sin((x - x0) / 28.0)) for x in range(x0, x1, 4)]
+        d.line(pts, fill=(18, 18, 20), width=26)
+    return img
+
+
+def tex_plate(text, w=900, h=300):
+    img = Image.new('RGBA', (w, h), (248, 248, 244, 255))
+    d = ImageDraw.Draw(img)
+    d.rectangle((8, 8, w - 9, h - 9), outline=(18, 18, 20), width=10)
+    draw_center(d, text, 'xbold', (40, 40, w - 40, h - 40), (18, 18, 20))
+    return img
+
+
+def sign_rect(tex, size, h):
+    return round_sign(tex, h=h, shape='rect', size=size), []
+
+
+def sign_fog():
+    H = 0.70 * math.sqrt(3) / 2
+    parts = round_sign(tex_fog(), h=2.6, shape='tri', size=(0.70, H))
+    zc = 2.6 - H - 0.05 - 0.12
+    parts.append(plate('subplate', 'rect', (0.0, 0.0, zc), (0.62, 0.21), tex_plate('SƯƠNG MÙ'), thick=0.005))
+    parts.append(clamps(0.0, 0.06, (zc,)))
+    return parts, []
+
+
+def ferry_booth():
+    """Chòi bán vé phà: ca-bin xanh trắng, cửa sổ kính có người bán vé, biển
+    "BÁN VÉ PHÀ" trên nóc, bảng giá vé, bệ bê tông."""
+    parts, glass = [], []
+    parts.append(Obj('base', lambda p: rbox(p, (0, 0.8, 0.08), (0.95, 0.85, 0.08), 0.02), Mat((176, 174, 168), rough=0.85)))
+    teal = Mat((30, 120, 110), rough=0.35, spec=0.6, coat=0.5)
+
+    def cab(p):
+        outer = rbox(p, (0, 0.8, 1.21), (0.78, 0.68, 1.05), 0.03)
+        win = rbox(p, (0, 0.10, 1.40), (0.55, 0.2, 0.42), 0.03)
+        inner = rbox(p, (0, 0.8, 1.21), (0.72, 0.62, 0.99), 0.03)
+        return smax(smax(outer, -win, 0.004), -inner, 0.004)
+    parts.append(Obj('cab', cab, [WHITE_PAINT, teal], pick=lambda p, n: ((p[2] < 0.75) | (p[2] > 2.05)).astype(np.int32)))
+    parts.append(Obj('roof', lambda p: rbox(p, (0, 0.8, 2.30), (0.95, 0.88, 0.05), 0.02), Mat((150, 60, 46), rough=0.45, metal=0.4)))
+    parts.append(Obj('sill', lambda p: rbox(p, (0, 0.06, 0.96), (0.60, 0.10, 0.02), 0.006), Mat((180, 184, 188), rough=0.3, metal=0.8)))
+    glass.append(Obj('win_glass', lambda p: rbox(p, (0, 0.14, 1.40), (0.55, 0.006, 0.42), 0.002), Mat((200, 210, 215))))
+    f = Fig(1.62, 'm')
+    s = f.s
+    for side, sg in (('l', -1), ('r', 1)):
+        f.arm(side, (sg * 0.2 * s, -0.12, 1.08 * s), (sg * 0.12, -0.32, 1.02 * s), (0, -0.8, 0))
+    staff = person(f, (236, 236, 230), (40, 44, 56), kind='shirt', skin='tan', hair_style='crop', hat='cap',
+                   hat_color=(30, 120, 110), seed=95)
+    parts += placed(staff, 0.0, 0.95, 0.0)
+    parts.append(Obj('desk', lambda p: rbox(p, (0, 0.42, 0.92), (0.70, 0.25, 0.02), 0.005), Mat((150, 120, 90), rough=0.6)))
+    parts.append(Obj('inside', lambda p: rbox(p, (0, 1.42, 1.2), (0.75, 0.03, 1.0), 0.01), Mat((220, 222, 220), rough=0.8, emit=0.1)))
+    sign = Image.new('RGBA', (1400, 300), (250, 236, 120, 255))
+    d = ImageDraw.Draw(sign)
+    d.rectangle((10, 10, 1389, 289), outline=(180, 30, 30), width=14)
+    draw_center(d, 'BÁN VÉ PHÀ', 'paytone', (60, 30, 1340, 270), (190, 30, 30))
+    parts.append(panel('board', (0, 0.10, 2.58), 0.85, 0.20, 0.02, sign, mat=Mat((240, 240, 236), rough=0.4, spec=0.5, coat=0.3)))
+    parts.append(Obj('board_posts', lambda p: rbox((np.abs(p[0]) - 0.6, p[1], p[2]), (0, 0.14, 2.38), (0.02, 0.02, 0.06), 0.005), DARK_METAL))
+    price = Image.new('RGBA', (600, 260), (248, 248, 244, 255))
+    dp = ImageDraw.Draw(price)
+    draw_center(dp, 'NGƯỜI 5.000đ', 'xbold', (30, 20, 570, 120), (30, 30, 34))
+    draw_center(dp, 'XE MÁY 10.000đ', 'xbold', (30, 135, 570, 240), (30, 30, 34))
+    parts.append(panel('prices', (0.0, 0.11, 0.60), 0.42, 0.18, 0.004, price, mat=Mat((240, 240, 236), rough=0.5, spec=0.4)))
+    return parts, glass
+
+
+# ------------------------------------------------------------ Chân dung mẹ
+def portrait_mom(path, size=512):
+    """Chân dung bán thân của mẹ áp điện thoại lên tai, cười hiền, nền bếp
+    nhoè ấm (ảnh đục, dùng cho thẻ cuộc gọi)."""
+    f = Fig(1.55, 'f', girth=1.08)
+    s = f.s
+    f.arm('r', (0.27 * s, -0.10, 1.18 * s), (0.12 * s, -0.07, 1.47 * s), (-0.25, 0.05, 1))
+    parts = person(f, (150, 52, 52), (52, 50, 56), kind='jacket', zipper=False, collar=True, skin='mid',
+                   hair=(64, 58, 54), hair_style='bun', seed=81)
+    parts = [o for o in parts if o.name not in ('lower', 'shoes')]
+    hx, hy, hz = f.j['head']
+    ph = (hx + 0.085, hy - 0.01, hz - 0.01)
+    parts.append(Obj('phone', lambda p: rbox(p, ph, (0.006, 0.036, 0.072), 0.006),
+                     [Mat((24, 24, 28), rough=0.12, spec=1.0, coat=1.0), Mat((200, 50, 60), rough=0.3)],
+                     pick=lambda p, n: (n[1] > 0.5).astype(np.int32)))
+    ppm = 760.0
+    view = View(parts, ppm, ss=3, catch=0.0, eye=hz, front=0.0)
+    rgb, alpha, emit = render(view)
+    W, H = view.w, view.h
+    img = finish(view, rgb, alpha, emit)
+    # finish() cắt sát; đặt lại vào khung gốc theo đáy (z = 0) và giữa ảnh
+    full = Image.new('RGBA', (W, H), (0, 0, 0, 0))
+    full.paste(img, ((W - img.width) // 2, H - img.height))
+    top_z, bot_z = hz + 0.17, hz - 0.50
+    side = int((top_z - bot_z) * ppm)
+    y0 = H - int(top_z * ppm)
+    cx = W // 2 + int(0.03 * ppm)
+    fig = full.crop((cx - side // 2, y0, cx - side // 2 + side, y0 + side))
+    # nền bếp: tường vàng ấm, gạch ốp, cửa sổ sáng, kệ hũ, câu đối đỏ, nhoè mạnh
+    bg = Image.new('RGB', (side, side), (226, 196, 150))
+    d = ImageDraw.Draw(bg)
+    for yy in range(side):
+        t = yy / side
+        d.line([(0, yy), (side, yy)], fill=(int(236 - 40 * t), int(206 - 44 * t), int(160 - 40 * t)))
+    d.rectangle((int(side * 0.62), int(side * 0.08), int(side * 0.98), int(side * 0.48)), fill=(252, 246, 226))
+    d.rectangle((int(side * 0.79), int(side * 0.08), int(side * 0.81), int(side * 0.48)), fill=(170, 140, 100))
+    tile_y = int(side * 0.62)
+    d.rectangle((0, tile_y, side, side), fill=(214, 220, 214))
+    for x in range(0, side, side // 9):
+        d.line([(x, tile_y), (x, side)], fill=(186, 192, 186), width=3)
+    for y in range(tile_y, side, side // 12):
+        d.line([(0, y), (side, y)], fill=(186, 192, 186), width=3)
+    d.rectangle((int(side * 0.02), int(side * 0.30), int(side * 0.36), int(side * 0.32)), fill=(130, 90, 60))
+    for k, col in enumerate(((200, 120, 50), (240, 200, 80), (120, 160, 70), (200, 60, 50))):
+        x = int(side * (0.04 + k * 0.08))
+        d.rounded_rectangle((x, int(side * 0.20), x + int(side * 0.06), int(side * 0.30)), radius=6, fill=col)
+    d.rectangle((int(side * 0.42), int(side * 0.05), int(side * 0.50), int(side * 0.40)), fill=(200, 30, 36))
+    bg = bg.filter(ImageFilter.GaussianBlur(side / 40))
+    a = np.asarray(bg, np.float64)
+    yy, xx = np.mgrid[0:side, 0:side] / side
+    glow = np.exp(-(((xx - 0.8) / 0.35) ** 2 + ((yy - 0.25) / 0.3) ** 2)) * 30
+    vig = 1 - 0.28 * (((xx - 0.5) ** 2 + (yy - 0.5) ** 2) / 0.5)
+    a = np.clip((a + glow[..., None]) * vig[..., None], 0, 255).astype(np.uint8)
+    bg = Image.fromarray(a).convert('RGBA')
+    bg.alpha_composite(fig)
+    out = bg.convert('RGB').resize((size, size), Image.LANCZOS)
+    out.save(path, optimize=True)
+    print(f'{os.path.basename(path)}: {size}x{size}', flush=True)
+    return out
+
+
+for _i in range(2):
+    reg('family', f'family_mom_{_i + 1}', (lambda i: lambda: (fam_mom(i), []))(_i), FAMILY_PPM, 'family', ss=3)
+    reg('family', f'family_dad_{_i + 1}', (lambda i: lambda: (fam_dad(i), []))(_i), FAMILY_PPM, 'family', ss=3)
+    reg('family', f'family_grandma_{_i + 1}', (lambda i: lambda: (fam_grandma(i), []))(_i), FAMILY_PPM, 'family', ss=3)
+    reg('family', f'family_kid_{_i + 1}', (lambda i: lambda: (fam_kid(i), []))(_i), FAMILY_PPM, 'family', ss=3)
+    reg('family', f'family_dog_{_i + 1}', (lambda i: lambda: (dog_parts(2 + i), []))(_i), ANIMAL_PPM, 'animal', ss=3,
+        facing='left')
+    reg('hitch', f'hitch_1_{_i + 1}', (lambda i: lambda: (hitch_student(i), []))(_i), FAMILY_PPM, 'hitchhiker', ss=3)
+    reg('hitch', f'hitch_2_{_i + 1}', (lambda i: lambda: (hitch_woman(i), []))(_i), FAMILY_PPM, 'hitchhiker', ss=3)
+reg('signs', 'sign_runaway_ramp', lambda: sign_rect(tex_runaway(), (1.2, 0.93), 2.8), SIGN_PPM, 'sign', ss=3)
+reg('signs', 'sign_ferry', lambda: sign_rect(tex_ferry(), (1.2, 0.93), 2.8), SIGN_PPM, 'sign', ss=3)
+reg('signs', 'sign_fog', sign_fog, SIGN_PPM, 'sign', ss=3)
+reg('misc', 'ferry_booth', ferry_booth, 130, 'prop', ss=3)
+
+
 def build_one(name, out):
+    if name == 'img_portrait_mom':
+        # ảnh thẻ cuộc gọi nằm ở assets/images (thư mục cha của driver/)
+        base = out.rstrip('/')
+        dst = os.path.dirname(base) if os.path.basename(base) == 'driver' else base
+        portrait_mom(os.path.join(dst, 'img_portrait_mom.png'))
+        return None
     if name in FLAT:
         fn, wm, hm, kind = FLAT[name]
         img = fn()
@@ -3964,7 +4312,7 @@ def build_one(name, out):
     return img
 
 
-GROUPS = sorted({c['group'] for c in CATALOG.values()} | {'fascia'})
+GROUPS = sorted({c['group'] for c in CATALOG.values()} | {'fascia', 'portrait'})
 
 
 def names_for(groups):
@@ -3972,6 +4320,8 @@ def names_for(groups):
     for g in groups:
         if g == 'fascia':
             out += list(FLAT)
+        elif g == 'portrait':
+            out.append('img_portrait_mom')
         else:
             out += [n for n, c in CATALOG.items() if c['group'] == g]
     return out

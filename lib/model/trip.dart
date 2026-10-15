@@ -126,6 +126,7 @@ class TripProgress {
     this.fuel = 0.6,
     this.score = 0,
     this.budget = GameConfig.timeBudgetFactor,
+    this.peach = -1,
   });
 
   final TripPlan plan;
@@ -147,6 +148,9 @@ class TripProgress {
   /// Hệ số thời gian cho phép lúc tính giờ xuất phát (bản cũ là 1,25).
   double budget;
 
+  /// Cành đào buộc sau xe máy còn đẹp bao nhiêu (0..100); âm = không chở.
+  double peach;
+
   bool get finished => stageIndex >= plan.stages.length;
 
   Map<String, dynamic> toJson() => {
@@ -158,6 +162,7 @@ class TripProgress {
         'fuel': fuel,
         'score': score,
         'budget': budget,
+        'peach': peach,
       };
 
   factory TripProgress.fromJson(Map<String, dynamic> json) => TripProgress(
@@ -169,6 +174,7 @@ class TripProgress {
         fuel: (json['fuel'] as num?)?.toDouble() ?? 0.6,
         score: (json['score'] as int?) ?? 0,
         budget: (json['budget'] as num?)?.toDouble() ?? 1.25,
+        peach: (json['peach'] as num?)?.toDouble() ?? -1,
       );
 }
 

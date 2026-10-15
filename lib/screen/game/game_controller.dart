@@ -58,6 +58,9 @@ class GameController extends GetxController {
   final driverView = false.obs;
   final viewLoading = false.obs;
 
+  /// Điện thoại từ nhà đang reo / đang nói chuyện (null khi không có).
+  final call = Rxn<PhoneCallState>();
+
   /// Tán gẫu với nhân viên cây xăng (null khi không đứng ở cây xăng).
   final gasChat = Rxn<GasChatState>();
   final Set<int> _chatUsed = {};
@@ -131,6 +134,7 @@ class GameController extends GetxController {
     chaseProgress.value = 0;
     stallVisit.value = null;
     job.value = null;
+    call.value = null;
     pump.value = null;
     _endChat();
     _chatUsed.clear();
@@ -153,6 +157,7 @@ class GameController extends GetxController {
         }
       },
       onJob: (value) => job.value = value,
+      onCall: (value) => call.value = value,
       onPhaseChanged: (value) {
         if (value == GamePhase.incident) {
           incidentKind.value = game.incidentKind;
@@ -238,6 +243,14 @@ class GameController extends GetxController {
         _audio.play(AppAudio.sfxSputter, volume: 0.8);
       case GameSound.fuelPump:
         _audio.play(AppAudio.sfxFuelPump, volume: 0.7);
+      case GameSound.phoneRing:
+        _audio.play(AppAudio.sfxPhoneRing, volume: 0.75);
+      case GameSound.windGust:
+        _audio.play(AppAudio.sfxWindGust, volume: 0.7);
+      case GameSound.truckHorn:
+        _audio.play(AppAudio.sfxTruckHorn, volume: 0.9);
+      case GameSound.fireworks:
+        _audio.play(AppAudio.sfxFireworks, volume: 0.8);
     }
   }
 
@@ -249,6 +262,8 @@ class GameController extends GetxController {
 
   // ------------------------------------------- Quán ven đường, quay đầu
   void stopAtStall() => game.stopAtStall();
+  void answerCall({required bool pullOver}) => game.answerCall(pullOver: pullOver);
+  void declineCall() => game.declineCall();
   void order(StallItem item) => game.order(item);
   void leaveStall() => game.leaveStall();
   void uTurn() => game.uTurn();
@@ -305,6 +320,10 @@ class GameController extends GetxController {
         game.stopAtStall();
       case RoadAction.approach:
         game.approachStall();
+      case RoadAction.pickUp:
+        game.pickUpHitch();
+      case RoadAction.dropOff:
+        game.dropOffRider();
       case RoadAction.cancelApproach:
         game.cancelApproach();
       case RoadAction.uTurn:

@@ -15,7 +15,53 @@
    "hfov_deg": 100.0
   },
   "horizon_row": null,
-  "note": "virtual camera ~10 cm behind the rider eyes pitched down 35 deg; its own horizon is above the frame, so the overlay is a stylised lower-periphery view: just draw it full-screen over the road (horizon 40 %). Rider head/torso hidden; speedometer needle fixed at ~38 km/h."
+  "note": "virtual camera ~10 cm behind the rider eyes pitched down 35 deg; its own horizon is above the frame, so the overlay is a stylised lower-periphery view: just draw it full-screen over the road (horizon 40 %). Rider head/torso hidden; no needles (draw them from \"dials\").",
+  "dials": [
+   {
+    "kind": "speed",
+    "center": [
+     787.7,
+     601.5
+    ],
+    "length": 73.3,
+    "angle0_deg": -157.8,
+    "angle1_deg": -22.0,
+    "max": 120
+   }
+  ],
+  "mirrors": [
+   {
+    "shape": "ellipse",
+    "rect": [
+     299,
+     240,
+     162,
+     82
+    ],
+    "radius": 0
+   },
+   {
+    "shape": "ellipse",
+    "rect": [
+     1139,
+     240,
+     162,
+     82
+    ],
+    "radius": 0
+   }
+  ],
+  "indicators": {
+   "left": [
+    726.9,
+    499.7
+   ],
+   "right": [
+    846.5,
+    499.7
+   ],
+   "size": 10.0
+  }
  },
  "car": {
   "image": "cockpit_car.png",
@@ -49,6 +95,63 @@
     720.3
    ],
    "note": "draw at pos (top-left, cockpit frame px), rotate around pivot; the wheel faces the eye so a 2D rotation is exact; it extends below the 740 px frame"
+  },
+  "dials": [
+   {
+    "kind": "speed",
+    "center": [
+     668.5,
+     556.8
+    ],
+    "length": 38.1,
+    "angle0_deg": 139.5,
+    "angle1_deg": 396.1,
+    "max": 180
+   },
+   {
+    "kind": "rpm",
+    "center": [
+     834.1,
+     556.8
+    ],
+    "length": 38.1,
+    "angle0_deg": 142.4,
+    "angle1_deg": 398.8,
+    "max": 8
+   }
+  ],
+  "mirrors": [
+   {
+    "shape": "rrect",
+    "rect": [
+     1041,
+     163,
+     303,
+     67
+    ],
+    "radius": 20.1
+   },
+   {
+    "shape": "ellipse",
+    "rect": [
+     294,
+     542,
+     97,
+     59
+    ],
+    "radius": 0
+   }
+  ],
+  "indicators": {
+   "left": [
+    715.2,
+    525.4
+   ],
+   "right": [
+    785.0,
+    525.4
+   ],
+   "size": 10.5
   }
  },
  "bus": {
@@ -83,6 +186,53 @@
     800.0
    ],
    "note": "draw at pos (top-left, cockpit frame px), rotate around pivot; the wheel faces the eye so a 2D rotation is exact; it extends below the 740 px frame"
+  },
+  "dials": [
+   {
+    "kind": "speed",
+    "center": [
+     716.0,
+     585.0
+    ],
+    "length": 36.3,
+    "angle0_deg": 146.6,
+    "angle1_deg": 389.8,
+    "max": 180
+   },
+   {
+    "kind": "rpm",
+    "center": [
+     884.0,
+     585.0
+    ],
+    "length": 36.3,
+    "angle0_deg": 150.2,
+    "angle1_deg": 393.4,
+    "max": 8
+   }
+  ],
+  "mirrors": [
+   {
+    "shape": "rrect",
+    "rect": [
+     1163,
+     18,
+     301,
+     88
+    ],
+    "radius": 26.4
+   }
+  ],
+  "indicators": {
+   "left": [
+    765.2,
+    558.3
+   ],
+   "right": [
+    834.8,
+    558.3
+   ],
+   "size": 8.4
   }
  }
 }

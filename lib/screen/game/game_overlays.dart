@@ -29,6 +29,7 @@ class IncidentOverlay extends StatelessWidget {
         IncidentKind.speeding => 'Chạy quá tốc độ quy định',
         IncidentKind.illegalUTurn => 'Quay đầu xe ở nơi có biển cấm',
         IncidentKind.crash => 'Gây tai nạn giao thông',
+        IncidentKind.phone => 'Sử dụng điện thoại khi đang điều khiển xe',
       };
 
   @override

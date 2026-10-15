@@ -28,6 +28,17 @@ class _DriverView extends Component {
   double _steer = 0;
   bool _ready = false;
 
+  /// Mức chi tiết (0 thấp … 2 cao): máy yếu, khung hình chậm thì vẽ gần lại.
+  int _quality = 2;
+  double _slow = 0;
+  double _fast = 0;
+
+  /// Số xe AI tối đa (nhân với mức của bản đồ) theo mức chi tiết.
+  int get trafficScale => const [2, 2, 3][_quality];
+
+  /// Camera nhìn ra sau cho gương chiếu hậu.
+  final DriverCamera _mirrorCam = DriverCamera();
+
   final Map<Image, Paint> _clampPaints = {};
   final Map<Image, Paint> _repeatPaints = {};
   final Paint _image = Paint()..filterQuality = FilterQuality.medium;
@@ -57,6 +68,20 @@ class _DriverView extends Component {
       _heading += VeQueGame._wrapAngle(target - _heading) * (1 - exp(-14 * dt));
     }
     cam.heading = _heading;
+    if (dt > 0.04) {
+      _slow += dt;
+    } else {
+      _slow = max(0, _slow - 0.4 * dt);
+    }
+    _fast = dt < 1 / 50 ? _fast + dt : 0;
+    if (_slow > 1.5 && _quality > 0) {
+      _quality--;
+      _slow = 0;
+    } else if (_fast > 8 && _quality < 2) {
+      _quality++;
+      _fast = 0;
+    }
+    cam.far = const [2300.0, 3100.0, 4200.0][_quality];
     final shot = art?.cockpitInfo[switch (g.spec.kind) {
       VehicleKind.motorbike => 'moto',
       VehicleKind.car => 'car',
@@ -100,6 +125,7 @@ class _DriverView extends Component {
     game._roadRenderer.paintGround(ground);
     _groundExtras(ground);
     _haze(canvas, big);
+    _fog(canvas, big);
     _objects(canvas, a);
     canvas.restore();
     _night(canvas, size);
@@ -179,16 +205,7 @@ class _DriverView extends Component {
   /// Đất nền dưới chân trời (ngoài dải đất bản đồ vẽ tới).
   void _terrain(Canvas canvas, Rect r) {
     final hy = cam.horizonY;
-    final near = switch (game.layout.kindAt(game.player.s)) {
-      RoadKind.city => const Color(0xff8B877F),
-      RoadKind.highway => switch (game.setup.theme) {
-          MapTheme.coast => const Color(0xffB9AE84),
-          MapTheme.mountain => const Color(0xff3D5636),
-          MapTheme.mekong => const Color(0xffA99A55),
-          _ => game.setup.south ? const Color(0xffA99A55) : const Color(0xff6F8248),
-        },
-      RoadKind.expressway => const Color(0xff74874D),
-    };
+    final near = _groundColor;
     final dim = 1 - 0.75 * game.darkness;
     canvas.drawRect(
       Rect.fromLTRB(r.left, hy - 1, r.right, r.bottom),
@@ -199,6 +216,18 @@ class _DriverView extends Component {
         ]),
     );
   }
+
+  /// Màu đất nền gần (ngoài dải đất bản đồ vẽ tới).
+  Color get _groundColor => switch (game.layout.kindAt(game.player.s)) {
+      RoadKind.city => const Color(0xff8B877F),
+      RoadKind.highway => switch (game.setup.theme) {
+          MapTheme.coast => const Color(0xffB9AE84),
+          MapTheme.mountain => const Color(0xff3D5636),
+          MapTheme.mekong => const Color(0xffA99A55),
+          _ => game.setup.south ? const Color(0xffA99A55) : const Color(0xff6F8248),
+        },
+      RoadKind.expressway => const Color(0xff74874D),
+    };
 
   /// Hơi sương xa che chỗ mặt đất hết tầm vẽ.
   void _haze(Canvas canvas, Rect r) {
@@ -227,6 +256,13 @@ class _DriverView extends Component {
                   Offset(cos(at.heading) * cos(i * pi / 5) * p.length / 2 - sin(at.heading) * sin(i * pi / 5) * p.width / 2,
                       sin(at.heading) * cos(i * pi / 5) * p.length / 2 + cos(at.heading) * sin(i * pi / 5) * p.width / 2),
           ], Paint()..color = const Color(0x8C5E6E7A));
+        case PickupKind.sand:
+          ground.polygon([
+            for (var i = 0; i < 12; i++)
+              Offset(x, y) +
+                  Offset(cos(at.heading) * cos(i * pi / 6) * p.length / 2 - sin(at.heading) * sin(i * pi / 6) * p.width / 2,
+                      sin(at.heading) * cos(i * pi / 6) * p.length / 2 + cos(at.heading) * sin(i * pi / 6) * p.width / 2),
+          ], Paint()..color = const Color(0xB3D9C69A));
         case PickupKind.lixi:
         case PickupKind.gift:
           break;
@@ -244,6 +280,7 @@ class _DriverView extends Component {
     _poles(items);
     _stalls(items, a, camS);
     _features(items, a, camS);
+    _eventProps(items, a, camS);
     _critters(items, a);
     _traffic(items, a);
     items.sort((x, y) => y.depth.compareTo(x.depth));
@@ -254,7 +291,41 @@ class _DriverView extends Component {
 
   double _fade(double z) {
     final t = ((z - cam.far * 0.7) / (cam.far * 0.3)).clamp(0.0, 1.0);
-    return 1 - t * t * (3 - 2 * t);
+    return (1 - t * t * (3 - 2 * t)) * (1 - _fogAt(z));
+  }
+
+  /// Độ đục sương mù ở khoảng cách [z] (0 trong suốt … gần 1 trắng hẳn).
+  double _fogAt(double z) {
+    final fog = game._events.fog;
+    if (fog < 0.02) return 0;
+    final k = z / game._events.visibility;
+    return fog * (1 - exp(-1.3 * k * k));
+  }
+
+  /// Sương mù: trời trắng đục, mặt đất mờ dần theo khoảng cách (vật đứng
+  /// thì mờ theo [_fade]).
+  void _fog(Canvas canvas, Rect r) {
+    final fog = game._events.fog;
+    if (fog < 0.02) return;
+    final dim = 1 - 0.7 * game.darkness;
+    final c = Color.fromRGBO((222 * dim).round(), (228 * dim).round(), (232 * dim).round(), 1);
+    final hy = cam.horizonY;
+    canvas.drawRect(Rect.fromLTRB(r.left, r.top, r.right, hy + 1), Paint()..color = c.withValues(alpha: 0.9 * fog));
+    // Hàng điểm ảnh y dưới chân trời ứng với mặt đất cách z = focal·eye / (y − chân trời).
+    final ks = [8.0, 3.0, 1.6, 1.0, 0.6, 0.3];
+    final ys = <double>[], colors = <Color>[];
+    for (final k in ks) {
+      final z = k * game._events.visibility;
+      ys.add(hy + cam.focal * cam.eye / z);
+      colors.add(c.withValues(alpha: _fogAt(z)));
+    }
+    final top = hy, bottom = max(ys.last, hy + 2);
+    canvas.drawRect(
+      Rect.fromLTRB(r.left, top, r.right, bottom),
+      Paint()
+        ..shader = Gradient.linear(Offset(0, top), Offset(0, bottom), [c.withValues(alpha: 0.9 * fog), ...colors],
+            [0, for (final y in ys) ((y - top) / (bottom - top)).clamp(0.0, 1.0)]),
+    );
   }
 
   static final Float64List _identity = Float64List.fromList(const [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
@@ -434,6 +505,9 @@ class _DriverView extends Component {
     }
   }
 
+  /// Đoạn rẽ vào đường cứu nạn (hộ lan bên phải chừa trống).
+  bool _rampNear(double s) => game._events.ramps.any((r) => s > r.s - 40 && s < r.s + GameConfig.rampLength + 40);
+
   /// Có quán / cây xăng ở phía [side] gần [s]: vách đá, hộ lan chừa lối vào.
   bool _stallNear(double s, double side) => game.layout.stallsBetween(s - 190, s + 190).any((t) => t.side == side);
 
@@ -458,7 +532,7 @@ class _DriverView extends Component {
         _ => const <double>[],
       };
       for (final side in sides) {
-        if (_stallNear(s0, side)) continue;
+        if (_stallNear(s0, side) || (side > 0 && _rampNear(s0))) continue;
         final d = side * (zone.kind == RoadKind.expressway ? _half + 30 : _half + 20);
         // Tấm tôn sáng phía trên, rãnh sóng tối phía dưới (cao 0,5–0,8 m).
         _wall(items, _at(s0, d), _at(s1, d), 13.5, 16.5, beam, 0, 1, 0, 1);
@@ -761,6 +835,7 @@ class _DriverView extends Component {
           _prop(items, a, const ['gift_peach', 'gift_kumquat', 'gift_box'][p.s.round() % 3], p.s, p.d, fallbackH: 1.2, scale: 1.8);
         case PickupKind.pothole:
         case PickupKind.puddle:
+        case PickupKind.sand:
           break;
       }
     }
@@ -803,6 +878,7 @@ class _DriverView extends Component {
       final lamps = a.lamps[DriverArt.baseOf(path)]?[view] ?? const <Offset>[];
       _board(items, o.dx, o.dy, w, h, img, fallback: const Color(0xff4B5563), after: (c, rect, fade) {
         if (img == null) return;
+        if ((v.blinker != 0 || v.runaway) && (game._time * 2.6).floor().isEven) _blink(c, v, o, img, rect, lamps, fade);
         final glowOn = same ? (v.braking || dark > 0.25) : dark > 0.25;
         if (!glowOn) return;
         for (final l in lamps) {
@@ -822,6 +898,58 @@ class _DriverView extends Component {
       final w = img == null ? v.type.length : img.width / DriverArt.vehiclePixelsPerMeter * _u;
       final h = img == null ? v.type.width * 0.8 : img.height / DriverArt.vehiclePixelsPerMeter * _u;
       _board(items, o.dx, o.dy, w, h, img, mirror: movingRight, fallback: const Color(0xff4B5563));
+    }
+  }
+
+  /// Xi-nhan (một bên) hoặc đèn khẩn cấp (cả hai bên) nháy vàng cam.
+  void _blink(Canvas c, TrafficVehicle v, Offset o, Image img, Rect rect, List<Offset> lamps, double fade) {
+    final pts = lamps.isEmpty ? [Offset(img.width * 0.5, img.height * 0.55)] : lamps;
+    final single = pts.length == 1;
+    final xs = pts.map((p) => p.dx);
+    final y = pts.first.dy;
+    final spread = img.width * 0.32;
+    final left = single ? pts.first.dx - spread : xs.reduce(min), right = single ? pts.first.dx + spread : xs.reduce(max);
+    final List<double> at;
+    if (v.runaway) {
+      at = [left, right];
+    } else {
+      final toward = _at(v.s, v.d + v.blinker * 20);
+      at = [cam.sideOf(toward.dx, toward.dy) > cam.sideOf(o.dx, o.dy) ? right : left];
+    }
+    for (final x in at) {
+      final p = Offset(rect.left + x / img.width * rect.width, rect.top + y / img.height * rect.height);
+      _glows.add((p, rect.width * 0.14, const Color(0xffFFA51F)));
+      c.drawCircle(p, max(1.2, rect.width * 0.028), Paint()..color = const Color(0xffFFC24A).withValues(alpha: fade));
+    }
+  }
+
+  // Khách vẫy xe, CSGT phân luồng chỗ tắc đường, biển đường cứu nạn, biển
+  // sương mù.
+  void _eventProps(List<_Drawn> items, DriverArt a, double camS) {
+    final ev = game._events;
+    final dir = game.dir;
+    bool inView(double s) => (s - camS) * dir > -200 && (s - camS) * dir < cam.far;
+    final frame = (game._time * 2.2).floor().isEven ? 1 : 2;
+    for (final h in ev.hitches) {
+      if (h.state == _HitchState.riding || !inView(h.standS)) continue;
+      if (h.state == _HitchState.done && (h.standS - camS).abs() > 900) continue;
+      final key = 'hitch_${h.art}_$frame';
+      _prop(items, a, a.prop(key) != null ? key : 'person_${1 + (h.art * 3) % 8}', h.standS, h.side,
+          fallbackH: 1.65, fallback: const Color(0xff8E44AD));
+    }
+    final j = ev.jam;
+    if (j != null && inView(j.head)) {
+      _prop(items, a, 'police_officer_wave', j.head + 14, 0, fallbackH: 1.75, fallback: const Color(0xffC4D23E));
+      for (var k = 0; k < 4; k++) {
+        _prop(items, a, 'traffic_cone', j.head - 40 + k * 24, -8, fallbackH: 0.7, fallback: const Color(0xffF26B1D));
+      }
+    }
+    for (final r in ev.ramps) {
+      if (inView(r.s - 320)) _prop(items, a, 'sign_runaway_ramp', r.s - 320, _half + 28, fallbackH: 2.8, fallback: const Color(0xff2F6FB5));
+    }
+    for (final b in ev.fogBanks) {
+      final s = dir > 0 ? b.from - 300 : b.to + 300;
+      if (inView(s)) _prop(items, a, 'sign_fog', s, dir * (_half + 26), fallbackH: 2.6, fallback: const Color(0xffF2C12E));
     }
   }
 
@@ -899,8 +1027,13 @@ class _DriverView extends Component {
     final top = size.height - img.height * scale;
     final dest = Rect.fromLTWH(0, top, size.width, img.height * scale);
     final src = Rect.fromLTWH(0, 0, img.width.toDouble(), img.height.toDouble());
+    final info = a.cockpitInfo[switch (kind) {
+      VehicleKind.motorbike => 'moto',
+      VehicleKind.car => 'car',
+      VehicleKind.bus => 'bus',
+    }];
     if (kind == VehicleKind.motorbike) {
-      // Ghi-đông quay nhẹ theo tay lái.
+      // Ghi-đông (cả đồng hồ, gương) quay nhẹ theo tay lái.
       final pivot = Offset(size.width / 2, size.height * 1.1);
       canvas.save();
       canvas
@@ -908,12 +1041,19 @@ class _DriverView extends Component {
         ..rotate(_steer * 0.05)
         ..translate(-pivot.dx, -pivot.dy);
       canvas.drawImageRect(img, src, dest, paint);
+      if (info is Map) {
+        _dash(canvas, info, scale, top, dim);
+        _mirrors(canvas, info, scale, top);
+      }
       canvas.restore();
       return;
     }
     canvas.drawImageRect(img, src, dest, paint);
+    if (info is Map) {
+      _dash(canvas, info, scale, top, dim);
+      _mirrors(canvas, info, scale, top);
+    }
     final wheel = a.cockpits['${key}_wheel'];
-    final info = a.cockpitInfo[kind == VehicleKind.car ? 'car' : 'bus'];
     if (wheel == null || info is! Map) return;
     final spec = info['wheel'];
     final rect = _rectOf(spec, wheel, img);
@@ -926,6 +1066,196 @@ class _DriverView extends Component {
       ..rotate(_steer * 1.6)
       ..translate(-c.dx, -c.dy);
     canvas.drawImageRect(wheel, Rect.fromLTWH(0, 0, wheel.width.toDouble(), wheel.height.toDouble()), r, paint);
+    canvas.restore();
+  }
+
+  /// Kim đồng hồ tốc độ / vòng tua chạy theo xe thật, đèn xi-nhan nháy.
+  void _dash(Canvas canvas, Map info, double scale, double top, double dim) {
+    Offset at(Object? v) {
+      final p = _pointOf(v, Offset.zero);
+      return Offset(p.dx * scale, top + p.dy * scale);
+    }
+
+    final kmh = game.player.speed * GameConfig.displayKmhPerUnitSpeed;
+    final dials = info['dials'];
+    if (dials is List) {
+      for (final d in dials) {
+        if (d is! Map) continue;
+        double n(String k, double or) => (d[k] as num?)?.toDouble() ?? or;
+        final a0 = n('angle0_deg', 135) * pi / 180, a1 = n('angle1_deg', 405) * pi / 180;
+        final value = d['kind'] == 'rpm' ? _rpm(kmh) : kmh;
+        final k = (value / n('max', 120)).clamp(0.0, 1.02);
+        _needle(canvas, at(d['center']), a0 + (a1 - a0) * k, n('length', 40) * scale, dim);
+      }
+    }
+    final ind = info['indicators'];
+    final blinker = game._events.blinker;
+    if (ind is Map && blinker != 0 && (game._time * 2.6).floor().isEven) {
+      final c = at(ind[blinker > 0 ? 'right' : 'left']);
+      final sz = ((ind['size'] as num?)?.toDouble() ?? 10) * scale;
+      final x = blinker.toDouble();
+      final arrow = Path()
+        ..moveTo(c.dx + x * sz, c.dy)
+        ..lineTo(c.dx - x * sz * 0.6, c.dy - sz * 0.8)
+        ..lineTo(c.dx - x * sz * 0.6, c.dy + sz * 0.8)
+        ..close();
+      canvas.drawCircle(
+        c,
+        sz * 2.4,
+        Paint()
+          ..blendMode = BlendMode.plus
+          ..shader = Gradient.radial(c, sz * 2.4, const [Color(0x7748FF7A), Color(0x0048FF7A)]),
+      );
+      canvas.drawPath(arrow, Paint()..color = const Color(0xff47FF7C));
+    }
+  }
+
+  /// Vòng tua (nghìn vòng/phút) giả theo số: lên dần trong mỗi số, tụt khi
+  /// sang số; vặn ga thì vọt lên chút.
+  double _rpm(double kmh) {
+    if (game.player.engineOff) return 0;
+    const gears = [0.0, 22.0, 42.0, 65.0, 95.0, 140.0, 999.0];
+    var i = 0;
+    while (kmh > gears[i + 1]) {
+      i++;
+    }
+    final frac = ((kmh - gears[i]) / (gears[i + 1] - gears[i])).clamp(0.0, 1.0);
+    return 0.9 + (i == 0 ? frac * 2.6 : 1.4 + frac * 2.8) + (game.player.throttle ? 0.4 : 0);
+  }
+
+  void _needle(Canvas canvas, Offset c, double angle, double len, double dim) {
+    final d = Offset(cos(angle), sin(angle));
+    final n = Offset(-d.dy, d.dx);
+    final w = max(1.1, len * 0.06);
+    final tail = c - d * (len * 0.18);
+    final path = Path()
+      ..moveTo(tail.dx + n.dx * w, tail.dy + n.dy * w)
+      ..lineTo(c.dx + d.dx * len, c.dy + d.dy * len)
+      ..lineTo(tail.dx - n.dx * w, tail.dy - n.dy * w)
+      ..close();
+    // Ban đêm đồng hồ sáng đèn: kim cam dạ quang.
+    final color = game.darkness > 0.3 ? const Color(0xffFF7A3A) : Color.lerp(const Color(0xffE5482C), const Color(0xff000000), 1 - dim)!;
+    canvas.drawPath(path, Paint()..color = color);
+    canvas.drawCircle(c, w * 1.8, Paint()..color = const Color(0xff1A1C1F));
+  }
+
+  /// Gương chiếu hậu: cảnh phía sau (lật trái phải) — mặt đường, xe đi sau
+  /// mình, xe ngược chiều vừa qua.
+  void _mirrors(Canvas canvas, Map info, double scale, double top) {
+    final list = info['mirrors'];
+    if (list is! List) return;
+    for (final m in list) {
+      if (m is! Map || m['rect'] is! List) continue;
+      final r = [for (final v in m['rect'] as List) (v as num).toDouble()];
+      if (r.length < 4) continue;
+      final rect = Rect.fromLTWH(r[0] * scale, top + r[1] * scale, r[2] * scale, r[3] * scale);
+      final shape = Path();
+      final ellipse = m['shape'] == 'ellipse';
+      if (ellipse) {
+        shape.addOval(rect);
+      } else {
+        shape.addRRect(RRect.fromRectAndRadius(rect, Radius.circular(((m['radius'] as num?)?.toDouble() ?? 8) * scale)));
+      }
+      // Gương hai bên nhìn chéo ra sau về phía mình; gương giữa nhìn thẳng.
+      final yaw = ellipse ? (r[0] + r[2] / 2 < 800 ? 0.3 : -0.3) : 0.0;
+      canvas.save();
+      canvas.clipPath(shape);
+      _mirrorView(canvas, rect, yaw);
+      canvas.drawRect(
+        rect,
+        Paint()
+          ..shader = Gradient.linear(rect.topLeft, rect.bottomRight, const [Color(0x33E8F2FF), Color(0x00FFFFFF), Color(0x1AFFFFFF)],
+              const [0, 0.5, 1]),
+      );
+      canvas.restore();
+    }
+  }
+
+  void _mirrorView(Canvas canvas, Rect rect, double yaw) {
+    final a = art;
+    if (a == null || rect.width < 4 || rect.height < 4) return;
+    final mc = _mirrorCam
+      ..x = cam.x
+      ..y = cam.y
+      ..eye = cam.eye
+      ..heading = _heading + pi + yaw
+      ..hfov = 0.55
+      ..far = 1600;
+    mc.setup(Size(rect.width, rect.height), horizon: 0.45);
+    final w = rect.width, h = rect.height, hy = mc.horizonY;
+    final dark = game.darkness;
+    canvas.save();
+    // Gương: trái phải đảo ngược.
+    canvas
+      ..translate(rect.right, rect.top)
+      ..scale(-1, 1);
+    canvas.drawRect(Rect.fromLTRB(0, 0, w, hy + 1), Paint()..shader = Gradient.linear(Offset.zero, Offset(0, hy), [_zenithColor, _horizonColor]));
+    final gc = _groundColor;
+    final dim = 1 - 0.75 * dark;
+    canvas.drawRect(
+      Rect.fromLTRB(0, hy, w, h),
+      Paint()..color = Color.fromRGBO((gc.r * 255 * dim).round(), (gc.g * 255 * dim).round(), (gc.b * 255 * dim).round(), 1),
+    );
+    final s0 = game.player.s, s1 = game.player.s - game.dir * 1600;
+    final samples = game.road.samplesBetween(min(s0, s1), max(s0, s1) + 20).toList(growable: false);
+    if (samples.length > 1) {
+      final sink = PerspectiveGroundSink(canvas, mc);
+      Offset on(RoadSample p, double d) => Offset(p.x - sin(p.heading) * d, p.y + cos(p.heading) * d);
+      sink.band([for (final p in samples) on(p, -_half)], [for (final p in samples) on(p, _half)], game._paints.asphalt);
+      final yellow = Paint()
+        ..color = const Color(0xffF0C23A)
+        ..strokeWidth = 2.6;
+      final white = Paint()
+        ..color = const Color(0xffF4F4F0)
+        ..strokeWidth = 3.2;
+      sink.polyline([for (final p in samples) on(p, 0)], yellow);
+      sink.polyline([for (final p in samples) on(p, _half - 5)], white);
+      sink.polyline([for (final p in samples) on(p, -_half + 5)], white);
+    }
+    final shown = <(double, Image?, Rect, List<Offset>, bool)>[];
+    for (final v in game.traffic.vehicles) {
+      final behind = (game.player.s - v.s) * game.dir;
+      if (behind < game.spec.length / 2 || behind > 1600) continue;
+      final following = (v.oncoming ? -1 : 1) == game.dir;
+      final view = following ? 'front' : 'rear';
+      final path = TrafficLayer.dressedPath(v.type, v.variant, raining: game._trafficLayer.raining);
+      final img = a.vehicle(path, view);
+      final o = _at(v.s + game.dir * v.type.length / 2, v.d);
+      final p = mc.toCam(o.dx, o.dy, 0);
+      if (p.z < DriverCamera.near * 2 || p.z > mc.far) continue;
+      final k = mc.focal / p.z;
+      final base = mc.project(p);
+      final sc = v.type == TrafficType.motorbike ? 1.15 : 1.0;
+      final bw = (img == null ? v.type.width : img.width / DriverArt.vehiclePixelsPerMeter * _u * sc) * k;
+      final bh = (img == null ? v.type.width * 0.8 : img.height / DriverArt.vehiclePixelsPerMeter * _u * sc) * k;
+      shown.add((p.z, img, Rect.fromLTWH(base.dx - bw / 2, base.dy - bh, bw, bh), a.lamps[DriverArt.baseOf(path)]?[view] ?? const [], following));
+    }
+    shown.sort((x, y) => y.$1.compareTo(x.$1));
+    final lamps = <(Offset, double, Color)>[];
+    final paint = Paint()..filterQuality = FilterQuality.low;
+    for (final (_, img, r, points, following) in shown) {
+      if (img == null) {
+        canvas.drawRect(r, Paint()..color = const Color(0xff4B5563));
+        continue;
+      }
+      canvas.drawImageRect(img, Rect.fromLTWH(0, 0, img.width.toDouble(), img.height.toDouble()), r, paint);
+      if (dark > 0.25) {
+        for (final l in points) {
+          final p = Offset(r.left + l.dx / img.width * r.width, r.top + l.dy / img.height * r.height);
+          lamps.add((p, r.width * (following ? 0.3 : 0.12), following ? const Color(0xffFFF3D6) : const Color(0xffFF2A1F)));
+        }
+      }
+    }
+    if (dark > 0.02) canvas.drawRect(Rect.fromLTWH(0, 0, w, h), Paint()..color = const Color(0xff050A18).withValues(alpha: 0.62 * dark));
+    for (final (p, r, c) in lamps) {
+      canvas.drawCircle(
+        p,
+        r,
+        Paint()
+          ..blendMode = BlendMode.plus
+          ..shader = Gradient.radial(p, r, [c.withValues(alpha: 0.9), c.withValues(alpha: 0)]),
+      );
+    }
     canvas.restore();
   }
 

@@ -4,6 +4,7 @@ import '../game/game_config.dart';
 import '../game/logic/trip_clock.dart';
 import '../game/logic/vehicle_condition.dart';
 import '../game/stage.dart';
+import '../game/vehicle_spec.dart';
 import '../model/place.dart';
 import '../model/trip.dart';
 import 'local_service.dart';
@@ -59,6 +60,8 @@ class TripService {
       cargo: 0,
       // Đi vội, bình còn chừng nửa (chưa kịp đổ đầy).
       fuel: GameConfig.fuelTripStartMin + _random.nextDouble() * (GameConfig.fuelTripStartMax - GameConfig.fuelTripStartMin),
+      // Đi xe máy thì buộc cành đào sau yên mang về cắm Tết.
+      peach: plan.vehicle == VehicleKind.motorbike ? 100 : -1,
     );
     _save(progress);
     return progress;
@@ -76,6 +79,7 @@ class TripService {
       startLixi: progress.lixi,
       startCargo: progress.cargo,
       startFuel: progress.fuel,
+      startPeach: progress.peach,
       stageNumber: progress.stageIndex + 1,
       stageCount: progress.plan.stages.length,
       seed: _random.nextInt(1 << 20),
@@ -129,6 +133,7 @@ class TripService {
       ..lixi = result.lixi
       ..cargo = result.cargo
       ..fuel = result.fuel
+      ..peach = result.peach
       ..score += result.score;
     if (!progress.finished) {
       _save(progress);

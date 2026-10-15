@@ -29,6 +29,7 @@ class RoadRenderer extends Component {
     required this.seed,
     this.ripeRice = false,
     this.theme = MapTheme.delta,
+    this.ramps = const [],
   }) : super(priority: 0);
 
   final RoadPath road;
@@ -43,6 +44,9 @@ class RoadRenderer extends Component {
 
   /// Cảnh hai bên quốc lộ theo bản đồ đã chọn.
   final MapTheme theme;
+
+  /// Đường cứu nạn (đèo): chỗ dải sỏi bắt đầu rẽ khỏi đường bên phải.
+  final List<double> ramps;
 
   /// Giờ trôi (giây) — sóng biển, mặt kênh gợn.
   double time = 0;
@@ -240,16 +244,68 @@ class RoadRenderer extends Component {
     _strip(g, samples, _half, _half + 24, paints.asphaltLight);
     _strip(g, samples, _half + 24, _seaReach, paints.forestDeep);
     _strip(g, samples, _half + 24, _half + 64, Paint()..color = const Color(0x66000000));
-    _line(g, samples, _half + 22, _railShadow);
-    _line(g, samples, _half + 20, _rail);
     final a = samples.first.s, b = samples.last.s;
+    // Hộ lan liền mạch, chừa chỗ rẽ vào đường cứu nạn.
+    bool gap(double s) => ramps.any((r) => s > r - 30 && s < r + GameConfig.rampLength + 40);
+    var run = <RoadSample>[];
+    void flush() {
+      if (run.length > 1) {
+        _line(g, run, _half + 22, _railShadow);
+        _line(g, run, _half + 20, _rail);
+      }
+      run = [];
+    }
+
+    for (final p in samples) {
+      if (gap(p.s)) {
+        flush();
+      } else {
+        run.add(p);
+      }
+    }
+    flush();
     for (var s = (a / 36).ceil() * 36.0; s < b; s += 36) {
-      g.circle(_point(road.at(s), _half + 21), 2.2, _railPost);
+      if (!gap(s)) g.circle(_point(road.at(s), _half + 21), 2.2, _railPost);
+    }
+    for (final r in ramps) {
+      if (r + GameConfig.rampLength < a || r > b) continue;
+      _ramp(g, r);
     }
     _strip(g, samples, -_half - 14, -_half, paints.laterite);
     _strip(g, samples, -_half - 96, -_half - 14, paints.rock);
     _line(g, samples, -_half - 15, _curbShadow);
     _strip(g, samples, -_ground, -_half - 96, paints.forest);
+  }
+
+  /// Đường cứu nạn: dải sỏi rẽ chéo khỏi lề phải, cuối có ụ cát chắn và
+  /// hàng tôn sọc đỏ trắng.
+  void _ramp(GroundSink g, double r) {
+    final pts = road.samplesBetween(r, r + GameConfig.rampLength).toList(growable: false);
+    if (pts.length < 2) return;
+    double center(double s) => _half + 30 + 80 * ((s - r) / GameConfig.rampLength).clamp(0.0, 1.0);
+    final inner = [for (final p in pts) _point(p, center(p.s) - 34)];
+    final outer = [for (final p in pts) _point(p, center(p.s) + 34)];
+    g.band(inner, outer, paints.gravel);
+    // Mép dải sỏi và vạch kẻ chéo báo hiệu ở đầu.
+    _offsetLine(g, pts, (s) => center(s) - 34, _white);
+    _offsetLine(g, pts, (s) => center(s) + 34, _white);
+    final end = road.at(r + GameConfig.rampLength);
+    for (var i = 0; i < 6; i++) {
+      final d0 = center(r + GameConfig.rampLength) - 30 + i * 10;
+      g.polygon([
+        _point(end, d0),
+        _point(end, d0 + 10),
+        _point(road.at(r + GameConfig.rampLength + 10), d0 + 10),
+        _point(road.at(r + GameConfig.rampLength + 10), d0),
+      ], i.isEven ? _rampRed : _rampWhite);
+    }
+  }
+
+  late final Paint _rampRed = Paint()..color = const Color(0xffC8372D);
+  late final Paint _rampWhite = Paint()..color = const Color(0xffF4F4F0);
+
+  void _offsetLine(GroundSink g, List<RoadSample> samples, double Function(double s) d, Paint paint) {
+    g.polyline([for (final p in samples) _point(p, d(p.s))], paint);
   }
 
   /// Sông nước: phía d dương bờ cỏ rồi con kênh chạy dọc đường, bờ bên kia

@@ -292,6 +292,39 @@ abstract class GameConfig {
   static const double stallApproachReach = 1300;
   static const double stallApproachSpeed = 180;
 
+  // ------------------------------------------------- Chuyện dọc đường
+  /// Sương mù dày dần / tan dần trong quãng này.
+  static const double fogFade = 900;
+
+  /// Tắc đường cửa ngõ: dài chừng 2 km trước đầu phố; mỗi lối vào phố có
+  /// [jamChance] bị tắc. Xe máy được đi lề rộng [shoulderWidth], chậm thôi.
+  static const double jamLength = 950;
+  static const double jamChance = 0.6;
+  static const double shoulderWidth = 30;
+  static const double shoulderSpeed = 0.38 * normalSpeed;
+
+  /// Gió biển giật kéo dài bao lâu.
+  static const double gustSeconds = 1.6;
+
+  /// Doi cát trên đường ven biển: đi nhanh hơn mức này thì trượt.
+  static const double sandSlipSpeed = 0.62 * normalSpeed;
+  static const double sandSlipSeconds = 0.5;
+  static const double sandSlipDrift = 70;
+
+  /// Xe tải mất phanh đổ dốc: tỉ lệ gặp ở mỗi đường cứu nạn, báo trước bao
+  /// lâu, nhanh hơn mình bao nhiêu; dải sỏi đường cứu nạn dài, ghì xe mạnh.
+  static const double runawayChance = 0.75;
+  static const double runawayWarningSeconds = 3.2;
+  static const double runawayExtraSpeed = 0.85;
+  static const double rampLength = 480;
+  static const double rampDecel = 520;
+
+  /// Điện thoại: chuông reo bao lâu, mỗi câu nói bao lâu, tấp vào nghe mất
+  /// mấy phút.
+  static const double callRingSeconds = 11;
+  static const double callLineSeconds = 2.7;
+  static const double callStopMinutes = 3;
+
   /// Dừng xe bao nhiêu phút trong game dù chưa gọi món (dựng xe, ngồi xuống).
   static const double stallBaseMinutes = 2;
 

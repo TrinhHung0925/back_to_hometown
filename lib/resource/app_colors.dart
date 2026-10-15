@@ -10,6 +10,8 @@ abstract class AppColors {
 
   /// Mặt đường nhựa, vỉa hè, bó vỉa.
   static const Color ff5B6169 = Color(0xff5B6169);
+  static const Color ffD94F7A = Color(0xffD94F7A);
+  static const Color ff47D16C = Color(0xff47D16C);
   static const Color ffCFC8B8 = Color(0xffCFC8B8);
   static const Color ff9A9385 = Color(0xff9A9385);
 

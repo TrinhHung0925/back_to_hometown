@@ -135,8 +135,11 @@ class TrafficVehicle {
   double d;
 
   /// Tốc độ muốn chạy và tốc độ hiện tại (luôn ≥ 0, chiều đi theo làn).
-  final double cruiseSpeed;
+  double cruiseSpeed;
   double speed;
+
+  /// Xe tải mất phanh đổ dốc: không giảm tốc theo xe trước, bật đèn khẩn cấp.
+  bool runaway = false;
 
   /// Đèn phanh: đang giảm tốc.
   bool braking = false;
@@ -304,6 +307,11 @@ class TrafficSystem {
   /// dừng phía trước, và người chơi; giảm tốc mượt, tăng tốc từ từ.
   void _followLeaders(double dt, PlayerSnapshot player, List<StopPoint> stops) {
     for (final v in vehicles) {
+      if (v.runaway) {
+        v.braking = false;
+        v.speed = v.cruiseSpeed;
+        continue;
+      }
       var desired = v.cruiseSpeed;
       double? gap;
       double leaderSpeed = 0;
@@ -389,6 +397,13 @@ class TrafficSystem {
       cruiseSpeed: speed,
       variant: _random.nextInt(1 << 16),
     )..laneChangeTimer = profile.laneChangeEvery * (0.5 + _random.nextDouble());
+    vehicles.add(vehicle);
+    return vehicle;
+  }
+
+  /// Thêm một xe ở chỗ định sẵn (xe xếp hàng lúc tắc đường, xe tải mất phanh).
+  TrafficVehicle addVehicle(TrafficType type, int lane, double s, double speed) {
+    final vehicle = TrafficVehicle(id: _nextId++, type: type, lane: lane, s: s, cruiseSpeed: speed, variant: _random.nextInt(1 << 16));
     vehicles.add(vehicle);
     return vehicle;
   }

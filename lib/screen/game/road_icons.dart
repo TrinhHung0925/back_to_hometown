@@ -27,6 +27,12 @@ enum RoadGlyph {
 
   /// Bản đồ nhìn từ trên: chuyển về góc nhìn trên cao.
   aerial,
+
+  /// Bông hoa đào năm cánh (cành đào buộc sau xe).
+  blossom,
+
+  /// Sương mù: mấy vệt ngang mờ.
+  fog,
 }
 
 class RoadIcon extends StatelessWidget {
@@ -254,6 +260,16 @@ class RoadIconPainter extends CustomPainter {
           ..color = accent
           ..strokeWidth = 2.4);
         canvas.drawCircle(const Offset(12, 17.5), 1.3, soft);
+      case RoadGlyph.blossom:
+        for (var i = 0; i < 5; i++) {
+          final a = -pi / 2 + i * 2 * pi / 5;
+          canvas.drawCircle(Offset(12 + cos(a) * 5.6, 12 + sin(a) * 5.6), 4.4, fill);
+        }
+        canvas.drawCircle(const Offset(12, 12), 2.6, soft);
+      case RoadGlyph.fog:
+        for (final (y, x0, x1) in [(6.0, 4.0, 18.0), (11.0, 2.0, 22.0), (16.0, 6.0, 20.0), (21.0, 3.0, 15.0)]) {
+          canvas.drawLine(Offset(x0, y), Offset(x1, y), stroke..strokeWidth = 2.4);
+        }
       case RoadGlyph.steering:
         canvas.drawCircle(const Offset(12, 12), 9.2, stroke..strokeWidth = 2.6);
         canvas.drawCircle(const Offset(12, 13), 2.6, fill);

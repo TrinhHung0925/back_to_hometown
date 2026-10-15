@@ -3056,7 +3056,7 @@ def shrine(f, cx, h=3.0):
     f.paint(f.rect(cx - 0.26, 2.2, cx + 0.26, 2.25), lin((140, 70, 50)), h=h + 0.05)
 
 
-def village_house(spec):
+def village_house(spec, keep=False):
     """Nhà cấp 4 quê: nền cao, hiên cột, mái ngói đỏ / tôn, cửa gỗ / cửa
     xếp, cửa sổ chớp; tường rào cổng sắt phía trước; cờ, bàn thờ thiên."""
     W = spec['width']
@@ -3125,8 +3125,28 @@ def village_house(spec):
         for xx in (xs[1] - 0.6, xs[2] + 0.6):
             lantern(f, xx, y_eave - 0.3, r=0.16, h=2.25, string=0.1)
     gw = 2.6 if spec.get('gate') is not None else None
-    fence(f, 0.0, W, cx - gw / 2 if gw else None, cx + gw / 2 if gw else None, spec['fence'], spec.get('gate'),
-          h=4.5, seed=sd, wall_rgb=(230, 226, 212))
+    if spec.get('table'):
+        # bàn thờ / bàn tiếp khách ngoài hiên: bánh chưng, mâm ngũ quả
+        tx = cx + 1.35
+        f.paint(f.rect(tx - 0.55, plinth + 0.72, tx + 0.55, plinth + 0.78), lin((110, 60, 36)), h=1.2, mat=M_WOOD)
+        for lx in (tx - 0.5, tx + 0.46):
+            f.paint(f.rect(lx, plinth, lx + 0.04, plinth + 0.72), lin((90, 50, 30)), h=1.15, mat=M_WOOD)
+        f.paint(f.rect(tx - 0.62, plinth + 0.78, tx + 0.62, plinth + 0.8), lin((190, 30, 30)), h=1.25)
+        for k in range(2):
+            bx = tx - 0.42 + k * 0.26
+            f.paint(f.rect(bx - 0.11, plinth + 0.8, bx + 0.11, plinth + 0.94), lin((52, 96, 40)), h=1.3, mat=M_PLANT)
+            f.paint(f.rect(bx - 0.11, plinth + 0.86, bx + 0.11, plinth + 0.875), lin((200, 196, 170)), h=1.31)
+            f.paint(f.rect(bx - 0.008, plinth + 0.8, bx + 0.008, plinth + 0.94), lin((200, 196, 170)), h=1.31)
+        f.paint(f.ellipse(tx + 0.3, plinth + 0.83, 0.26, 0.04), lin((200, 160, 60)), h=1.3)
+        rng2 = np.random.default_rng(7)
+        for k in range(14):
+            fx = tx + 0.3 + rng2.uniform(-0.2, 0.2)
+            fy = plinth + 0.86 + rng2.uniform(0, 0.16) * (1 - abs(fx - tx - 0.3) / 0.25)
+            c = [(236, 140, 30), (240, 200, 50), (90, 140, 50), (200, 40, 40), (230, 220, 120)][k % 5]
+            f.paint(f.ellipse(fx, fy, 0.045, 0.045), lin(c), h=1.32 + 0.01 * k, mat=M_PLANT)
+    if spec.get('fence'):
+        fence(f, 0.0, W, cx - gw / 2 if gw else None, cx + gw / 2 if gw else None, spec['fence'], spec.get('gate'),
+              h=4.5, seed=sd, wall_rgb=(230, 226, 212))
     if spec.get('flag') == 'gate':
         vn_flag(f, cx + gw / 2 + 0.2, 1.97, length=1.4, w=0.7, side=1, h=4.8)
     elif spec.get('flag') == 'pole':
@@ -3143,6 +3163,8 @@ def village_house(spec):
                  cys + (R if k % 2 == 0 else R * 0.382) * math.sin(math.pi / 2 + k * math.pi / 5)) for k in range(10)]
         f.paint(f.poly(star), lin((252, 214, 40)), hadd=0.004)
     f.weather(amount=1.6 if old else 1.0, splash=1.3, seed=sd)
+    if keep:
+        return f.render(), H, f
     return f.render(), H
 
 

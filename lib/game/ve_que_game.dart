@@ -46,6 +46,8 @@ import 'stage.dart';
 import 'vehicle_spec.dart';
 
 part 'driver/driver_view.dart';
+part 'event_layers.dart';
+part 'tet_events.dart';
 
 /// Một chặng lái xe. Flutter (GameController) điều khiển qua các hàm
 /// set*/honk/toggleHeadlights/payFine/flee và nhận số liệu qua các callback.
@@ -60,6 +62,7 @@ class VeQueGame extends FlameGame {
     required this.onNotice,
     this.onRest,
     this.onJob,
+    this.onCall,
     this.fatigue = true,
   });
 
@@ -76,6 +79,9 @@ class VeQueGame extends FlameGame {
 
   /// Việc bên lề (thay lốp, chờ xăng, thợ vá) đang làm tới đâu; null khi xong.
   final void Function(JobState? job)? onJob;
+
+  /// Điện thoại từ nhà: đang reo / đang nói chuyện; null khi cúp máy.
+  final void Function(PhoneCallState? call)? onCall;
 
   /// Có tính buồn ngủ, xăng, mưa, sự cố không (nền màn menu thì tắt).
   final bool fatigue;
@@ -227,6 +233,10 @@ class VeQueGame extends FlameGame {
 
   /// Quán đang tự tấp vào (bấm nút "Vào quán").
   Stall? _approach;
+
+  /// Chuyện dọc đường: sương mù, gió biển, tắc đường, xe tải mất phanh,
+  /// điện thoại, khách đi nhờ, cành đào.
+  late final _TetEvents _events = _TetEvents(this);
   _RestStep _restStep = _RestStep.parking;
   double _restT = 0;
   List<String> _restChatter = const [];
@@ -330,6 +340,7 @@ class VeQueGame extends FlameGame {
       seed: setup.seed,
       ripeRice: setup.south || setup.theme == MapTheme.mekong,
       theme: setup.theme,
+      ramps: [for (final r in _events.ramps) r.s],
     );
     _featureGround = FeatureGroundLayer(road: road, layout: layout)..gates = _gates;
     _featureOverhead = FeatureOverheadLayer(road: road, layout: layout);
@@ -389,8 +400,11 @@ class VeQueGame extends FlameGame {
       _featureOverhead,
       _powerLines,
       _overtakeArrow,
+      _EventProps(this),
+      _PeachBranch(this),
       _airFx,
       _rainSky,
+      _FogLayer(this),
       _night,
       _fireworks,
       _speech,
@@ -425,13 +439,13 @@ class VeQueGame extends FlameGame {
   // ------------------------------------------------------------ Đầu vào
   void setThrottle(bool on) {
     player.throttle = on;
-    if (on && _approach != null) cancelApproach();
+    if (on && (_approach != null || _events.pull != null)) cancelApproach();
   }
   void setBrake(bool on) => player.brake = on;
   void setSteer(double value) {
     player.steer = value;
     // Đánh lái mạnh lúc xe đang tự tấp vào quán: tự lái tiếp.
-    if (value.abs() > 0.7 && _approach != null) cancelApproach();
+    if (value.abs() > 0.7 && (_approach != null || _events.pull != null)) cancelApproach();
   }
 
   /// Bóp còi xin đường. Trả về false nếu còi đang hồi.
@@ -550,6 +564,7 @@ class VeQueGame extends FlameGame {
       player.curvature = road.at(player.s).curvature;
       _stepAlert(dt);
       _stepCondition(dt);
+      _events.preMove(dt);
       _stepApproach(dt);
       player.update(dt);
     }
@@ -563,6 +578,7 @@ class VeQueGame extends FlameGame {
     _stepBusStops(dt);
     _stepOvertakes(dt);
     _stepPickups(dt);
+    _events.step(dt);
     _stepAnimals(dt);
     _stepNails();
     _stepStallNotices();
@@ -613,7 +629,7 @@ class VeQueGame extends FlameGame {
       profileAt: _profileAt,
       canSpawnAt: (s) => !layout.nearFeature(s, margin: 160),
       // Nhìn xa gấp mấy lần bản đồ thì cho đông xe tương ứng.
-      capScale: _driverActive ? 3 : 1,
+      capScale: _driverActive ? _driver.trafficScale : 1,
     );
     cross.update(dt, _time, layout.lightsBetween(_camLeftS - 300, _camRightS + 600), _playerBox);
     animals.update(dt);
@@ -1043,7 +1059,13 @@ class VeQueGame extends FlameGame {
       final crossed = dir > 0 ? prevFront < radar && front >= radar : prevFront > radar && front <= radar;
       if (!crossed || _wavedBy != null || !_radarChecked.add('${c.seed}/$dir')) continue;
       final kmh = (player.speed * GameConfig.displayKmhPerUnitSpeed).round();
-      if (kmh > c.limitKmh + GameConfig.speedTolerance) {
+      if (_events.talkingWhileDriving) {
+        _wavedBy = c;
+        _wavedDir = dir;
+        violation = Violation(IncidentKind.phone, place: _placeName());
+        onSound(GameSound.whistle);
+        onNotice(const GameNotice('Toét toét! CSGT thấy vừa lái xe vừa nghe điện thoại — vẫy vào, tấp lề dừng xe!', kind: NoticeKind.warning));
+      } else if (kmh > c.limitKmh + GameConfig.speedTolerance) {
         _wavedBy = c;
         _wavedDir = dir;
         violation = Violation(IncidentKind.speeding, measuredKmh: kmh, limitKmh: c.limitKmh, place: _placeName());
@@ -1056,7 +1078,7 @@ class VeQueGame extends FlameGame {
     final past = _wavedDir * (player.s - w.radarS(_wavedDir));
     if (dir == _wavedDir && player.speed < 15 && past < GameConfig.pullOverReach) {
       _wavedBy = null;
-      incidentKind = IncidentKind.speeding;
+      incidentKind = violation?.kind == IncidentKind.phone ? IncidentKind.phone : IncidentKind.speeding;
       player.stop();
       _startIncident();
       return true;
@@ -1065,7 +1087,7 @@ class VeQueGame extends FlameGame {
       _wavedBy = null;
       onSound(GameSound.whistle);
       onNotice(const GameNotice('Không dừng xe — CSGT nổ máy đuổi theo!', kind: NoticeKind.warning));
-      incidentKind = IncidentKind.speeding;
+      incidentKind = violation?.kind == IncidentKind.phone ? IncidentKind.phone : IncidentKind.speeding;
       _policeVisible = true;
       _policeS = _behindEdgeS - dir * 120;
       _policeD = player.d;
@@ -1211,7 +1233,7 @@ class VeQueGame extends FlameGame {
   /// Quán cùng phía phía trước, còn đủ quãng để giảm tốc tấp vào: hiện nút
   /// "Vào quán" / "Vào đổ xăng"… (quán gần nhất).
   Stall? get stallAhead {
-    if (phase != GamePhase.driving || _uTurn != null || _approach != null || fuel.empty || _wavedBy != null) return null;
+    if (phase != GamePhase.driving || _uTurn != null || _approach != null || fuel.empty || _wavedBy != null || _events.pull != null) return null;
     final stopping = player.speed * player.speed / (2 * _approachDecel);
     final a = player.s, b = player.s + dir * GameConfig.stallApproachReach;
     Stall? best;
@@ -1241,10 +1263,11 @@ class VeQueGame extends FlameGame {
   }
 
   void cancelApproach() {
-    if (_approach == null) return;
+    final events = _events.cancelPull();
+    if (_approach == null && !events) return;
     _approach = null;
     player.steer = 0;
-    onNotice(const GameNotice('Thôi không ghé — tự lái tiếp', kind: NoticeKind.info));
+    onNotice(const GameNotice('Thôi không tấp vào — tự lái tiếp', kind: NoticeKind.info));
   }
 
   void _stepApproach(double dt) {
@@ -1260,20 +1283,41 @@ class VeQueGame extends FlameGame {
       onNotice(GameNotice('Lỡ mất ${t.name} rồi', kind: NoticeKind.warning));
       return;
     }
-    // Ga giảm dần theo quãng còn lại để dừng ngay trước quán.
+    if (_pullInTo(t.s, dt)) {
+      _approach = null;
+      _enterStall(t);
+    }
+  }
+
+  /// Tự tấp vào lề phải và dừng ngay trước [targetS]: nhả ga, giảm tốc dần
+  /// theo quãng còn lại, bám theo xe phía trước (không đâm), chờ làn sát lề
+  /// trống mới tạt vào. Trả về true khi đã chậm hẳn ở gần đích.
+  bool _pullInTo(double targetS, double dt) {
+    final ahead = (targetS - player.s) * dir;
     final decel = _approachDecel;
-    final want = min(GameConfig.stallApproachSpeed, sqrt(2 * decel * max(0.0, ahead - 6)));
+    var want = min(GameConfig.stallApproachSpeed, sqrt(2 * decel * max(0.0, ahead - 6)));
+    final curb = dir * (player.maxOffset - 10);
+    var sideBlocked = false;
+    for (final v in traffic.vehicles) {
+      if (v.oncoming == (dir > 0)) continue;
+      final reach = (v.type.width + spec.width) / 2 + 6;
+      final along = (v.s - player.s) * dir;
+      final gap = along - (v.type.length + spec.length) / 2;
+      final inLane = (v.d - player.d).abs() < reach;
+      final inCurb = (v.d - curb).abs() < reach;
+      // Xe đang song song ở làn sát lề: chờ nó qua rồi mới tạt vào.
+      if (inCurb && !inLane && gap < 30 && gap > -(v.type.length + spec.length) / 2 - 40) sideBlocked = true;
+      if (gap < -2 || !(inLane || (inCurb && along < ahead + 40))) continue;
+      // Kịp dừng sau xe phía trước dù nó phanh gấp.
+      want = min(want, sqrt(v.speed * v.speed + 2 * decel * max(0.0, gap - 26)));
+    }
     player
       ..throttle = false
       ..cruise = want;
     if (player.speed > want) player.speed = max(want, player.speed - 1.6 * decel * dt);
-    // Tạt sát lề phải.
     final right = dir * player.d;
-    player.steer = ((player.maxOffset - 10 - right) / 26).clamp(-1.0, 1.0);
-    if (player.speed <= GameConfig.stallStopSpeed && ahead < 120) {
-      _approach = null;
-      _enterStall(t);
-    }
+    player.steer = sideBlocked ? 0 : ((player.maxOffset - 10 - right) / 26).clamp(-1.0, 1.0);
+    return player.speed <= GameConfig.stallStopSpeed && ahead < 120 && right > player.maxOffset - 40;
   }
 
   /// Ghé quán đang dừng ngay trước mặt (nút "Ghé quán").
@@ -1760,13 +1804,15 @@ class VeQueGame extends FlameGame {
         _notice('wrongway${(player.s / 2000).floor()}', 'Đang đi ngược chiều cao tốc! Cẩn thận!', NoticeKind.warning);
       }
     }
+    // Tắc đường cửa ngõ: xe máy được luồn lên lề phải.
+    if (_events.shoulderOpen(player.s)) hi += GameConfig.shoulderWidth;
     player
       ..minD = lo
       ..maxD = hi;
   }
 
   List<StopPoint> _stopPoints() {
-    final stops = <StopPoint>[];
+    final stops = <StopPoint>[..._events.stops()];
     for (final l in layout.lightsBetween(_camLeftS - 300, _camRightS + 900)) {
       if (l.colorAt(_time) == LightColor.green) continue;
       stops
@@ -1830,6 +1876,7 @@ class VeQueGame extends FlameGame {
       {required void Function() onMinor, required void Function() stopOther, bool backOff = false, bool headOn = false}) {
     final severity = classifyCollision(relative, headOn: headOn);
     _impactFx(relative);
+    _events.damagePeach(severity == CollisionSeverity.crash || severity == CollisionSeverity.fatal ? 70 : 30, 'Va quẹt mạnh quá, cành đào sau xe gãy mất mấy nhánh!');
     _finishUTurn();
     player.stop();
     // Đang bỏ chạy mà đâm mạnh thì hết đường chạy.
@@ -2078,8 +2125,8 @@ class VeQueGame extends FlameGame {
       final hit = RoadBox(s: pickup.s, d: pickup.d, length: pickup.length, width: pickup.width).overlaps(box, shrink: 0.9);
       if (!hit) continue;
       pickup.consumed = true;
-      // Vũng nước vẫn nằm đó sau khi xe lội qua.
-      if (pickup.kind != PickupKind.puddle) component.removeFromParent();
+      // Vũng nước, doi cát vẫn nằm đó sau khi xe đi qua.
+      if (pickup.kind != PickupKind.puddle && pickup.kind != PickupKind.sand) component.removeFromParent();
       switch (pickup.kind) {
         case PickupKind.lixi:
           lixi++;
@@ -2104,7 +2151,19 @@ class VeQueGame extends FlameGame {
           } else {
             player.speed *= 0.92;
           }
+        case PickupKind.sand:
+          if (player.speed > GameConfig.sandSlipSpeed && _uTurn == null) {
+            _slipLeft = GameConfig.sandSlipSeconds;
+            player.slipDrift = (_random.nextBool() ? 1 : -1) * GameConfig.sandSlipDrift;
+            _shake = max(_shake, 0.12);
+            onSound(GameSound.skid);
+            _events.damagePeach(5, null);
+            _notice('sand${(player.s / 3000).floor()}', 'Cát tràn ra đường — bánh xe trượt, đi chậm lại!', NoticeKind.warning);
+          } else {
+            player.speed *= 0.95;
+          }
         case PickupKind.pothole:
+          _events.damagePeach(6, null);
           if (fatigue && player.speed > GameConfig.potholeFlatSpeed && tires.ok && _random.nextDouble() < GameConfig.potholeFlatChance) {
             _puncture('Sập ổ gà mạnh quá — xì lốp rồi!');
           }
@@ -2167,6 +2226,15 @@ class VeQueGame extends FlameGame {
     _addPickup(Pickup(kind: PickupKind.puddle, s: s0, d: d), PuddleComponent(_random.nextInt(1 << 20)));
   }
 
+  /// Doi cát gió thổi tràn ra làn chiều mình (ven biển).
+  void _spawnSand() {
+    final s0 = _aheadEdgeS + dir * 60;
+    final lane = _myLanes[_random.nextInt(2)];
+    if (!_canPlace(s0, lane)) return;
+    final d = Lanes.center(lane) + (_random.nextDouble() - 0.5) * 24;
+    _addPickup(Pickup(kind: PickupKind.sand, s: s0, d: d), SandPatchComponent(_random.nextInt(1 << 20)));
+  }
+
   void _spawnGift() {
     final s0 = _aheadEdgeS + dir * 60;
     final lane = _myLanes[_random.nextInt(2)];
@@ -2182,6 +2250,28 @@ class VeQueGame extends FlameGame {
   }
 
   // ------------------------------------------------------ Thông báo
+  // ------------------------------------------ Cho bot tự lái, ảnh chụp thử
+  /// Chỗ bắt đầu các đoạn sương mù, đường cứu nạn, chỗ khách vẫy xe; đầu
+  /// đoạn tắc đường cửa ngõ.
+  List<double> get fogStarts => [for (final b in _events.fogBanks) b.from];
+  List<double> get rampStarts => [for (final r in _events.ramps) r.s];
+  List<double> get hitchSpots => [for (final h in _events.hitches) h.s];
+  double? get jamHead => _events.jam?.head;
+
+  /// Cho điện thoại reo ngay.
+  void ringPhoneNow() => _events._ring();
+
+  /// Quãng đường (đơn vị bản đồ) ra mét, làm tròn 10 m.
+  static int _meters(double units) => (units / GameConfig.unitsPerKm * 100).round() * 10;
+
+  /// Khách xin đi nhờ: tấp vào đón / trả khách.
+  void pickUpHitch() => _events.pickUp();
+  void dropOffRider() => _events.dropOff();
+
+  /// Điện thoại: nghe luôn (vừa lái), tấp vào nghe, hay để lát gọi lại.
+  void answerCall({required bool pullOver}) => _events.answer(pullOver: pullOver);
+  void declineCall() => _events.decline();
+
   /// Báo một lần theo [key]; trả về true nếu vừa báo.
   bool _notice(String key, String text, NoticeKind kind) {
     if (!_noticed.add(key)) return false;
@@ -2598,6 +2688,7 @@ class VeQueGame extends FlameGame {
       clockMinutes: clock.minutes,
       minutesLeft: max(0, clock.minutesLeft),
       fuel: fuel.level,
+      peach: _events.peach,
     ));
   }
 
@@ -2774,14 +2865,17 @@ class VeQueGame extends FlameGame {
         player.d,
         facingBackward: (u?.dirFrom ?? dir) < 0,
         yaw: u != null ? -u.theta : (resting ? _parkYaw : player.yawOffset) + _crashSpin * 0.25 + wobble,
+        blinkerD: resting ? 0 : _events.blinker * dir,
       );
     if (_policeVisible) {
       _police.placeOn(road, _policeS, _policeD, facingBackward: dir < 0);
     } else {
       _police.placeOn(road, _camLeftS - 1000, 0);
     }
-    _overtakeArrow.active = _overtakeWarn > 0;
-    if (_overtakeArrow.active) _overtakeArrow.placeOn(road, _camLeftS + 60, Lanes.center(_overtakeLane));
+    _overtakeArrow.active = _overtakeWarn > 0 || _events.truckWarn > 0;
+    if (_overtakeArrow.active) {
+      _overtakeArrow.placeOn(road, _camLeftS + 60, Lanes.center(_events.truckWarn > 0 ? 0 : _overtakeLane));
+    }
     _syncNight(night);
   }
 
@@ -3027,7 +3121,12 @@ class VeQueGame extends FlameGame {
     final here = stallHere;
     return [
       if (here != null) RoadAction.visit,
-      if (_approach != null) RoadAction.cancelApproach else if (here == null && stallAhead != null) RoadAction.approach,
+      if (_approach != null || _events.pull == _PullKind.pickUp || _events.pull == _PullKind.dropOff)
+        RoadAction.cancelApproach
+      else if (here == null && stallAhead != null)
+        RoadAction.approach,
+      if (_events.hitchAhead != null) RoadAction.pickUp,
+      if (_events.canDropOff) RoadAction.dropOff,
       if (fuel.empty && stopped && moto && !_tiltUsed) RoadAction.tiltBike,
       if (fuel.empty && stopped && moto && !pushing) RoadAction.push,
       if (fuel.empty && player.speed < 8 && _uTurn == null) RoadAction.callFuel,
@@ -3040,6 +3139,8 @@ class VeQueGame extends FlameGame {
   void _pushHud() {
     final here = stallHere;
     final ahead = here == null ? (_approach ?? stallAhead) : null;
+    final hitch = _events.pull == _PullKind.pickUp ? _events._pullHitch : _events.hitchAhead;
+    final rider = _events.riding;
     final shown = here ?? ahead;
     final hud = HudData(
       kmDone: ((player.s - _startS) / GameConfig.unitsPerKm).clamp(0, setup.lengthKm).floor(),
@@ -3062,6 +3163,12 @@ class VeQueGame extends FlameGame {
       stallPrompt: shown?.name,
       stallKind: shown?.kind,
       driverSeat: _driverShown,
+      hitchPrompt: hitch?.name,
+      hitchMeters: hitch == null ? null : _meters((hitch.s - player.s).abs()),
+      rider: rider?.name,
+      riderMeters: rider == null || rider.overshot ? null : _meters(max(0.0, rider.dropS - player.s)),
+      peach: _events.peach >= 0 ? _events.peach.round() : null,
+      fog: _events.fog > 0.3,
       stallMeters: ahead == null ? null : (max(0.0, (ahead.s - player.s) * dir) / GameConfig.unitsPerKm * 100).round() * 10,
       reversed: dir < 0,
       fuel: (fuel.level * 100).ceil() / 100,

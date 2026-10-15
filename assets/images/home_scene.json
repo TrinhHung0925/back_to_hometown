@@ -1,0 +1,37 @@
+{
+ "ground_y": 860,
+ "px_per_m": 187.3,
+ "vehicle_stop_x": 1092,
+ "vehicle_stop_y": 950,
+ "vehicle_px_per_m": 243.9,
+ "family_spots": [
+  [
+   1226,
+   815
+  ],
+  [
+   1234,
+   789
+  ],
+  [
+   1348,
+   792
+  ],
+  [
+   1353,
+   772
+  ],
+  [
+   1509,
+   795
+  ]
+ ],
+ "sky_rect": [
+  0,
+  0,
+  2200,
+  350
+ ],
+ "gate_x": 1563,
+ "note": "khung 2200x1000; mặt đất trước cổng ở ground_y; xe vào từ mép trái dọc ngõ"
+}

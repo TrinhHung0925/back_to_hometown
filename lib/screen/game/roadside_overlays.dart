@@ -83,9 +83,27 @@ class _ActionSpec {
         ),
       RoadAction.cancelApproach => _ActionSpec(
           'Thôi, không ghé',
-          hud.stallMeters == null ? 'tự lái tiếp' : 'đang tấp vào · ${_distance(hud.stallMeters!)}',
+          hud.stallMeters != null
+              ? 'đang tấp vào · ${_distance(hud.stallMeters!)}'
+              : hud.hitchMeters != null
+                  ? 'đang tấp vào đón ${hud.hitchPrompt}'
+                  : 'tự lái tiếp',
           RoadGlyph.steering,
           AppColors.ff5B6169,
+        ),
+      RoadAction.pickUp => _ActionSpec(
+          'Cho đi nhờ',
+          '${hud.hitchPrompt ?? 'Người vẫy xe'}${hud.hitchMeters == null ? '' : ' · ${_distance(hud.hitchMeters!)}'}',
+          RoadGlyph.walker,
+          AppColors.ff1E9C53,
+          highlighted: true,
+        ),
+      RoadAction.dropOff => _ActionSpec(
+          'Thả khách',
+          hud.riderMeters == null ? '${hud.rider ?? 'Khách'} xuống đây' : '${hud.rider} · ${_distance(hud.riderMeters!)}',
+          RoadGlyph.walker,
+          AppColors.ff1E9C53,
+          highlighted: true,
         ),
       RoadAction.uTurn => _ActionSpec(
           hud.reversed ? 'Quay đầu' : 'Quay đầu',
@@ -198,10 +216,17 @@ class ReversedChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Obx(() {
       final hud = controller.hud.value;
-      if (hud == null || controller.phase.value == GamePhase.resting) return const SizedBox.shrink();
+      // Đang có điện thoại thì thẻ cuộc gọi nằm chỗ này.
+      if (hud == null || controller.phase.value == GamePhase.resting || controller.call.value != null) return const SizedBox.shrink();
       final chips = <Widget>[
         if (hud.reversed) _chip(RoadGlyph.uTurn, 'Đang đi ngược về ${controller.setup.fromName}', AppColors.ffB4231E),
         if (hud.pushing) _chip(RoadGlyph.walker, 'Đang dắt bộ — giữ Ga để đẩy xe', AppColors.ff5B6169),
+        if (hud.rider != null)
+          _chip(RoadGlyph.walker, hud.riderMeters == null ? 'Chở ${hud.rider} — tấp lề cho xuống' : 'Chở ${hud.rider} · còn ${_distance(hud.riderMeters!)}',
+              AppColors.ff1E9C53),
+        if (hud.peach != null)
+          _chip(RoadGlyph.blossom, hud.peach! > 0 ? 'Cành đào ${hud.peach}%' : 'Cành đào gãy mất rồi', hud.peach! >= 60 ? AppColors.ffD94F7A : AppColors.ff5B6169),
+        if (hud.fog) _chip(RoadGlyph.fog, 'Sương mù — bật đèn, đi chậm', AppColors.ff5B6169),
       ];
       if (chips.isEmpty) return const SizedBox.shrink();
       return Column(

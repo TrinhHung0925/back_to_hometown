@@ -11,6 +11,7 @@ import 'chat_overlay.dart';
 import 'game_controller.dart';
 import 'game_hud.dart';
 import 'game_overlays.dart';
+import 'phone_call_card.dart';
 import 'roadside_overlays.dart';
 import 'speedometer.dart';
 import 'steering_stick.dart';
@@ -76,14 +77,18 @@ class _GameViewState extends State<GameView> {
                   children: [
                     Positioned(top: 0, left: 0, right: 0, child: GameHud(controller: controller)),
                     Positioned(top: 112.h, left: 12.h, child: ReversedChip(controller: controller)),
+                    // Điện thoại từ nhà: góc trên bên trái, không che đường phía trước.
+                    Positioned(top: 56.h, left: 12.h, child: PhoneCallCard(controller: controller)),
                     Positioned(top: 54.h, right: 12.h, child: RoadAheadColumn(controller: controller)),
                     // Thông báo nằm giữa khoảng trống phía trên: chừa cột "đường phía
                     // trước" bên phải; đang ghé quán thì dời sang phải bảng quán.
                     Obx(() {
                       final resting = controller.phase.value == GamePhase.resting && controller.stallVisit.value != null;
+                      // Đang có điện thoại: thẻ cuộc gọi ở góc trái, thông báo dời sang phải.
+                      final calling = controller.call.value != null;
                       return Positioned(
                         top: 56.h,
-                        left: resting ? 444.h : 0,
+                        left: resting ? 444.h : (calling ? 312.h : 0),
                         right: resting ? 12.h : 214.h,
                         child: Column(
                           children: [
