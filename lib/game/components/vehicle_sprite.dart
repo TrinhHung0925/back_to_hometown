@@ -32,6 +32,15 @@ class VehicleSprite extends PositionComponent {
   double blinkX = 0.22;
   double frontBlinkY = 0.12;
 
+  /// Đèn, xi-nhan khớp xe máy dựng 3D: đèn pha ở đầu ghi-đông, đèn hậu dưới
+  /// baga, xi-nhan hai bên đầu xe.
+  void fitMotorbike3d() {
+    headY = 0.22;
+    tailY = 0.93;
+    blinkX = 0.38;
+    frontBlinkY = 0.21;
+  }
+
   bool braking = false;
 
   /// Xi-nhan theo phía của xe: -1 trái, 1 phải, 0 tắt.

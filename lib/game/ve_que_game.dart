@@ -323,18 +323,11 @@ class VeQueGame extends FlameGame {
       priority: 6,
       motorbike: spec.kind == VehicleKind.motorbike,
     );
-    if (spec.kind == VehicleKind.motorbike) {
-      // Đèn, xi-nhan khớp với xe Wave dựng 3D: đèn pha ở đầu ghi-đông.
-      _playerSprite
-        ..headY = 0.22
-        ..tailY = 0.93
-        ..blinkX = 0.38
-        ..frontBlinkY = 0.21;
-    }
+    if (spec.kind == VehicleKind.motorbike) _playerSprite.fitMotorbike3d();
     _police = PoliceComponent(
       sprite: Sprite(images.fromCache(Img.imgScooterPolice)),
-      shadow: Sprite(images.fromCache(Img.imgShadowBox)),
-    );
+      shadow: Sprite(images.fromCache(Img.shadowOf(Img.imgScooterPolice))),
+    )..fitMotorbike3d();
     _busStops = BusStopLayer(
       road: road,
       layout: layout,
@@ -2705,7 +2698,7 @@ class VeQueGame extends FlameGame {
         final hs = leave > 0 ? park + dir * leave * 900 : from + (park - from) * (1 - pow(1 - arrive, 2));
         final hd = player.d + curb * (leave > 0 ? -30 * leave : 0);
         final helperHeading = heading;
-        _crew.items.add(CrewItem(Img.scootersAi[job.kind == RoadsideJobKind.fuelDelivery ? 3 : 6], hs, hd, helperHeading + pi / 2,
+        _crew.items.add(CrewItem(job.kind == RoadsideJobKind.fuelDelivery ? Img.imgScooterFuel : Img.imgScooterMechanic, hs, hd, helperHeading + pi / 2,
             27 * GameConfig.motorbikeVisualScale, 27 * GameConfig.motorbikeVisualScale * 150 / 64));
         if (job.kind == RoadsideJobKind.fuelDelivery && leave <= 0) {
           final atCar = arrive >= 1 && k > 0.45;

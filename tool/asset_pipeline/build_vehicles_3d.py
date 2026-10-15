@@ -26,6 +26,7 @@ chơi:
 
 build_vehicles.py, build_trip_events.py và build_roadside.py cũng ghi các file
 trên (bản vẽ phẳng cũ) nên nếu chạy lại chúng thì chạy script này sau cùng.
+Dòng xe AI dựng bằng build_traffic_3d.py (dùng lại các hàm ở đây).
 Ngoài ra script này ghi thêm bóng đổ theo hình xe (xem SHADOWS bên dưới):
     img_shadow_scooter_player.png, img_shadow_scooter_player_raincoat.png,
     img_shadow_scooter_parked.png, img_shadow_car_player.png,
@@ -1384,21 +1385,21 @@ def ac_unit(p):
     """Vỏ dàn lạnh trên nóc: hộp dẹt bo tròn, mũi vát."""
     x, y, z = p
     zb = 3.31
-    hgt = 0.21 - 0.12 * np.clip((1.75 - y) / 0.45, 0, 1) ** 2
+    hgt = 0.17 - 0.10 * np.clip((2.0 - y) / 0.4, 0, 1) ** 2
     d_top = (z - zb - hgt) / 1.1
-    d_plan = rbox((x, y, np.zeros_like(z)), (0, 2.85, 0), (0.86, 1.55, 1.0), 0.32)
-    d = smax(d_plan, d_top, 0.08)
+    d_plan = rbox((x, y, np.zeros_like(z)), (0, 2.95, 0), (0.70, 1.20, 1.0), 0.28)
+    d = smax(d_plan, d_top, 0.07)
     # hai quạt dàn nóng khoét lõm
-    fans = np.minimum(length2(x - 0.43, y - 3.55), length2(x + 0.43, y - 3.55)) - 0.27
-    dish = smax(fans, zb + hgt - 0.05 - z, 0.02)
+    fans = np.minimum(length2(x - 0.34, y - 3.62), length2(x + 0.34, y - 3.62)) - 0.21
+    dish = smax(fans, zb + hgt - 0.045 - z, 0.02)
     return smax(d, -dish, 0.02)
 
 
 def ac_pick(p, n):
     x, y, z = p
-    r = np.minimum(length2(x - 0.43, y - 3.55), length2(x + 0.43, y - 3.55))
-    grille = r < 0.285
-    louver = (y > 1.75) & (y < 2.6) & (np.abs(x) < 0.6) & (n[2] > 0.8)
+    r = np.minimum(length2(x - 0.34, y - 3.62), length2(x + 0.34, y - 3.62))
+    grille = r < 0.225
+    louver = (y > 2.0) & (y < 2.75) & (np.abs(x) < 0.48) & (n[2] > 0.8)
     idx = np.zeros(x.shape, np.int32)
     idx[louver] = 1
     idx[grille] = 2
@@ -1408,12 +1409,12 @@ def ac_pick(p, n):
 def ac_tint(p, n, alb, idx):
     x, y, z = p
     # khe lá gió, nan lưới + cánh quạt
-    louv = (idx == 1) & (np.abs(((y - 1.75) % 0.085) - 0.0425) < 0.013)
-    ang = np.arctan2(y - 3.55, np.abs(x) - 0.43)
-    r = np.minimum(length2(x - 0.43, y - 3.55), length2(x + 0.43, y - 3.55))
-    rings = (idx == 2) & ((np.abs((r % 0.06) - 0.03) < 0.006) | (r < 0.07))
-    blades = (idx == 2) & (np.sin(ang * 5 + r * 9) > 0.55) & (r < 0.25)
-    k = np.where(louv, 0.45, 1.0) * np.where(rings, 1.9, 1.0) * np.where(blades, 0.55, 1.0)
+    louv = (idx == 1) & (np.abs(((y - 2.0) % 0.075) - 0.0375) < 0.012)
+    ang = np.arctan2(y - 3.62, np.abs(x) - 0.34)
+    r = np.minimum(length2(x - 0.34, y - 3.62), length2(x + 0.34, y - 3.62))
+    rings = (idx == 2) & ((np.abs((r % 0.05) - 0.025) < 0.005) | (r < 0.06))
+    blades = (idx == 2) & (np.sin(ang * 5 + r * 9) > 0.55) & (r < 0.19)
+    k = np.where(louv, 0.45, 1.0) * np.where(rings, 1.6, 1.0) * np.where(blades, 0.55, 1.0)
     return alb * k[:, None]
 
 
@@ -1456,8 +1457,8 @@ def bus_interior():
             Obj('floor', lambda p: rbox(p, (0, 2.0, 0.6), (1.2, 1.9, 0.05), 0.04), Mat((50, 50, 52), rough=0.9))]
 
 
-def bus_scene(main, stripe):
-    pt = paint(main)
+def bus_scene(main, stripe, metal=0.55):
+    pt = paint(main, metal=metal)
     mats = [pt,
             Mat((10, 11, 12), rough=0.03, glass=1.0, spec=1.0),
             Mat((12, 12, 13), rough=0.12, spec=1.0, coat=0.8),
@@ -1465,9 +1466,9 @@ def bus_scene(main, stripe):
             paint((236, 236, 232), rough=0.5),
             Mat((250, 160, 30), rough=0.05, coat=1.0, emit=0.3),
             Mat((210, 30, 26), rough=0.05, coat=1.0, emit=0.3)]
-    acw = Mat((214, 216, 218), rough=0.45, coat=0.5, spec=0.3)
+    acw = Mat((176, 180, 184), rough=0.55, coat=0.25, spec=0.3)
     parts = [Obj('body', bus_body, mats, pick=bus_pick, tint=bus_tint),
-             Obj('ac', ac_unit, [acw, Mat((180, 184, 188), rough=0.5), Mat((40, 42, 44), rough=0.5, metal=0.3)],
+             Obj('ac', ac_unit, [acw, Mat((150, 154, 158), rough=0.5), Mat((40, 42, 44), rough=0.5, metal=0.3)],
                  pick=ac_pick, tint=ac_tint),
              Obj('hatches', bus_hatches, [Mat((200, 202, 204), rough=0.4), Mat((70, 76, 82), rough=0.15, coat=1.0)],
                  pick=bus_hatch_pick),

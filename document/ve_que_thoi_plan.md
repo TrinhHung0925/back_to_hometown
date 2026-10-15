@@ -401,6 +401,15 @@ Chia hai tay giống game MOBA: **tay trái đặt liên tục trên cần lái*
 
 **Xe của mình là mô hình 3D:** xe máy (Wave, người lái đội mũ bảo hiểm, áo chống nắng; bản mặc áo mưa cánh dơi; bản dựng chân chống), ô tô sedan đỏ, xe khách — dựng bằng khối 3D trong `tool/asset_pipeline/build_vehicles_3d.py` (raymarching: bóng mềm, che khuất môi trường, sơn bóng phản chiếu trời, kính tối thấy lờ mờ nội thất) rồi render sẵn thành ảnh nhìn từ trên xuống, kèm ảnh bóng đổ theo đúng dáng từng xe. Game vẫn vẽ 2D nên chạy mượt. Chạy script này sau cùng (các script cũ cũng ghi đè các file ảnh này).
 
+**Dòng xe AI cũng là mô hình 3D** (`tool/asset_pipeline/build_traffic_3d.py`, dùng chung bộ dò tia), để cả con đường một kiểu ảnh thật:
+- Xe máy: xe số kiểu Wave và xe tay ga kiểu Vision / Lead; người lái đủ màu mũ, áo chống nắng, găng tay; có xe chở người ngồi sau (tay vịn eo người lái), xe chở cành đào, cây quất trong chậu (treo bao lì xì), thùng hàng + thùng bia Tết đỏ, bao gạo. Trời mưa thì trùm áo mưa cánh dơi nhiều màu.
+- Xe CSGT: xe trắng sọc xanh, thùng sau, cụm đèn đỏ xanh đúng chỗ game nháy đèn; người lái áo vàng chanh, mũ trắng.
+- Xe thợ vá lưu động (hộp đồ nghề đỏ, săm cuộn, bơm tay) và xe người mang xăng tới (hai can đỏ) là hình riêng.
+- Ô tô: sedan bảy màu (cùng mô hình xe người chơi, sơn ánh kim / sơn trơn tuỳ màu, người lái mặc áo khác nhau), xe đa dụng 7 chỗ có baga nóc, bán tải cabin kép có khung thể thao, ốp vè đen, lòng thùng lót nhựa gân — thùng chở cây quất to, cây đào thế hoặc mấy thùng các-tông.
+- Xe khách: cùng mô hình xe khách người chơi, ba kiểu sơn; cục điều hoà trên nóc nhỏ và dịu màu hơn.
+- Xe tải: thùng mui bạt có dây chằng chéo, thùng kín nhôm có đường ghép, xe ben chở cát (thùng ben trùm lên nóc cabin).
+- Mỗi xe AI có ảnh bóng đổ riêng theo dáng xe (`img_shadow_<tên ảnh>`, `Img.shadowOf`); đèn xe máy AI đặt đúng chỗ trên mô hình 3D như xe mình. Bán tải dài hơn nên hộp va chạm 96 (trước 92).
+
 **Gà vịt chó qua đường (quốc lộ):** thỉnh thoảng ngay phía trước có đàn vịt lạch bạch nối đuôi qua đường (người chăn cầm sào đi sau), gà chạy ngang — có con khựng lại, có con quay đầu chạy ngược — hoặc chó chạy rông đứng giữa đường. Miền Nam nhiều vịt, miền Bắc nhiều gà, chó. Xe AI dừng chờ. **Bóp còi** thì chúng giật mình vỗ cánh chạy nhanh. Quệt phải gà vịt: lông bay, xe khựng, chủ chạy ra — đền 1 lì xì, mất 4 phút (mỗi đàn một lần). Chó lao ra: xe khựng mạnh, xe máy loạng choạng.
 
 **Hiệu ứng cho sống động:** khói pô phụt dày khi vặn ga (xe tải, xe khách phụt khói đen); phanh gấp / trượt cua in vệt lốp xuống mặt đường, mờ dần; quệt lề toé tia lửa; đường ướt bánh xe tung bụi nước; va chạm văng mảnh vỡ kính, nhựa, bốc khói bụi; nhặt lì xì / trả phí hiện chữ nổi "+1", "−2"; chạy nhanh camera lùi ra một chút. Từ 22:30 đêm giao thừa trời bắt đầu có pháo hoa, càng sát nửa đêm càng dày; về tới nhà ở chặng cuối thì pháo hoa nổ rộ.

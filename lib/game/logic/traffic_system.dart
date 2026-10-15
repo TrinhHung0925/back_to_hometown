@@ -33,7 +33,7 @@ abstract class Lanes {
 
 enum TrafficType {
   sedan(length: 88, width: 44),
-  pickup(length: 92, width: 46),
+  pickup(length: 96, width: 46),
   motorbike(length: 56, width: 24),
   bus(length: 176, width: 54),
   truck(length: 150, width: 52);

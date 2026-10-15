@@ -31,9 +31,9 @@ abstract class Img {
   static const String icMoney = '$assetsIconPath/ic_money.png';
   static const String icArrow = '$assetsIconPath/ic_arrow.png';
 
-  /// images — xe nhìn từ trên xuống, mũi xe hướng lên trên.
-  /// Ô tô: UnLuckY Studio (đổi màu bằng code); xe máy có người lái, xe khách,
-  /// xe container: vẽ bằng code (tool/asset_pipeline/build_vehicles.py).
+  /// images — xe nhìn từ trên xuống, mũi xe hướng lên trên. Mọi xe là mô
+  /// hình 3D render sẵn: xe của mình ở tool/asset_pipeline/build_vehicles_3d.py,
+  /// dòng xe AI ở tool/asset_pipeline/build_traffic_3d.py.
   static const String imgScooterPlayer = '$assetsImgPath/img_scooter_player.png';
   static const String imgScooterPolice = '$assetsImgPath/img_scooter_police.png';
   static final List<String> scootersAi = [for (var i = 1; i <= 10; i++) '$assetsImgPath/img_scooter_ai_$i.png'];
@@ -93,6 +93,24 @@ abstract class Img {
   static const String imgShadowCarPlayer = '$assetsImgPath/img_shadow_car_player.png';
   static const String imgShadowBusPlayer = '$assetsImgPath/img_shadow_bus_player.png';
 
+  /// Thợ vá lưu động / người mang xăng chạy xe máy tới chỗ mình.
+  static const String imgScooterMechanic = '$assetsImgPath/img_scooter_mechanic.png';
+  static const String imgScooterFuel = '$assetsImgPath/img_scooter_fuel.png';
+
+  /// Bóng đổ theo dáng một xe AI: `img_shadow_` + tên ảnh xe.
+  static String shadowOf(String path) => path.replaceFirst('/img_', '/img_shadow_');
+
+  /// Ảnh xe AI (mỗi ảnh có bóng đổ riêng [shadowOf]).
+  static List<String> get traffic => [
+        ...scootersAi,
+        ...scootersRaincoat,
+        imgScooterPolice,
+        ...sedansAi,
+        ...pickups,
+        ...buses,
+        ...trucks,
+      ];
+
   static String playerShadow(VehicleKind kind) => switch (kind) {
         VehicleKind.motorbike => imgShadowScooterPlayer,
         VehicleKind.car => imgShadowCarPlayer,
@@ -105,6 +123,9 @@ abstract class Img {
         imgShadowScooterParked,
         imgShadowCarPlayer,
         imgShadowBusPlayer,
+        for (final path in traffic) shadowOf(path),
+        imgScooterMechanic,
+        imgScooterFuel,
         imgBusPlayer,
         imgScooterPlayer,
         imgScooterPolice,

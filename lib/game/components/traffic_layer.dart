@@ -40,20 +40,33 @@ class TrafficLayer extends Component with HasGameReference<FlameGame> {
         TrafficType.truck => Img.trucks[variant % Img.trucks.length],
       };
 
-  VehicleSprite _make(TrafficType type, int variant) => VehicleSprite(
-        sprite: _sprite(_pathFor(type, variant)),
-        shadow: Sprite(game.images.fromCache(Img.imgShadowBox)),
-        width: type.width * (type == TrafficType.motorbike ? GameConfig.motorbikeVisualScale : 1),
-        motorbike: type == TrafficType.motorbike,
-      );
+  VehicleSprite _make(TrafficType type, int variant) {
+    final path = _pathFor(type, variant);
+    final sprite = VehicleSprite(
+      sprite: _sprite(path),
+      shadow: _sprite(Img.shadowOf(path)),
+      width: type.width * (type == TrafficType.motorbike ? GameConfig.motorbikeVisualScale : 1),
+      motorbike: type == TrafficType.motorbike,
+    );
+    if (type == TrafficType.motorbike) sprite.fitMotorbike3d();
+    return sprite;
+  }
+
+  /// Đổi ảnh xe (mưa thì trùm áo mưa) kèm bóng đổ theo dáng ảnh đó.
+  void _dress(VehicleSprite sprite, TrafficType type, int variant) {
+    final path = _pathFor(type, variant);
+    sprite
+      ..sprite = _sprite(path)
+      ..shadow = _sprite(Img.shadowOf(path));
+  }
 
   void sync() {
     final alive = <int>{};
     for (final v in traffic.vehicles) {
       alive.add(v.id);
       final sprite = _sprites.putIfAbsent(v.id, () => _make(v.type, v.variant)..addToParent(this));
+      _dress(sprite, v.type, v.variant);
       sprite
-        ..sprite = _sprite(_pathFor(v.type, v.variant))
         ..braking = v.braking
         ..lightsOn = lightsOn
         ..placeOn(road, v.s, v.d, facingBackward: v.oncoming, blinkerD: v.blinker);
@@ -64,8 +77,8 @@ class TrafficLayer extends Component with HasGameReference<FlameGame> {
     for (final v in cross.vehicles) {
       crossAlive.add(v.id);
       final sprite = _crossSprites.putIfAbsent(v.id, () => _make(v.type, v.variant)..addToParent(this));
+      _dress(sprite, v.type, v.variant);
       sprite
-        ..sprite = _sprite(_pathFor(v.type, v.variant))
         ..braking = v.speed < v.cruiseSpeed * 0.5
         ..lightsOn = lightsOn
         ..placeAcross(road, v.s, v.d, down: v.down);
