@@ -73,7 +73,9 @@ class StageSetup {
   double get lengthKm => sections.fold(0, (sum, s) => sum + s.km);
   double get lengthUnits => lengthKm * GameConfig.unitsPerKm;
 
-  StageSetup withSeed(int value) => StageSetup(
+  StageSetup withSeed(int value) => copyWith(seed: value);
+
+  StageSetup copyWith({int? seed, MapTheme? theme, SkyMode? sky}) => StageSetup(
         vehicle: vehicle,
         fromName: fromName,
         toName: toName,
@@ -85,11 +87,11 @@ class StageSetup {
         startFuel: startFuel,
         stageNumber: stageNumber,
         stageCount: stageCount,
-        seed: value,
+        seed: seed ?? this.seed,
         south: south,
         laterMinutes: laterMinutes,
-        theme: theme,
-        sky: sky,
+        theme: theme ?? this.theme,
+        sky: sky ?? this.sky,
         startPeach: startPeach,
       );
 }
@@ -303,7 +305,19 @@ enum GameSound {
   fireworks,
 }
 
-enum NoticeKind { info, warning, money }
+/// Loại thông báo; [rank] cao hơn thì được chen lên trước, không bị thông
+/// báo thấp hơn đè mất ([danger]: nguy hiểm ngay trước mặt — xe tải mất
+/// phanh, đuôi đoạn tắc đường…).
+enum NoticeKind {
+  info(0),
+  money(1),
+  warning(2),
+  danger(3);
+
+  const NoticeKind(this.rank);
+
+  final int rank;
+}
 
 /// Thông báo ngắn hiện giữa phía trên màn hình (vào phố, sắp tới trạm thu
 /// phí, xe vượt phía sau…).
@@ -352,6 +366,21 @@ class CurveHud {
   int get hashCode => Object.hash(right, meters, adviseKmh, tooFast);
 }
 
+/// Đuôi đoạn tắc đường phía trước: còn bao xa, đang chạy nhanh quá không
+/// kịp phanh thì [tooFast].
+class JamHud {
+  const JamHud({required this.meters, required this.tooFast});
+
+  final int meters;
+  final bool tooFast;
+
+  @override
+  bool operator ==(Object other) => other is JamHud && other.meters == meters && other.tooFast == tooFast;
+
+  @override
+  int get hashCode => Object.hash(meters, tooFast);
+}
+
 /// Ảnh chụp số liệu để HUD Flutter hiển thị. Game chỉ gửi khi có số thay đổi.
 class HudData {
   const HudData({
@@ -367,6 +396,7 @@ class HudData {
     required this.danger,
     this.light,
     this.curve,
+    this.jam,
     this.headlightsOn = false,
     this.night = false,
     this.alert = 100,
@@ -424,6 +454,9 @@ class HudData {
 
   /// Khúc cua gắt phía trước (null nếu không có).
   final CurveHud? curve;
+
+  /// Đuôi đoạn tắc đường phía trước (null nếu không có).
+  final JamHud? jam;
   final bool headlightsOn;
 
   /// Trời đã tối (nên bật đèn).
@@ -517,6 +550,7 @@ class HudData {
       other.danger == danger &&
       other.light == light &&
       other.curve == curve &&
+      other.jam == jam &&
       other.headlightsOn == headlightsOn &&
       other.night == night &&
       other.alert == alert &&
@@ -552,7 +586,7 @@ class HudData {
 
   @override
   int get hashCode => Object.hashAll([
-        kmDone, kmTotal, speedKmh, cruiseKmh, spareMinutes, clockLabel, minutesLeft, lixi, cargo, danger, light, curve, headlightsOn, night, //
+        kmDone, kmTotal, speedKmh, cruiseKmh, spareMinutes, clockLabel, minutesLeft, lixi, cargo, danger, light, curve, jam, headlightsOn, night, //
         alert, drowse, canUTurn, stallPrompt, stallKind, stallMeters, driverSeat, hitchPrompt, hitchMeters, rider, riderMeters, peach, fog, day, reversed, fuel, fuelKm, tire, spare, rain, rainKind, raincoat,
         soaked, speedLimit, pullOver, outOfFuel, pushing, fuelAhead, repairAhead, Object.hashAll(actions),
       ]);

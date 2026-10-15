@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import '../../common/app_button.dart';
 import '../../common/lixi_icon.dart';
 import '../../common/screen_header.dart';
+import '../../dialog/map_picker_dialog.dart';
 import '../../game/logic/trip_clock.dart';
 import '../../model/trip.dart';
 import '../../resource/app_colors.dart';
@@ -66,7 +67,14 @@ class _RestStopViewState extends State<RestStopView> {
                           children: [
                             Expanded(child: _TripCard(progress: progress, behind: controller.behindSchedule, controller: controller)),
                             SizedBox(width: 16.h),
-                            Expanded(child: _NextStageCard(stage: next, number: progress.stageIndex + 1, total: progress.plan.stages.length)),
+                            Expanded(
+                              child: _NextStageCard(
+                                stage: next,
+                                number: progress.stageIndex + 1,
+                                total: progress.plan.stages.length,
+                                controller: controller,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -240,11 +248,12 @@ class _TripCard extends StatelessWidget {
 }
 
 class _NextStageCard extends StatelessWidget {
-  const _NextStageCard({required this.stage, required this.number, required this.total});
+  const _NextStageCard({required this.stage, required this.number, required this.total, required this.controller});
 
   final TripStage stage;
   final int number;
   final int total;
+  final RestStopController controller;
 
   static String kindLabel(RoadKind kind) => switch (kind) {
         RoadKind.city => 'Đường phố',
@@ -315,6 +324,8 @@ class _NextStageCard extends StatelessWidget {
             maxLines: 2,
             color: AppColors.ff5B6169,
           ),
+          SizedBox(height: 8.h),
+          Obx(() => MapRow(summary: controller.mapSummary.value, onPressed: controller.pickMap)),
         ],
       ),
     );

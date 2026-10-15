@@ -73,6 +73,7 @@ class TrafficLayer extends Component with HasGameReference<FlameGame> {
       sprite
         ..braking = v.braking
         ..lightsOn = lightsOn
+        ..hazard = v.hazard
         ..placeOn(road, v.s, v.d, facingBackward: v.oncoming, blinkerD: v.blinker);
     }
     _prune(_sprites, alive);

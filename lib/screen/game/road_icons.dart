@@ -33,6 +33,9 @@ enum RoadGlyph {
 
   /// Sương mù: mấy vệt ngang mờ.
   fog,
+
+  /// Tắc đường: ba xe nối đuôi nhau (nhìn từ phía sau), đèn phanh đỏ.
+  jam,
 }
 
 class RoadIcon extends StatelessWidget {
@@ -260,6 +263,14 @@ class RoadIconPainter extends CustomPainter {
           ..color = accent
           ..strokeWidth = 2.4);
         canvas.drawCircle(const Offset(12, 17.5), 1.3, soft);
+      case RoadGlyph.jam:
+        final glass = Paint()..color = const Color(0x991B1D22);
+        for (final (l, t, r, b) in [(7.5, 2.0, 16.5, 7.5), (5.0, 8.0, 19.0, 14.5), (2.5, 15.0, 21.5, 23.0)]) {
+          canvas.drawRRect(RRect.fromLTRBR(l, t, r, b, Radius.circular((b - t) * 0.3)), fill);
+          canvas.drawRRect(RRect.fromLTRBR(l + (r - l) * 0.18, t + (b - t) * 0.14, r - (r - l) * 0.18, t + (b - t) * 0.46, const Radius.circular(1)), glass);
+        }
+        canvas.drawCircle(const Offset(5.5, 19.5), 1.7, soft);
+        canvas.drawCircle(const Offset(18.5, 19.5), 1.7, soft);
       case RoadGlyph.blossom:
         for (var i = 0; i < 5; i++) {
           final a = -pi / 2 + i * 2 * pi / 5;

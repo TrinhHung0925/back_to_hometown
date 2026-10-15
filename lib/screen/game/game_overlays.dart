@@ -7,12 +7,15 @@ import 'package:get/get.dart';
 import '../../common/app_button.dart';
 import '../../common/game_panel.dart';
 import '../../common/lixi_icon.dart';
+import '../../dialog/map_picker_dialog.dart';
 import '../../game/game_config.dart';
 import '../../game/logic/trip_clock.dart';
 import '../../game/stage.dart';
+import '../../model/map_theme.dart';
 import '../../resource/app_colors.dart';
 import '../../resource/app_resource.dart';
 import '../../resource/app_text.dart';
+import '../../service/audio_service.dart';
 import 'game_controller.dart';
 import 'road_icons.dart';
 
@@ -342,6 +345,8 @@ class ChaseBar extends StatelessWidget {
   }
 }
 
+/// Tạm dừng: đi tiếp / chơi lại / về menu; bên phải đổi trời (ngay) và bản
+/// đồ (chơi lại chặng với cảnh mới).
 class PauseOverlay extends StatelessWidget {
   const PauseOverlay({super.key, required this.controller});
 
@@ -350,7 +355,7 @@ class PauseOverlay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GamePanel(
-      width: 320.h,
+      width: 600.h,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -362,15 +367,76 @@ class PauseOverlay extends StatelessWidget {
             textAlign: TextAlign.center,
             color: AppColors.ff1B1D22,
           ),
-          SizedBox(height: 16.h),
-          AppButton(label: 'Đi tiếp', icon: Img.icPlay, onPressed: controller.resume),
-          SizedBox(height: 10.h),
-          AppButton(label: 'Chơi lại chặng này', icon: Img.icRetry, color: AppColors.ff5B6169, onPressed: controller.retry),
-          SizedBox(height: 10.h),
-          AppButton(label: 'Về menu', icon: Img.icMenu, color: AppColors.ff5B6169, onPressed: controller.exitToMenu),
+          SizedBox(height: 14.h),
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      AppButton(label: 'Đi tiếp', icon: Img.icPlay, width: double.infinity, onPressed: controller.resume),
+                      SizedBox(height: 10.h),
+                      AppButton(
+                        label: 'Chơi lại chặng này',
+                        icon: Img.icRetry,
+                        width: double.infinity,
+                        color: AppColors.ff5B6169,
+                        onPressed: controller.retry,
+                      ),
+                      SizedBox(height: 10.h),
+                      AppButton(label: 'Về menu', icon: Img.icMenu, width: double.infinity, color: AppColors.ff5B6169, onPressed: controller.exitToMenu),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16.h),
+                  child: Container(width: 1.h, color: AppColors.ffE3E5E9),
+                ),
+                Expanded(child: _ViewSettings(controller: controller)),
+              ],
+            ),
+          ),
         ],
       ),
     );
+  }
+}
+
+/// Trời ngày / đêm đổi ngay; dòng bản đồ mở hộp chọn bản đồ.
+class _ViewSettings extends StatelessWidget {
+  const _ViewSettings({required this.controller});
+
+  final GameController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final sky = controller.sky.value;
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          AppText.manrope('TRỜI', fontSize: 11.h, fontWeight: FontWeight.w800, letterSpacing: 1.2.h, color: AppColors.ff9A9385),
+          SizedBox(height: 6.h),
+          for (final s in SkyMode.values) ...[
+            SkyChip(
+              sky: s,
+              selected: s == sky,
+              onTap: () {
+                AudioService.shared.click();
+                controller.setSky(s);
+              },
+            ),
+            SizedBox(height: 6.h),
+          ],
+          SizedBox(height: 4.h),
+          MapRow(summary: controller.setup.theme.title, onPressed: controller.pickMap),
+        ],
+      );
+    });
   }
 }
 

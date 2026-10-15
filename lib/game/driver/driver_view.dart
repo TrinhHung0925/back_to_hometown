@@ -872,13 +872,12 @@ class _DriverView extends Component {
       final img = a.vehicle(path, view);
       // Mặt đuôi xe trước mặt / mặt đầu xe ngược chiều nằm ở đầu gần mình.
       final o = _at(v.s - game.dir * v.type.length / 2, v.d);
-      final scale = v.type == TrafficType.motorbike ? 1.15 : 1.0;
-      final w = img == null ? v.type.width : img.width / DriverArt.vehiclePixelsPerMeter * _u * scale;
-      final h = img == null ? v.type.width * 0.8 : img.height / DriverArt.vehiclePixelsPerMeter * _u * scale;
+      final w = img == null ? v.type.width : img.width / DriverArt.vehiclePixelsPerMeter * _u;
+      final h = img == null ? v.type.width * 0.8 : img.height / DriverArt.vehiclePixelsPerMeter * _u;
       final lamps = a.lamps[DriverArt.baseOf(path)]?[view] ?? const <Offset>[];
       _board(items, o.dx, o.dy, w, h, img, fallback: const Color(0xff4B5563), after: (c, rect, fade) {
         if (img == null) return;
-        if ((v.blinker != 0 || v.runaway) && (game._time * 2.6).floor().isEven) _blink(c, v, o, img, rect, lamps, fade);
+        if ((v.blinker != 0 || v.hazard) && (game._time * 2.6).floor().isEven) _blink(c, v, o, img, rect, lamps, fade);
         final glowOn = same ? (v.braking || dark > 0.25) : dark > 0.25;
         if (!glowOn) return;
         for (final l in lamps) {
@@ -910,7 +909,7 @@ class _DriverView extends Component {
     final spread = img.width * 0.32;
     final left = single ? pts.first.dx - spread : xs.reduce(min), right = single ? pts.first.dx + spread : xs.reduce(max);
     final List<double> at;
-    if (v.runaway) {
+    if (v.hazard) {
       at = [left, right];
     } else {
       final toward = _at(v.s, v.d + v.blinker * 20);
@@ -1020,6 +1019,9 @@ class _DriverView extends Component {
 
   /// Khung xe mình phía trước mắt: ghi-đông xe máy, táp-lô và vô-lăng ô tô,
   /// xe khách. Vô-lăng xoay theo tay lái.
+  /// Ghi-đông xe máy chiếm bao nhiêu bề ngang màn hình.
+  static const double _motoCockpitScale = 0.84;
+
   void _cockpit(Canvas canvas, Size size, DriverArt a) {
     final kind = game.spec.kind;
     final key = switch (kind) {
@@ -1046,17 +1048,23 @@ class _DriverView extends Component {
       VehicleKind.bus => 'bus',
     }];
     if (kind == VehicleKind.motorbike) {
-      // Ghi-đông (cả đồng hồ, gương) quay nhẹ theo tay lái.
+      // Ghi-đông nhỏ hơn bề ngang màn hình một chút (thấy nhiều đường hơn),
+      // canh giữa đáy; mép ảnh kẹp lại nên hai ống tay áo vẫn kéo tới mép
+      // màn hình. Cả đồng hồ, gương quay nhẹ theo tay lái.
+      final k = scale * _motoCockpitScale;
+      final left = (size.width - img.width * k) / 2, mTop = size.height - img.height * k;
       final pivot = Offset(size.width / 2, size.height * 1.1);
       canvas.save();
       canvas
         ..translate(pivot.dx, pivot.dy)
         ..rotate(_steer * 0.05)
-        ..translate(-pivot.dx, -pivot.dy);
-      canvas.drawImageRect(img, src, dest, paint);
+        ..translate(-pivot.dx + left, -pivot.dy);
+      final shader = ImageShader(img, TileMode.clamp, TileMode.clamp, Float64List.fromList([k, 0, 0, 0, 0, k, 0, 0, 0, 0, 1, 0, 0, mTop, 0, 1]),
+          filterQuality: FilterQuality.medium);
+      canvas.drawRect(Rect.fromLTRB(-left, mTop, size.width - left, size.height + 4), paint..shader = shader);
       if (info is Map) {
-        _dash(canvas, info, scale, top, dim);
-        _mirrors(canvas, info, scale, top);
+        _dash(canvas, info, k, mTop, dim);
+        _mirrors(canvas, info, k, mTop);
       }
       canvas.restore();
       return;
@@ -1238,9 +1246,8 @@ class _DriverView extends Component {
       if (p.z < DriverCamera.near * 2 || p.z > mc.far) continue;
       final k = mc.focal / p.z;
       final base = mc.project(p);
-      final sc = v.type == TrafficType.motorbike ? 1.15 : 1.0;
-      final bw = (img == null ? v.type.width : img.width / DriverArt.vehiclePixelsPerMeter * _u * sc) * k;
-      final bh = (img == null ? v.type.width * 0.8 : img.height / DriverArt.vehiclePixelsPerMeter * _u * sc) * k;
+      final bw = (img == null ? v.type.width : img.width / DriverArt.vehiclePixelsPerMeter * _u) * k;
+      final bh = (img == null ? v.type.width * 0.8 : img.height / DriverArt.vehiclePixelsPerMeter * _u) * k;
       shown.add((p.z, img, Rect.fromLTWH(base.dx - bw / 2, base.dy - bh, bw, bh), a.lamps[DriverArt.baseOf(path)]?[view] ?? const [], following));
     }
     shown.sort((x, y) => y.$1.compareTo(x.$1));

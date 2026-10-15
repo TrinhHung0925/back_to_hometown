@@ -141,6 +141,11 @@ class TrafficVehicle {
   /// Xe tải mất phanh đổ dốc: không giảm tốc theo xe trước, bật đèn khẩn cấp.
   bool runaway = false;
 
+  /// Bật đèn khẩn cấp (xe cuối hàng tắc đường báo xe sau).
+  bool hazardLights = false;
+
+  bool get hazard => runaway || hazardLights;
+
   /// Đèn phanh: đang giảm tốc.
   bool braking = false;
 

@@ -428,6 +428,18 @@ class _TetEvents {
   }
 
   // --------------------------------------------------------- Tắc đường
+  /// Xe cuối hàng tắc (gồm cả xe vừa nối vào đuôi) và quãng trống từ đầu xe
+  /// mình tới đó; null khi chưa tới gần hoặc đã ở trong hàng.
+  TrafficVehicle? jamTail;
+  double jamGap = 0;
+  final Set<int> _jamLit = {};
+
+  /// Quãng đường trước đuôi tắc giữ thẳng, khỏi khuất sau khúc cua.
+  bool keepStraight(double a, double b) {
+    final j = jam;
+    return j != null && b > j.from - GameConfig.jamClearView && a < j.head;
+  }
+
   void _stepJam(double dt) {
     final j = jam;
     if (j == null || g.dir < 0) return;
@@ -436,14 +448,28 @@ class _TetEvents {
       j.filled = true;
       _fillJam(j);
     }
-    if (s > j.from - 900 && s < j.head) {
-      g._notice(
-        'jam${j.head.round()}',
-        g.spec.kind == VehicleKind.motorbike
-            ? 'Tắc đường cửa ngõ ngày Tết! Xe máy đi sát lề phải luồn lên được — đi chậm thôi.'
-            : 'Tắc đường cửa ngõ ngày Tết! Chịu khó nhích từng chút, CSGT đang phân luồng phía trước.',
-        NoticeKind.warning,
-      );
+    _trackTail(j);
+    final tail = jamTail;
+    if (tail != null) {
+      final v = g.player.speed;
+      final moto = g.spec.kind == VehicleKind.motorbike;
+      if (jamGap < GameConfig.jamWarnAhead) {
+        g._notice(
+          'jam${j.head.round()}',
+          moto
+              ? 'Phía trước tắc đường cửa ngõ ngày Tết! Xe máy đi sát lề phải luồn lên được — đi chậm thôi.'
+              : 'Phía trước tắc đường cửa ngõ ngày Tết! Giảm tốc dần, CSGT đang phân luồng.',
+          NoticeKind.warning,
+        );
+      }
+      // Lao tới đuôi hàng xe mà chưa giảm tốc: báo nguy hiểm, kèm khoảng cách.
+      if (v > 0.45 * GameConfig.normalSpeed && jamGap < _stopReach(v) + v * 0.5) {
+        g._notice(
+          'jamTail${j.head.round()}',
+          moto ? 'Sắp đâm vào đuôi hàng xe tắc — phanh ngay, hoặc né sát lề phải!' : 'Sắp đâm vào đuôi hàng xe tắc — phanh ngay!',
+          NoticeKind.danger,
+        );
+      }
     }
     // CSGT cho từng đợt xe đi qua.
     j.cycle += dt;
@@ -459,6 +485,73 @@ class _TetEvents {
         j.ids.remove(v.id);
       }
     }
+  }
+
+  /// Quãng phanh hết cỡ từ tốc độ [v] (cộng chút phản xạ).
+  double _stopReach(double v) => v * v / (2 * g.spec.brakeDecel) + v * 0.6 + 40;
+
+  /// Dò đuôi hàng xe đứng / bò chậm từ chỗ phân luồng lùi về phía mình; xe
+  /// ô tô cuối hàng mỗi làn bật đèn khẩn cấp như ngoài đời.
+  void _trackTail(_Jam j) {
+    final s = g.player.s;
+    final front = s + g.spec.length / 2;
+    jamTail = null;
+    if (!j.filled || s > j.head || s < j.from - 3200) {
+      _unlight();
+      return;
+    }
+    final queue = [
+      for (final v in g.traffic.vehicles)
+        if (!v.oncoming && !v.runaway && v.s > s && v.s < j.head + 60 && v.speed < 0.4 * GameConfig.normalSpeed) v,
+    ]..sort((a, b) => b.s.compareTo(a.s));
+    var edge = j.head + 60;
+    final chain = <TrafficVehicle>[];
+    for (final v in queue) {
+      if (edge - v.s > GameConfig.jamChainGap) break;
+      chain.add(v);
+      edge = v.s;
+    }
+    if (chain.isEmpty) {
+      _unlight();
+      return;
+    }
+    final tail = chain.last;
+    final gap = tail.s - tail.type.length / 2 - front;
+    // Đã nhập vào hàng (đứng ngay sau đuôi) hay đang luồn lề thì thôi báo.
+    if (!onShoulder && (gap > 18 || g.player.speed > 0.3 * GameConfig.normalSpeed)) {
+      jamTail = tail;
+      jamGap = max(0.0, gap);
+    }
+    final lit = <int>{};
+    for (final lane in Lanes.sameDirection) {
+      final rear = chain.reversed.where((v) => v.lane == lane && v.type != TrafficType.motorbike).take(1);
+      for (final v in rear) {
+        v.hazardLights = true;
+        lit.add(v.id);
+      }
+    }
+    for (final v in g.traffic.vehicles) {
+      if (_jamLit.contains(v.id) && !lit.contains(v.id)) v.hazardLights = false;
+    }
+    _jamLit
+      ..clear()
+      ..addAll(lit);
+  }
+
+  void _unlight() {
+    if (_jamLit.isEmpty) return;
+    for (final v in g.traffic.vehicles) {
+      if (_jamLit.contains(v.id)) v.hazardLights = false;
+    }
+    _jamLit.clear();
+  }
+
+  /// Biển "Tắc …m" trên HUD; nền đỏ khi đang quá nhanh, phanh không kịp.
+  JamHud? get jamHud {
+    final tail = jamTail;
+    if (tail == null || jamGap > GameConfig.jamWarnAhead) return null;
+    final v = g.player.speed;
+    return JamHud(meters: VeQueGame._meters(jamGap), tooFast: v > 0.3 * GameConfig.normalSpeed && _stopReach(v) + v * 0.5 > jamGap);
   }
 
   void _fillJam(_Jam j) {
@@ -503,8 +596,7 @@ class _TetEvents {
         _truckRamp = r;
         truckWarn = GameConfig.runawayWarningSeconds;
         g.onSound(GameSound.truckHorn);
-        g.onNotice(const GameNotice('Đang đổ dốc dài — xe tải phía sau mất phanh, còi inh ỏi! Tránh sang làn sát lề phải ngay!',
-            kind: NoticeKind.warning));
+        g.onNotice(const GameNotice('Xe tải mất phanh lao tới phía sau! Tránh sang làn sát lề phải ngay!', kind: NoticeKind.danger));
       }
     }
     if (truckWarn > 0) {

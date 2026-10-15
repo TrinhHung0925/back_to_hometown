@@ -13,10 +13,13 @@ import '../service/local_service.dart';
 /// Chọn bản đồ (cảnh hai bên đường) và trời (theo giờ / ngày / đêm). Lưu
 /// ngay khi chọn; áp cho các chặng sắp chơi.
 class MapPickerDialog extends StatefulWidget {
-  const MapPickerDialog({super.key});
+  const MapPickerDialog({super.key, this.note});
+
+  /// Ghi chú dưới tiêu đề (ví dụ đang chơi dở: đổi bản đồ thì chơi lại chặng).
+  final String? note;
 
   /// Mở hộp chọn; trả về khi đóng.
-  static Future<void> open() => Get.dialog<void>(const MapPickerDialog());
+  static Future<void> open({String? note}) => Get.dialog<void>(MapPickerDialog(note: note));
 
   /// Dòng tóm tắt lựa chọn hiện tại, ví dụ "Tự động · Theo giờ".
   static String summary() => '${LocalService.shared.getMapTheme().title} · ${LocalService.shared.getSkyMode().title}';
@@ -56,7 +59,16 @@ class _MapPickerDialogState extends State<MapPickerDialog> {
             children: [
               Row(
                 children: [
-                  Expanded(child: AppText.manrope('Chọn bản đồ', fontSize: 18.h, fontWeight: FontWeight.w800, color: AppColors.ff1B1D22)),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        AppText.manrope('Chọn bản đồ', fontSize: 18.h, fontWeight: FontWeight.w800, color: AppColors.ff1B1D22),
+                        if (widget.note != null)
+                          AppText.manrope(widget.note!, fontSize: 11.h, fontWeight: FontWeight.w700, color: AppColors.ffD62828),
+                      ],
+                    ),
+                  ),
                   CupertinoButton(
                     padding: EdgeInsets.zero,
                     minimumSize: Size.zero,
@@ -90,7 +102,7 @@ class _MapPickerDialogState extends State<MapPickerDialog> {
                 children: [
                   for (final sky in SkyMode.values) ...[
                     if (sky != SkyMode.values.first) SizedBox(width: 8.h),
-                    Expanded(child: _SkyChip(sky: sky, selected: sky == _sky, onTap: () => _pickSky(sky))),
+                    Expanded(child: SkyChip(sky: sky, selected: sky == _sky, onTap: () => _pickSky(sky))),
                   ],
                 ],
               ),
@@ -188,12 +200,14 @@ class _ThemeCard extends StatelessWidget {
       };
 }
 
-class _SkyChip extends StatelessWidget {
-  const _SkyChip({required this.sky, required this.selected, required this.onTap});
+/// Một lựa chọn trời: chấm màu bầu trời, tên, mô tả ([compact] bỏ mô tả).
+class SkyChip extends StatelessWidget {
+  const SkyChip({super.key, required this.sky, required this.selected, required this.onTap, this.compact = false});
 
   final SkyMode sky;
   final bool selected;
   final VoidCallback onTap;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -229,8 +243,10 @@ class _SkyChip extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  AppText.manrope(sky.title, fontSize: 13.h, fontWeight: FontWeight.w800, color: selected ? AppColors.ffFFFFFF : AppColors.ff1B1D22),
-                  AppText.manrope(sky.subtitle,
+                  AppText.manrope(sky.title,
+                      fontSize: 13.h, fontWeight: FontWeight.w800, maxLines: 1, color: selected ? AppColors.ffFFFFFF : AppColors.ff1B1D22),
+                  if (!compact)
+                    AppText.manrope(sky.subtitle,
                       fontSize: 9.5.h,
                       fontWeight: FontWeight.w600,
                       maxLines: 1,
@@ -238,6 +254,37 @@ class _SkyChip extends StatelessWidget {
                 ],
               ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Dòng "Bản đồ · Tự động · Theo giờ — Đổi ›" (màn lên lộ trình, trạm dừng
+/// nghỉ, menu tạm dừng); bấm để mở [MapPickerDialog].
+class MapRow extends StatelessWidget {
+  const MapRow({super.key, required this.summary, required this.onPressed});
+
+  final String summary;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return CupertinoButton(
+      padding: EdgeInsets.zero,
+      minimumSize: Size.zero,
+      onPressed: onPressed,
+      child: Container(
+        height: 30.h,
+        padding: EdgeInsets.symmetric(horizontal: 10.h),
+        decoration: BoxDecoration(color: AppColors.ffF2F3F5, borderRadius: BorderRadius.circular(10.h)),
+        child: Row(
+          children: [
+            AppText.manrope('Bản đồ', fontSize: 11.h, fontWeight: FontWeight.w700, color: AppColors.ff6B7280),
+            SizedBox(width: 8.h),
+            Expanded(child: AppText.manrope(summary, fontSize: 12.5.h, fontWeight: FontWeight.w800, maxLines: 1, color: AppColors.ff1B1D22)),
+            AppText.manrope('Đổi ›', fontSize: 12.h, fontWeight: FontWeight.w800, color: AppColors.ffD62828),
           ],
         ),
       ),

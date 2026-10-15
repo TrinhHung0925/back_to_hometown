@@ -5,6 +5,7 @@ import '../game/logic/trip_clock.dart';
 import '../game/logic/vehicle_condition.dart';
 import '../game/stage.dart';
 import '../game/vehicle_spec.dart';
+import '../model/map_theme.dart';
 import '../model/place.dart';
 import '../model/trip.dart';
 import 'local_service.dart';
@@ -88,10 +89,13 @@ class TripService {
       seed: _random.nextInt(1 << 20),
       south: _isSouth(progress.plan, progress.stageIndex),
       laterMinutes: progress.plan.stages.skip(progress.stageIndex + 1).fold(0.0, (sum, s) => sum + stageGameMinutes(s)),
-      theme: LocalService.shared.getMapTheme().resolve(_place(stage.fromName), _place(stage.toName)),
+      theme: themeFor(stage.fromName, stage.toName),
       sky: LocalService.shared.getSkyMode(),
     );
   }
+
+  /// Bản đồ đang chọn (tự động thì theo vùng) cho chặng từ [from] tới [to].
+  static MapTheme themeFor(String from, String to) => LocalService.shared.getMapTheme().resolve(_place(from), _place(to));
 
   /// Điểm trên bản đồ có tên ở cuối tên điểm dừng của chặng.
   static Place? _place(String name) {

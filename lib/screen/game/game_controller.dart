@@ -12,6 +12,8 @@ import '../../game/logic/vehicle_condition.dart';
 import '../../game/stage.dart';
 import '../../game/ve_que_game.dart';
 import '../../game/vehicle_spec.dart';
+import '../../dialog/map_picker_dialog.dart';
+import '../../model/map_theme.dart';
 import '../../model/trip.dart';
 import '../../resource/app_resource.dart';
 import '../../route.dart';
@@ -23,6 +25,9 @@ import '../../service/trip_service.dart';
 class GameController extends GetxController {
   late StageSetup setup;
   late VeQueGame game;
+
+  /// Trời đang chọn (đổi được ngay giữa chặng ở menu tạm dừng).
+  final sky = SkyMode.clock.obs;
 
   /// Tăng mỗi lần chơi lại để dựng GameWidget mới.
   final gameKey = 0.obs;
@@ -47,6 +52,17 @@ class GameController extends GetxController {
   /// Thông báo ngắn đang hiện (tự ẩn sau vài giây).
   final notice = Rxn<GameNotice>();
   Timer? _noticeTimer;
+
+  /// Thông báo chờ tới lượt (cái đang hiện quan trọng hơn hoặc vừa mới hiện),
+  /// xếp theo [NoticeKind.rank] rồi theo lúc báo.
+  final List<(GameNotice, DateTime)> _noticeQueue = [];
+  DateTime _noticeAt = DateTime(0);
+  DateTime _noticeEnd = DateTime(0);
+
+  /// Hiện ít nhất chừng này mới để thông báo cùng mức thay; chờ quá
+  /// [_noticeStale] thì bỏ (chuyện đã qua rồi).
+  static const _noticeMin = Duration(milliseconds: 2200);
+  static const _noticeStale = Duration(seconds: 7);
 
   /// Đang ghé quán (null khi đang lái).
   final stallVisit = Rxn<StallVisit>();
@@ -130,6 +146,7 @@ class GameController extends GetxController {
   }
 
   void _createGame() {
+    sky.value = setup.sky;
     hud.value = null;
     phase.value = GamePhase.driving;
     result.value = null;
@@ -140,6 +157,9 @@ class GameController extends GetxController {
     job.value = null;
     call.value = null;
     pump.value = null;
+    notice.value = null;
+    _noticeQueue.clear();
+    _noticeTimer?.cancel();
     _endChat();
     _chatUsed.clear();
     game = VeQueGame(
@@ -259,10 +279,59 @@ class GameController extends GetxController {
     }
   }
 
+  /// Thông báo nguy hiểm chen ngay lên trước; thông báo thường không đè lên
+  /// cái quan trọng hơn hay cái vừa hiện chưa kịp đọc mà xếp hàng chờ.
   void _showNotice(GameNotice value) {
+    final current = notice.value;
+    if (current?.text == value.text || _noticeQueue.any((q) => q.$1.text == value.text)) return;
+    if (current == null) return _presentNotice(value);
+    final now = DateTime.now();
+    final shown = now.difference(_noticeAt);
+    if (value.kind.rank > current.kind.rank) {
+      if (shown < _noticeMin) _queueNotice(current, _noticeAt, first: true);
+      return _presentNotice(value);
+    }
+    if (value.kind.rank == current.kind.rank && current.kind != NoticeKind.danger && shown >= _noticeMin) {
+      return _presentNotice(value);
+    }
+    _queueNotice(value, now);
+    // Có cái đang chờ: thông báo thường chỉ giữ đủ lâu để đọc rồi nhường.
+    final due = _noticeAt.add(_noticeMin);
+    if (current.kind != NoticeKind.danger && due.isBefore(_noticeEnd)) _scheduleNotice(due);
+  }
+
+  void _queueNotice(GameNotice value, DateTime at, {bool first = false}) {
+    var i = _noticeQueue.indexWhere((q) => first ? q.$1.kind.rank <= value.kind.rank : q.$1.kind.rank < value.kind.rank);
+    if (i < 0) i = _noticeQueue.length;
+    _noticeQueue.insert(i, (value, at));
+    if (_noticeQueue.length > 3) _noticeQueue.removeLast();
+  }
+
+  void _presentNotice(GameNotice value) {
     notice.value = value;
+    _noticeAt = DateTime.now();
+    final hold = value.kind == NoticeKind.danger
+        ? const Duration(milliseconds: 4500)
+        : _noticeQueue.isEmpty
+            ? const Duration(milliseconds: 3200)
+            : _noticeMin;
+    _scheduleNotice(_noticeAt.add(hold));
+  }
+
+  void _scheduleNotice(DateTime end) {
+    _noticeEnd = end;
     _noticeTimer?.cancel();
-    _noticeTimer = Timer(const Duration(milliseconds: 3200), () => notice.value = null);
+    _noticeTimer = Timer(end.difference(DateTime.now()), _nextNotice);
+  }
+
+  void _nextNotice() {
+    final now = DateTime.now();
+    _noticeQueue.removeWhere((q) => now.difference(q.$2) > _noticeStale);
+    if (_noticeQueue.isEmpty) {
+      notice.value = null;
+      return;
+    }
+    _presentNotice(_noticeQueue.removeAt(0).$1);
   }
 
   // ------------------------------------------- Quán ven đường, quay đầu
@@ -443,6 +512,26 @@ class GameController extends GetxController {
     game.resumeEngine();
     isPaused.value = false;
     _audio.resumeLoops();
+  }
+
+  /// Đổi trời ngay (theo giờ / luôn ngày / luôn đêm), lưu cho các chặng sau.
+  void setSky(SkyMode value) {
+    LocalService.shared.saveSkyMode(value);
+    sky.value = value;
+    game.sky = value;
+    setup = setup.copyWith(sky: value);
+  }
+
+  /// Chọn bản đồ giữa chặng: trời đổi ngay; bản đồ khác thì dựng lại chặng
+  /// này (chơi lại từ đầu chặng) với cảnh mới.
+  Future<void> pickMap() async {
+    await MapPickerDialog.open(note: 'Đổi bản đồ thì chặng này chơi lại từ đầu');
+    final chosenSky = LocalService.shared.getSkyMode();
+    if (chosenSky != sky.value) setSky(chosenSky);
+    final theme = TripService.themeFor(setup.fromName, setup.toName);
+    if (theme == setup.theme) return;
+    setup = setup.copyWith(theme: theme, seed: _random.nextInt(1 << 20));
+    _createGame();
   }
 
   /// Thua thì chơi lại chặng này từ trạm dừng nghỉ gần nhất.

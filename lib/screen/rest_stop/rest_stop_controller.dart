@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 
+import '../../dialog/map_picker_dialog.dart';
 import '../../game/game_config.dart';
 import '../../game/logic/vehicle_condition.dart';
 import '../../resource/app_resource.dart';
@@ -14,6 +15,14 @@ class RestStopController extends GetxController {
   /// Lì xì, xăng hiện tại (đổi khi đổ xăng ở trạm).
   final lixi = 0.obs;
   final fuel = 0.0.obs;
+
+  /// Bản đồ, trời cho chặng sắp đi (đổi được trước khi lên đường).
+  final mapSummary = MapPickerDialog.summary().obs;
+
+  Future<void> pickMap() async {
+    await MapPickerDialog.open();
+    mapSummary.value = MapPickerDialog.summary();
+  }
 
   @override
   void onInit() {

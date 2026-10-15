@@ -307,6 +307,13 @@ abstract class GameConfig {
   /// [jamChance] bị tắc. Xe máy được đi lề rộng [shoulderWidth], chậm thôi.
   static const double jamLength = 950;
   static const double jamChance = 0.6;
+
+  /// Quãng trước đuôi tắc giữ đường thẳng (thấy hàng xe từ xa), quãng bắt
+  /// đầu báo tắc / hiện biển "Tắc …m", và khoảng hở tối đa giữa hai xe
+  /// trong cùng một hàng tắc.
+  static const double jamClearView = 1100;
+  static const double jamWarnAhead = 2200;
+  static const double jamChainGap = 150;
   static const double shoulderWidth = 30;
   static const double shoulderSpeed = 0.38 * normalSpeed;
 

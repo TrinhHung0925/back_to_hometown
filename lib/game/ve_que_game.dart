@@ -104,7 +104,7 @@ class VeQueGame extends FlameGame {
     styleAt: setup.theme == MapTheme.mountain
         ? (s) => layout.kindAt(s) == RoadKind.highway ? CurveStyle.mountain : layout.curveStyleAt(s)
         : layout.curveStyleAt,
-    keepStraight: (a, b) => layout.featureWithin(a, b, margin: 200),
+    keepStraight: (a, b) => layout.featureWithin(a, b, margin: 200) || _events.keepStraight(a, b),
   );
   late final PlayerPhysics player = PlayerPhysics(
     spec: spec,
@@ -1812,7 +1812,7 @@ class VeQueGame extends FlameGame {
         hi = -m - half - 1;
       }
       if (player.d * dir < 0) {
-        _notice('wrongway${(player.s / 2000).floor()}', 'Đang đi ngược chiều cao tốc! Cẩn thận!', NoticeKind.warning);
+        _notice('wrongway${(player.s / 2000).floor()}', 'Đang đi ngược chiều cao tốc! Cẩn thận!', NoticeKind.danger);
       }
     }
     // Tắc đường cửa ngõ: xe máy được luồn lên lề phải.
@@ -2711,9 +2711,12 @@ class VeQueGame extends FlameGame {
     final speedRatio = (player.speed / spec.maxSpeed).clamp(0.0, 1.0);
     // Đang làm việc bên lề (thợ tới sửa, chờ xăng): đưa xe vào gần giữa để
     // thấy cả người giúp đỗ phía sau.
+    // Sắp tới đuôi đoạn tắc đường: lia camera ra trước cho thấy hàng xe.
     final targetFraction = _job != null
         ? 0.3
-        : GameConfig.playerScreenXSlow + (GameConfig.playerScreenXFast - GameConfig.playerScreenXSlow) * speedRatio;
+        : _events.jamTail != null
+            ? GameConfig.playerScreenXSlow
+            : GameConfig.playerScreenXSlow + (GameConfig.playerScreenXFast - GameConfig.playerScreenXSlow) * speedRatio;
     _screenFraction += (targetFraction - _screenFraction) * (1 - exp(-2.5 * dt));
     final lead = (0.5 - _screenFraction) * w;
 
@@ -3008,9 +3011,12 @@ class VeQueGame extends FlameGame {
     }
   }
 
+  /// Trời theo giờ / luôn ngày / luôn đêm — đổi được giữa chặng (menu tạm dừng).
+  late SkyMode sky = setup.sky;
+
   /// Mức tối theo giờ trong ngày của đồng hồ chuyến đi (0 ngày .. 1 đêm).
   double get nightLevel {
-    switch (setup.sky) {
+    switch (sky) {
       case SkyMode.day:
         return 0;
       case SkyMode.night:
@@ -3168,6 +3174,7 @@ class VeQueGame extends FlameGame {
       danger: player.speed >= dangerSpeed || player.d * dir < 0,
       light: _nextLight(),
       curve: _curveHud(),
+      jam: _events.jamHud,
       headlightsOn: headlightsOn,
       night: darkness > 0.3,
       alert: alert.round(),

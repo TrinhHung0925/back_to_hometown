@@ -277,6 +277,7 @@ class RoadAheadColumn extends StatelessWidget {
       final items = <Widget>[
         if (hud.pullOver != null) _PullOverBanner(meters: hud.pullOver!),
         if (hud.light != null) _LightPill(light: hud.light!),
+        if (hud.jam != null) _JamPill(jam: hud.jam!),
         if (hud.curve != null) _CurvePill(curve: hud.curve!),
         if (hud.speedLimit != null) _SpeedLimitPill(limit: hud.speedLimit!, speedKmh: hud.speedKmh),
         if (hud.fuelAhead != null) _ServiceChip(glyph: RoadGlyph.pump, label: hud.fuelAhead!, color: AppColors.ffEE9B2F),
@@ -507,6 +508,34 @@ class _CurvePill extends StatelessWidget {
   }
 }
 
+/// Đuôi đoạn tắc đường phía trước: biển xe nối đuôi, khoảng cách; đang
+/// chạy nhanh quá (không kịp phanh) thì nền đỏ nháy.
+class _JamPill extends StatelessWidget {
+  const _JamPill({required this.jam});
+
+  final JamHud jam;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 38.h,
+      padding: EdgeInsets.only(left: 8.h, right: 12.h),
+      decoration: BoxDecoration(
+        color: jam.tooFast ? AppColors.ffD62828.withValues(alpha: 0.88) : AppColors.ff1B1D22.withValues(alpha: 0.6),
+        borderRadius: BorderRadius.circular(19.h),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _Blink(on: jam.tooFast, child: RoadIcon(RoadGlyph.jam, size: 24.h, color: AppColors.ffFFD166, accent: AppColors.ffD62828)),
+          SizedBox(width: 6.h),
+          AppText.manrope('Tắc ${jam.meters}m', fontSize: 14.h, fontWeight: FontWeight.w800, color: AppColors.ffFFFFFF),
+        ],
+      ),
+    );
+  }
+}
+
 /// Mũi tên biển "chỗ ngoặt nguy hiểm": đi thẳng lên rồi bẻ sang phía cua.
 class _CurveArrowPainter extends CustomPainter {
   const _CurveArrowPainter({required this.right});
@@ -560,29 +589,69 @@ class NoticeBanner extends StatelessWidget {
         duration: const Duration(milliseconds: 220),
         child: notice == null
             ? const SizedBox.shrink()
-            : Container(
-                key: ValueKey(notice),
-                constraints: BoxConstraints(maxWidth: 520.h),
-                padding: EdgeInsets.symmetric(horizontal: 16.h, vertical: 8.h),
-                decoration: BoxDecoration(
-                  color: switch (notice.kind) {
-                    NoticeKind.warning => const Color(0xE6B4231E),
-                    NoticeKind.money => const Color(0xE6976A12),
-                    NoticeKind.info => AppColors.ff1B1D22.withValues(alpha: 0.8),
-                  },
-                  borderRadius: BorderRadius.circular(18.h),
-                ),
-                child: AppText.manrope(
-                  notice.text,
-                  fontSize: 13.h,
-                  fontWeight: FontWeight.w800,
-                  maxLines: 2,
-                  textAlign: TextAlign.center,
-                  color: AppColors.ffFFFFFF,
-                ),
-              ),
+            : notice.kind == NoticeKind.danger
+                ? _DangerNotice(key: ValueKey(notice), text: notice.text)
+                : Container(
+                    key: ValueKey(notice),
+                    constraints: BoxConstraints(maxWidth: 520.h),
+                    padding: EdgeInsets.symmetric(horizontal: 16.h, vertical: 8.h),
+                    decoration: BoxDecoration(
+                      color: switch (notice.kind) {
+                        NoticeKind.warning || NoticeKind.danger => const Color(0xE6B4231E),
+                        NoticeKind.money => const Color(0xE6976A12),
+                        NoticeKind.info => AppColors.ff1B1D22.withValues(alpha: 0.8),
+                      },
+                      borderRadius: BorderRadius.circular(18.h),
+                    ),
+                    child: AppText.manrope(
+                      notice.text,
+                      fontSize: 13.h,
+                      fontWeight: FontWeight.w800,
+                      maxLines: 3,
+                      textAlign: TextAlign.center,
+                      color: AppColors.ffFFFFFF,
+                    ),
+                  ),
       );
     });
+  }
+}
+
+/// Nguy hiểm ngay trước mặt (xe tải mất phanh, đuôi đoạn tắc đường): nền đỏ
+/// sẫm viền vàng, biển tam giác nháy.
+class _DangerNotice extends StatelessWidget {
+  const _DangerNotice({super.key, required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: BoxConstraints(maxWidth: 560.h),
+      padding: EdgeInsets.fromLTRB(10.h, 7.h, 16.h, 7.h),
+      decoration: BoxDecoration(
+        color: const Color(0xF29E1418),
+        borderRadius: BorderRadius.circular(18.h),
+        border: Border.all(color: AppColors.ffFFD166, width: 2.h),
+        boxShadow: [BoxShadow(color: AppColors.ffD62828.withValues(alpha: 0.45), blurRadius: 14.h)],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _Blink(on: true, child: RoadIcon(RoadGlyph.warning, size: 26.h, color: AppColors.ffFFD166, accent: AppColors.ff1B1D22)),
+          SizedBox(width: 10.h),
+          Flexible(
+            child: AppText.manrope(
+              text,
+              fontSize: 13.5.h,
+              fontWeight: FontWeight.w800,
+              maxLines: 3,
+              color: AppColors.ffFFFFFF,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
