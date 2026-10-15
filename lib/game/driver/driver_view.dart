@@ -607,7 +607,9 @@ class _DriverView extends Component {
       final far = l.s + dir * (l.halfWidth + 25);
       for (final (s, d) in [(stop - dir * 10, dir * (_half + 18)), (far, -dir * (_half + 18))]) {
         final o = _at(s, d);
-        _trafficLight(items, a, o, color);
+        // Cần đèn vươn ra phía lòng đường.
+        final toRoad = _at(s, d * 0.5);
+        _trafficLight(items, a, o, color, armRight: cam.sideOf(toRoad.dx, toRoad.dy) > cam.sideOf(o.dx, o.dy));
       }
     }
     for (final c in game.layout.checkpoints) {
@@ -680,25 +682,53 @@ class _DriverView extends Component {
 
   static int _limitArt(int kmh) => kmh <= 55 ? 50 : kmh <= 70 ? 60 : 80;
 
-  void _trafficLight(List<_Drawn> items, DriverArt a, Offset o, LightColor color) {
+  void _trafficLight(List<_Drawn> items, DriverArt a, Offset o, LightColor color, {required bool armRight}) {
     final pole = a.prop('traffic_light_pole');
     final head = a.prop('traffic_light_head_${color.name}');
-    final ph = (pole?.heightM ?? 5.2) * _u;
-    _board(items, o.dx, o.dy, pole == null ? 6 : ph * pole.aspect, ph, pole?.image, fallback: const Color(0xff3A3E44));
-    final hh = (head?.heightM ?? 1.0) * _u;
-    _board(items, o.dx, o.dy, head == null ? 14 : hh * head.aspect, hh, head?.image, lift: ph * 0.72, bias: -1, fallback: switch (color) {
-      LightColor.red => const Color(0xffFF2A1F),
+    final glow = switch (color) {
+      LightColor.red => const Color(0xffFF3B30),
       LightColor.yellow => const Color(0xffFFC53A),
-      LightColor.green => const Color(0xff2BD46B),
-    }, after: (c, rect, fade) {
-      if (game.darkness > 0.2) {
-        final lamp = Offset(rect.center.dx, rect.top + rect.height * (color == LightColor.red ? 0.2 : color == LightColor.yellow ? 0.42 : 0.64));
-        _glows.add((lamp, rect.width * 0.9, switch (color) {
-          LightColor.red => const Color(0xffFF3B30),
-          LightColor.yellow => const Color(0xffFFC53A),
-          LightColor.green => const Color(0xff34E07A),
-        }));
+      LightColor.green => const Color(0xff34E07A),
+    };
+    final lampV = switch (color) {
+      LightColor.red => 0.2,
+      LightColor.yellow => 0.42,
+      LightColor.green => 0.64,
+    };
+    final ph = (pole?.heightM ?? 5.2) * _u;
+    final tip = pole?.anchor('arm_tip');
+    if (pole == null || head == null || tip == null) {
+      _board(items, o.dx, o.dy, pole == null ? 6 : ph * pole.aspect, ph, pole?.image, fallback: const Color(0xff3A3E44));
+      final hh = (head?.heightM ?? 1.0) * _u;
+      _board(items, o.dx, o.dy, head == null ? 14 : hh * head.aspect, hh, head?.image, lift: ph * 0.72, bias: -1, fallback: glow,
+          after: (c, rect, fade) {
+        if (game.darkness > 0.2) _glows.add((Offset(rect.center.dx, rect.top + rect.height * lampV), rect.width * 0.9, glow));
+      });
+      return;
+    }
+    // Ảnh cột có cần vươn sang trái; đèn treo ở đầu cần.
+    final mount = head.anchor('mount') ?? const Offset(0.5, 0);
+    _board(items, o.dx, o.dy, ph * pole.aspect, ph, pole.image, mirror: armRight, after: (c, rect, fade) {
+      final k = rect.height / ph;
+      final hw = head.heightM * _u * head.aspect * k, hh = head.heightM * _u * k;
+      final u = armRight ? 1 - tip.dx : tip.dx;
+      final at = Offset(rect.left + u * rect.width, rect.top + tip.dy * rect.height);
+      final mx = armRight ? 1 - mount.dx : mount.dx;
+      final box = Rect.fromLTWH(at.dx - mx * hw, at.dy - mount.dy * hh, hw, hh);
+      _image.color = Color.fromRGBO(255, 255, 255, fade);
+      final src = Rect.fromLTWH(0, 0, head.image.width.toDouble(), head.image.height.toDouble());
+      if (armRight) {
+        c.save();
+        c
+          ..translate(box.center.dx, 0)
+          ..scale(-1, 1)
+          ..translate(-box.center.dx, 0);
+        c.drawImageRect(head.image, src, box, _image);
+        c.restore();
+      } else {
+        c.drawImageRect(head.image, src, box, _image);
       }
+      if (game.darkness > 0.2) _glows.add((Offset(box.center.dx, box.top + box.height * lampV), box.width * 0.9, glow));
     });
   }
 
@@ -719,9 +749,9 @@ class _DriverView extends Component {
       switch (p.kind) {
         case PickupKind.lixi:
           final bob = sin(game._time * 3 + p.s) * 4;
-          _prop(items, a, 'lixi_float', p.s, p.d, fallbackH: 1.4, fallback: const Color(0xffD62828), lift: 8 + bob);
+          _prop(items, a, 'lixi_float', p.s, p.d, fallbackH: 1.4, fallback: const Color(0xffD62828), lift: 8 + bob, scale: 5.5);
         case PickupKind.gift:
-          _prop(items, a, const ['gift_peach', 'gift_kumquat', 'gift_box'][p.s.round() % 3], p.s, p.d, fallbackH: 1.2);
+          _prop(items, a, const ['gift_peach', 'gift_kumquat', 'gift_box'][p.s.round() % 3], p.s, p.d, fallbackH: 1.2, scale: 1.8);
         case PickupKind.pothole:
         case PickupKind.puddle:
           break;

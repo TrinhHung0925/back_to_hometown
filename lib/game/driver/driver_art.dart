@@ -6,10 +6,20 @@ import 'package:flutter/services.dart';
 
 /// Ảnh đứng (cây, nhà, quán, người…) và chiều cao thật của khung ảnh.
 class BillboardArt {
-  const BillboardArt(this.image, this.heightM);
+  const BillboardArt(this.image, this.heightM, [this.info = const {}]);
 
   final Image image;
   final double heightM;
+
+  /// Thông tin thêm trong tệp mô tả (điểm treo, đầu cần đèn…).
+  final Map<dynamic, dynamic> info;
+
+  /// Điểm [key] trên ảnh theo tỉ lệ [u, v] (u tính từ trái, v từ trên).
+  Offset? anchor(String key) {
+    final v = info[key];
+    if (v is List && v.length >= 2) return Offset((v[0] as num).toDouble(), (v[1] as num).toDouble());
+    return null;
+  }
 
   double get aspect => image.width / image.height;
 }
@@ -87,7 +97,7 @@ class DriverArt {
         final image = await _image(images, e.key);
         final info = e.value;
         if (image == null || info is! Map) return;
-        art.props[e.key] = BillboardArt(image, (info['h_m'] as num?)?.toDouble() ?? image.height / 100);
+        art.props[e.key] = BillboardArt(image, (info['h_m'] as num?)?.toDouble() ?? image.height / 100, info);
       }));
     }
     await Future.wait([

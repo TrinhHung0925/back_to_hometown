@@ -227,14 +227,20 @@ class SceneryLayer extends Component with HasGameReference<FlameGame> {
       }
       return s + step + 10 + random.nextDouble() * 40;
     }
+    // Quanh xóm có lũy tre; ngoài đồng cây bóng mát, xoài, bụi chuối.
     final roll = random.nextDouble();
-    if (roll < 0.55) {
+    final nearVillage = sin(s / 2300 + side * 1.7) > 0.05;
+    if (nearVillage && roll < 0.4) {
+      _pick(Img.bambooTops, s, side, _half + 80 + random.nextDouble() * 70, 100 + random.nextDouble() * 45, 'tree_bamboo');
+    } else if (roll < 0.62) {
       _tree(s, side, _half + 80 + random.nextDouble() * 90, 70 + random.nextDouble() * 70);
-    } else if (roll < 0.8) {
+    } else if (roll < 0.76) {
+      _pick(Img.mangoes, s, side, _half + 85 + random.nextDouble() * 100, 90 + random.nextDouble() * 40, 'tree_broad');
+    } else if (roll < 0.92) {
       _sprite(Img.bananas[random.nextInt(2)], s, side, _half + 75 + random.nextDouble() * 60, 50 + random.nextDouble() * 24,
           kind: SceneryKind.banana);
     }
-    return s + 70 + random.nextDouble() * 200;
+    return s + 50 + random.nextDouble() * 150;
   }
 
   // ------------------------------------------------------- Ven biển
