@@ -239,8 +239,14 @@ class _DriverView extends Component {
     );
   }
 
-  /// Ổ gà, vũng nước nằm trên mặt đường.
+  /// Ổ gà, vũng nước nằm trên mặt đường; boong phà trên mặt sông.
   void _groundExtras(PerspectiveGroundSink ground) {
+    final f = game._events.ferry;
+    if (f != null && game.images.containsKey(Img.imgFerry)) {
+      final (x, y) = game.road.worldAt(f.center, 0);
+      ground.image(game.images.fromCache(Img.imgFerry), Offset(x, y), game.road.at(f.center).heading + pi / 2, _Ferry.width,
+          _Ferry.length, _image);
+    }
     for (final (p, _) in game._pickups) {
       if (p.consumed) continue;
       final at = game.road.at(p.s);
@@ -349,7 +355,7 @@ class _DriverView extends Component {
     final fade = _fade(p.z);
     items.add(_Drawn(p.z + bias, (c) {
       if (img == null) {
-        c.drawRect(rect, Paint()..color = fallback.withValues(alpha: fade));
+        if (fallback.a > 0) c.drawRect(rect, Paint()..color = fallback.withValues(alpha: fallback.a * fade));
       } else {
         _image.color = Color.fromRGBO(255, 255, 255, fade);
         final src = Rect.fromLTWH(0, 0, img.width.toDouble(), img.height.toDouble());
@@ -950,19 +956,119 @@ class _DriverView extends Component {
     if (f != null && dir > 0) {
       if (inView(f.a - 900)) _prop(items, a, 'sign_ferry', f.a - 900, _half + 28, fallbackH: 2.8, fallback: const Color(0xff2F6FB5));
       if (inView(f.a - 150)) _prop(items, a, 'ferry_booth', f.a - 150, _half + 52, fallbackH: 2.8, fallback: const Color(0xff2F6FB5));
-      // Phà thấy từ phía cầu dẫn (đầu gần bến A).
-      final near = f.center - _Ferry.length / 2;
-      final art = a.prop('ferry_front');
-      if (inView(near)) {
-        final h = art == null ? 120.0 : art.heightM * _u;
-        final o = _at(near, 0);
-        _board(items, o.dx, o.dy, art == null ? _Ferry.width : h * art.aspect, h, art?.image, fallback: const Color(0xff5E7066));
-      }
     }
+    if (f != null) _ferry(items, a, f);
     for (final b in ev.fogBanks) {
       final s = dir > 0 ? b.from - 300 : b.to + 300;
       if (inView(s)) _prop(items, a, 'sign_fog', s, dir * (_half + 26), fallbackH: 2.6, fallback: const Color(0xffF2C12E));
     }
+  }
+
+  // ------------------------------------------------------------------ Phà
+  /// Ảnh boong nhìn từ trên (img_ferry.png, 482 × 1420, hàng 0 là đầu phía
+  /// bờ bên kia) trải trên mặt sông ở [_groundExtras]; ở đây dựng phần đứng
+  /// theo đúng chỗ trên ảnh: thành mạn trắng gỉ, lan can ống, phao cứu sinh,
+  /// ca-bin lái kính đen bên phải, cột cờ, cầu dẫn đầu xa đang kéo lên.
+  void _ferry(List<_Drawn> items, DriverArt a, _Ferry f) {
+    const rows = 1420.0, cols = 482.0;
+    final len = _Ferry.length, wid = _Ferry.width;
+    final (fx, fy) = game.road.worldAt(f.center, 0);
+    final z = cam.depthOf(fx, fy);
+    if (z < -len || z > cam.far + len) return;
+    double sAt(double row) => f.center + len / 2 - row / rows * len;
+    double dAt(double col) => (col - cols / 2) / cols * wid;
+    const m = _u;
+    final hull = Paint()
+      ..shader = Gradient.linear(Offset.zero, const Offset(0, 1), [const Color(0xffEEF0EB), const Color(0xffC9C2B4), const Color(0xff8E7A66)],
+          [0, 0.7, 1]);
+    final rail = Paint()..color = const Color(0xffE8EAE6);
+    final nearS = sAt(1330), farS = sAt(90);
+    // Thành mạn và lan can hai bên.
+    for (final side in const [-1.0, 1.0]) {
+      final d = side * (wid / 2 - 0.12 * m);
+      _wall(items, _at(nearS, d), _at(farS, d), 0, 0.7 * m, hull, 0, 1, 0, 1);
+      _wall(items, _at(nearS, d), _at(farS, d), 0.97 * m, 1.06 * m, rail, 0, 1, 0, 1);
+    }
+    // Cầu dẫn đầu bên kia kéo lên: thép xám, mép vàng.
+    final rampD = 3.9 * m;
+    _wall(items, _at(farS, -rampD), _at(farS, rampD), 0, 1.5 * m, Paint()..color = const Color(0xff6E7472), 0, 1, 0, 1);
+    _wall(items, _at(farS, -rampD), _at(farS, rampD), 1.36 * m, 1.5 * m, Paint()..color = const Color(0xffDEBA28), 0, 1, 0, 1, bias: -0.5);
+    // Ca-bin lái: mặt gần và mặt hông phía mình đang nhìn thấy.
+    final c0 = sAt(780), c1 = sAt(569), dA = dAt(373), dB = dAt(462);
+    final top = 2.45 * m;
+    final white = Paint()
+      ..shader = Gradient.linear(Offset.zero, const Offset(0, 1), [const Color(0xffF4F4EF), const Color(0xffD5D3CA)]);
+    final night = game.darkness > 0.3;
+    final glass = Paint()
+      ..shader = Gradient.linear(Offset.zero, const Offset(0, 1),
+          night ? [const Color(0xffFFD98A), const Color(0xffE7A84A)] : [const Color(0xff5D6B78), const Color(0xff161C22)]);
+    final pd = game.player.d;
+    final faces = <(Offset, Offset)>[
+      (_at(c0, dA), _at(c0, dB)),
+      if (pd < dA) (_at(c0, dA), _at(c1, dA)),
+      if (pd > dB) (_at(c0, dB), _at(c1, dB)),
+    ];
+    for (final (p, q) in faces) {
+      _wall(items, p, q, 0, top, white, 0, 1, 0, 1);
+      _wall(items, p, q, 1.45 * m, 2.2 * m, glass, 0, 1, 0, 1, bias: -0.6);
+      _wall(items, p, q, top - 0.04 * m, top + 0.1 * m, Paint()..color = const Color(0xffB9BBB5), 0, 1, 0, 1, bias: -0.8);
+    }
+    // Cột cờ trên nóc ca-bin, cờ đỏ sao vàng bay.
+    final mast = _at(sAt(616), dAt(417));
+    _board(items, mast.dx, mast.dy, 0.08 * m, 1.9 * m, null, fallback: const Color(0xffB8BCC0), lift: top, bias: -1);
+    final wave = sin(game._time * 5) * 0.04;
+    _board(items, mast.dx, mast.dy, 0.7 * m, 0.46 * m, null, fallback: const Color(0x00000000), lift: top + 1.35 * m, bias: -1.2,
+        after: (c, rect, fade) {
+      final r = rect.shift(Offset(rect.width / 2, 0));
+      final flag = Path()
+        ..moveTo(r.left, r.top)
+        ..quadraticBezierTo(r.center.dx, r.top + r.height * wave, r.right, r.top + r.height * 0.05)
+        ..lineTo(r.right, r.bottom - r.height * 0.05)
+        ..quadraticBezierTo(r.center.dx, r.bottom + r.height * wave, r.left, r.bottom)
+        ..close();
+      c.drawPath(flag, Paint()..color = const Color(0xffD7262B).withValues(alpha: fade));
+      c.drawPath(_star(r.center, r.height * 0.3), Paint()..color = const Color(0xffFADB30).withValues(alpha: fade));
+    });
+    // Phao cứu sinh đỏ trắng treo trên lan can.
+    for (final (row, col) in const [(240.0, 22.0), (710.0, 22.0), (1180.0, 22.0), (287.0, 460.0), (1110.0, 460.0)]) {
+      final o = _at(sAt(row), dAt(col));
+      _board(items, o.dx, o.dy, 0.72 * m, 0.72 * m, null, fallback: const Color(0x00000000), lift: 0.3 * m, bias: -0.4, after: (c, rect, fade) {
+        final ring = Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = rect.width * 0.22;
+        for (var i = 0; i < 4; i++) {
+          ring.color = (i.isEven ? const Color(0xffD9262A) : const Color(0xffF5F3EE)).withValues(alpha: fade);
+          c.drawArc(Rect.fromCircle(center: rect.center, radius: rect.width * 0.38), i * pi / 2, pi / 2, false, ring);
+        }
+      });
+    }
+    // Xe đang lên / đậu trên boong.
+    final raining = game._trafficLayer.raining;
+    for (final car in f.deck) {
+      final (cs, cd) = game._events.deckSpot(car);
+      final path = TrafficLayer.dressedPath(car.type, car.variant, raining: raining);
+      final img = a.vehicle(path, 'rear');
+      final o = _at(cs - game.dir * car.type.length / 2, cd);
+      final w = img == null ? car.type.width : img.width / DriverArt.vehiclePixelsPerMeter * _u;
+      final h = img == null ? car.type.width * 0.8 : img.height / DriverArt.vehiclePixelsPerMeter * _u;
+      _board(items, o.dx, o.dy, w, h, img, fallback: const Color(0xff4B5563));
+    }
+  }
+
+  /// Ngôi sao năm cánh tâm [c], bán kính ngoài [r].
+  static Path _star(Offset c, double r) {
+    final path = Path();
+    for (var i = 0; i < 10; i++) {
+      final a = -pi / 2 + i * pi / 5;
+      final k = i.isEven ? r : r * 0.4;
+      final p = c + Offset(cos(a) * k, sin(a) * k);
+      if (i == 0) {
+        path.moveTo(p.dx, p.dy);
+      } else {
+        path.lineTo(p.dx, p.dy);
+      }
+    }
+    return path..close();
   }
 
   // ----------------------------------------------------- Đêm, mưa, xe mình

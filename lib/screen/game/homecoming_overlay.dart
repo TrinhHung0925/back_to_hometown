@@ -41,14 +41,17 @@ abstract class _Scene {
   static double scaleAt(double y) => pxPerM + (y - groundY) * (vehiclePxPerM - pxPerM) / (vehicleY - groundY);
 }
 
-/// Một người (hay con chó) trong nhà ra đón: ảnh, cao bao nhiêu mét, đứng ở đâu.
+/// Một người trong nhà ra đón: ảnh, cao bao nhiêu mét, đứng chờ ở cổng
+/// ([x], [y]) rồi xe tới thì bước ra ngõ ([outX], [outY]).
 class _Greeter {
-  const _Greeter(this.art, this.heightM, this.x, this.y, this.phase);
+  const _Greeter(this.art, this.heightM, this.x, this.y, this.outX, this.outY, this.phase);
 
   final String art;
   final double heightM;
   final double x;
   final double y;
+  final double outX;
+  final double outY;
 
   /// Lệch nhịp vẫy tay giữa mọi người.
   final double phase;
@@ -68,18 +71,26 @@ class _HomecomingOverlayState extends State<HomecomingOverlay> with TickerProvid
   bool _night = false;
 
   static const List<_Greeter> _greeters = [
-    _Greeter('family_grandma', 1.48, 1395, 788, 0.4),
-    _Greeter('family_dad', 1.9, 1500, 795, 0.15),
-    _Greeter('family_mom', 1.63, 1300, 800, 0),
-    _Greeter('family_kid', 1.31, 1218, 818, 0.6),
+    _Greeter('family_grandma', 1.48, 1395, 788, 1570, 870, 0.4),
+    _Greeter('family_dad', 1.9, 1500, 795, 1690, 878, 0.15),
+    _Greeter('family_mom', 1.63, 1300, 800, 1470, 880, 0),
+    _Greeter('family_kid', 1.31, 1218, 818, 1372, 890, 0.6),
   ];
+
+  /// Lúc xe dừng trước cổng (giây của [_clock]); cả nhà bắt đầu bước ra.
+  double? _homeAt;
 
   @override
   void initState() {
     super.initState();
     _night = _lateArrival;
     _drive.addStatusListener((status) {
-      if (status == AnimationStatus.completed && mounted) setState(() => _step = _Step.home);
+      if (status == AnimationStatus.completed && mounted) {
+        setState(() {
+          _step = _Step.home;
+          _homeAt = _seconds;
+        });
+      }
     });
   }
 
@@ -180,9 +191,7 @@ class _HomecomingOverlayState extends State<HomecomingOverlay> with TickerProvid
                 ),
               ),
               // Cả nhà đứng ở cổng (xa vẽ trước), con chó chạy ra ngõ đón.
-              for (final g in [..._greeters]..sort((a, b) => a.y.compareTo(b.y)))
-                _figure(at, scale, '${g.art}_${(t * 2.2 + g.phase).floor().isEven ? 1 : 2}', g.heightM, g.x, g.y, k),
-              _figure(at, scale, 'family_dog_${(t * 5).floor().isEven ? 1 : 2}', 0.72, 1130 + 60 * sin(t * 1.3) * k, 836, k, flip: true),
+              for (final (art, h, x, y, flip) in _people(t)) _figure(at, scale, art, h, x, y, k, flip: flip),
               // Xe mình chạy vào từ đầu ngõ (ảnh đầu xe quay trái nên lật lại).
               Positioned(
                 left: at(vehicleX, 0).dx - vehicleW / 2,
@@ -210,6 +219,30 @@ class _HomecomingOverlayState extends State<HomecomingOverlay> with TickerProvid
         },
       );
     });
+  }
+
+  /// Cả nhà (và con chó) lúc [t]: chờ ở cổng, xe dừng thì lần lượt bước ra
+  /// ngõ (bà chậm nhất), vừa đi vừa vẫy. Xa vẽ trước.
+  List<(String, double, double, double, bool)> _people(double t) {
+    final since = _homeAt == null ? -1.0 : t - _homeAt!;
+    final out = <(String, double, double, double, bool)>[];
+    for (final g in _greeters) {
+      final w = Curves.easeInOut.transform(((since - g.phase * 0.5) / 1.5).clamp(0.0, 1.0));
+      final walking = w > 0 && w < 1;
+      final x = g.x + (g.outX - g.x) * w;
+      final y = g.y + (g.outY - g.y) * w - (walking ? sin(t * 10 + g.phase * 3).abs() * 5 : 0);
+      out.add(('${g.art}_${(t * 2.2 + g.phase).floor().isEven ? 1 : 2}', g.heightM, x, y, false));
+    }
+    // Con chó quẩn ở cổng, xe tới thì chạy ra ngõ mừng rỡ.
+    final run = Curves.easeOut.transform((since / 0.9).clamp(0.0, 1.0));
+    out.add((
+      'family_dog_${(t * 5).floor().isEven ? 1 : 2}',
+      0.72,
+      1130 + (1420 - 1130) * run + (run < 1 ? 60 : 40) * sin(t * 1.3),
+      836 + (912 - 836) * run,
+      true,
+    ));
+    return out..sort((a, b) => a.$4.compareTo(b.$4));
   }
 
   Widget _figure(Offset Function(double, double) at, double scale, String art, double heightM, double x, double y, double appear,

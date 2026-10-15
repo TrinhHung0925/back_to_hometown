@@ -134,7 +134,13 @@ Cả hai xe đều phải về kịp được; khác nhau ở cách chơi: xe m�
 | Đường làng | — | — | Để sau MVP |
 
 ### Bản đồ và trời
-Người chơi chê bản đồ cũ đơn điệu, không giống thật. Ở màn lên lộ trình, dưới dòng chọn xe có dòng **Bản đồ … Đổi ›**. Bấm vào sẽ mở hộp chọn, chọn xong là lưu ngay và áp cho các chặng sắp chơi.
+Người chơi chê bản đồ cũ đơn điệu, không giống thật. Dòng **Bản đồ … Đổi ›** có ở ba chỗ. Chọn xong là lưu ngay.
+
+- **Màn lên lộ trình:** dưới dòng chọn xe. Áp cho các chặng sắp chơi.
+- **Trạm dừng nghỉ:** cuối thẻ chặng tiếp theo, đổi trước khi đi tiếp.
+- **Menu tạm dừng khi đang chơi:** người chơi đi tiếp chuyến thì không qua màn lên lộ trình, nên từng tưởng mất chỗ chọn.
+  - Cột bên phải có ba nút trời, bấm là đổi ngay.
+  - Bên dưới là dòng bản đồ. Đổi sang bản đồ khác thì chơi lại chặng đó từ đầu với cảnh mới.
 
 - **Cảnh hai bên đường:**
 
@@ -221,6 +227,28 @@ Người chơi muốn mỗi bản đồ chơi một kiểu khác nhau, không ch
   - Xe xếp hàng hai làn, CSGT đứng giữa đường phân luồng, cho đi từng đợt (dừng ~4,6 giây, đi ~3,2 giây).
   - Ô tô, xe khách chịu khó nhích. Xe máy được luồn lên lề phải, đi chậm.
   - Qua chỗ phân luồng thì xe chạy lại bình thường.
+  - **Không để đâm bất ngờ vào đuôi hàng xe:**
+    - Đoạn ~1.100 đơn vị trước đuôi hàng luôn là đường thẳng, không khuất sau khúc cua.
+    - Ô tô cuối hàng mỗi làn bật đèn khẩn cấp.
+    - Còn ~2.200 đơn vị: báo "Phía trước tắc đường", HUD hiện biển **Tắc …m**. Biển chuyển đỏ nháy khi chạy nhanh quá, phanh không kịp.
+    - Lao tới mà chưa giảm tốc: thông báo nguy hiểm "Sắp đâm vào đuôi hàng xe tắc — phanh ngay!".
+    - Ở góc nhìn từ trên, camera tự lia ra trước để thấy hàng xe.
+
+- **Phà ở góc ghế lái:** dựng thành khối thật, không còn là một tấm ảnh dựng đứng.
+  - Boong (ảnh nhìn từ trên) trải phẳng trên mặt sông theo phối cảnh.
+  - Thành mạn trắng gỉ, lan can ống, phao cứu sinh đỏ trắng.
+  - Ca-bin lái kính đen bên phải (ban đêm cửa kính sáng đèn), cờ đỏ sao vàng bay.
+  - Cầu dẫn đầu bên kia kéo lên, mép sơn vàng.
+
+### Thông báo trên màn hình
+- Thông báo xếp hàng theo mức: **nguy hiểm** > cảnh báo > lì xì > tin thường.
+  - Mức nguy hiểm: xe tải mất phanh, sắp đâm vào đuôi hàng tắc, đi ngược chiều cao tốc.
+- Thông báo nguy hiểm:
+  - Nền đỏ sẫm, viền vàng, biển tam giác nháy.
+  - Giữ 4,5 giây; thông báo khác không đè lên được, phải chờ.
+- Thông báo thường:
+  - Giữ ít nhất 2,2 giây mới cho cái cùng mức thay.
+  - Chờ quá 7 giây thì bỏ, vì chuyện đã qua.
 
 ### Chuyện vui dọc đường
 - **Mẹ gọi điện:**
@@ -245,7 +273,7 @@ Xong chặng cuối thì có cảnh về nhà trước bảng kết quả.
 1. **Xe vào ngõ:** xe của mình (xe máy chở túi đồ và cành đào, ô tô đỏ, xe khách) chạy vào ngõ làng, dừng trước cổng.
 2. **Cả nhà ra đón:**
    - Nhà mái ngói, cổng treo "CHÚC MỪNG NĂM MỚI", câu đối, đèn lồng, cây đào.
-   - Bố, mẹ, bà, em bé vẫy tay; con chó chạy ra mừng.
+   - Bố, mẹ, bà, em bé đứng chờ ở cổng. Xe dừng thì lần lượt bước ra tận ngõ (bà chậm nhất), vừa đi vừa vẫy, đứng gần nên thấy rõ. Con chó chạy ra mừng.
    - Ban ngày có hoa đào bay. Tới muộn (sau 21:30) thì cảnh đã là đêm, có đèn.
    - Dòng chữ báo tới lúc mấy giờ, còn bao lâu nữa giao thừa, cành đào còn đẹp không.
 3. **Đón giao thừa:** bấm **Đón giao thừa** → chuyển sang đêm, đếm ngược 5 giây → pháo hoa nổ rộn trời, "Chúc Mừng Năm Mới!" → **Xem kết quả**.

@@ -2274,6 +2274,16 @@ class VeQueGame extends FlameGame {
   /// Cho điện thoại reo ngay.
   void ringPhoneNow() => _events._ring();
 
+  /// Cho phà đậu sẵn ở bến phía mình (để thử).
+  void dockFerryNow() {
+    final f = _events.ferry;
+    if (f == null) return;
+    f
+      ..state = _FerryState.dockedA
+      ..center = f.dockA
+      ..t = 0;
+  }
+
   /// Quãng đường (đơn vị bản đồ) ra mét, làm tròn 10 m.
   static int _meters(double units) => (units / GameConfig.unitsPerKm * 100).round() * 10;
 
