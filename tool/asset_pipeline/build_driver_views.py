@@ -2641,3 +2641,83 @@ def car_cockpit(size=CP_SIZE, fov=96.0):
     pitch = pitch_for(CP_HORIZON * size[1], fov, size)
     cam = PinholeCam(eye, 0.0, pitch, fov, size)
     return cab, cam
+
+
+MOTO_CAM = dict(eye=(0.0, 0.70, 1.47), yaw=0.0, pitch=-35.0, fov=100.0)
+CAR_SUN = (-0.30, -0.45, 0.84)
+
+
+def build_cockpit_moto(out, info):
+    t0 = time.time()
+    c = MOTO_CAM
+    cam = PinholeCam(c['eye'], c['yaw'], c['pitch'], c['fov'], CP_SIZE)
+    img = render_cockpit(moto_cockpit_scene(), cam)
+    img.save(f'{out}/cockpit_moto.png', optimize=True)
+    info['moto'] = {'image': 'cockpit_moto.png', 'size': list(CP_SIZE),
+                    'camera': {'eye_m': list(c['eye']), 'pitch_deg': c['pitch'], 'hfov_deg': c['fov']},
+                    'horizon_row': None,
+                    'note': 'virtual camera ~10 cm behind the rider eyes pitched down 35 deg; its own horizon is above '
+                            'the frame, so the overlay is a stylised lower-periphery view: just draw it full-screen over '
+                            'the road (horizon 40 %). Rider head/torso hidden; speedometer needle fixed at ~38 km/h.'}
+    print(f'cockpit_moto: {time.time() - t0:.1f}s')
+
+
+def build_cockpit_car(out, info):
+    t0 = time.time()
+    fov = 96.0
+    cab, cam = car_cockpit(CP_SIZE, fov)
+    parts, wheel = cab.parts(), cab.wheel_parts()
+    sc = Scene(parts, cab.bounds(), 1500.0, (0, 0), (1, 1), ao_scale=1.6)
+    img = render_cockpit(sc, cam, near=0.05, sun=CAR_SUN, fill=CABIN_FILL)
+    img.save(f'{out}/cockpit_car.png', optimize=True)
+    # vô-lăng riêng: khung sát quanh vành (có thể thò xuống dưới mép 740)
+    wf = cab.wf
+    ang = np.linspace(0, math.tau, 96, endpoint=False)
+    R = 0.185 + 0.03
+    pts = [wf.H + R * (math.cos(a) * wf.r + math.sin(a) * wf.u) for a in ang]
+    xs, ys = zip(*[cam.project(q) for q in pts])
+    x0, y0 = int(math.floor(min(xs))) - 4, int(math.floor(min(ys))) - 4
+    x1, y1 = int(math.ceil(max(xs))) + 4, int(math.ceil(max(ys))) + 4
+    w, h = x1 - x0, y1 - y0
+    wcam = PinholeCam(cab.eye, 0.0, pitch_for(CP_HORIZON * CP_SIZE[1], fov), fov, (w, h),
+                      shift=(cam.cx - x0 - w / 2, cam.cy - y0 - h / 2))
+    wcam.fl = cam.fl
+    ws = Scene(parts + wheel, cab.bounds(), 1500.0, (0, 0), (1, 1), ao_scale=1.6)
+    ws.primary = wheel
+    wimg = render_cockpit(ws, wcam, near=0.05, sun=CAR_SUN, fill=CABIN_FILL)
+    wimg.save(f'{out}/cockpit_car_wheel.png', optimize=True)
+    px, py = cam.project(wf.H)
+    info['car'] = {'image': 'cockpit_car.png', 'size': list(CP_SIZE), 'horizon_row': round(cam.horizon_row(), 1),
+                   'camera': {'eye_m': [float(v) for v in cab.eye], 'hfov_deg': fov, 'pitch_deg': round(pitch_for(296, fov), 3),
+                              'eye_height_m': float(cab.eye[2])},
+                   'wheel': {'image': 'cockpit_car_wheel.png', 'pos': [x0, y0], 'size': [w, h],
+                             'pivot': [round(px, 1), round(py, 1)],
+                             'note': 'draw at pos (top-left, cockpit frame px), rotate around pivot; the wheel faces the '
+                                     'eye so a 2D rotation is exact; it extends below the 740 px frame'}}
+    print(f'cockpit_car: {time.time() - t0:.1f}s')
+
+
+def build_cockpits(out, names):
+    info = load_json(f'{out}/cockpits.json')
+    if 'cockpit_moto' in names or 'cockpit' in names:
+        build_cockpit_moto(out, info)
+    if 'cockpit_car' in names or 'cockpit' in names:
+        build_cockpit_car(out, info)
+    with open(f'{out}/cockpits.json', 'w') as f:
+        json.dump(info, f, indent=1)
+
+
+GROUPS = ('moto', 'car', 'bus', 'truck', 'cockpit')
+
+if __name__ == '__main__':
+    args = sys.argv[1:]
+    out = OUT
+    if '--out' in args:
+        i = args.index('--out')
+        out = args[i + 1]
+        args = args[:i] + args[i + 2:]
+    os.makedirs(out, exist_ok=True)
+    sel = set(args or GROUPS)
+    build_billboards(out, sel & set(GROUPS[:4]), sel)
+    if sel & {'cockpit', 'cockpit_moto', 'cockpit_car'}:
+        build_cockpits(out, sel)

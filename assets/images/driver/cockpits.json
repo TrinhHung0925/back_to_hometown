@@ -1,0 +1,54 @@
+{
+ "moto": {
+  "image": "cockpit_moto.png",
+  "size": [
+   1600,
+   740
+  ],
+  "camera": {
+   "eye_m": [
+    0.0,
+    0.7,
+    1.47
+   ],
+   "pitch_deg": -35.0,
+   "hfov_deg": 100.0
+  },
+  "horizon_row": null,
+  "note": "virtual camera ~10 cm behind the rider eyes pitched down 35 deg; its own horizon is above the frame, so the overlay is a stylised lower-periphery view: just draw it full-screen over the road (horizon 40 %). Rider head/torso hidden; speedometer needle fixed at ~38 km/h."
+ },
+ "car": {
+  "image": "cockpit_car.png",
+  "size": [
+   1600,
+   740
+  ],
+  "horizon_row": 296.0,
+  "camera": {
+   "eye_m": [
+    -0.32,
+    2.62,
+    1.3
+   ],
+   "hfov_deg": 96.0,
+   "pitch_deg": -5.866,
+   "eye_height_m": 1.3
+  },
+  "wheel": {
+   "image": "cockpit_car_wheel.png",
+   "pos": [
+    417,
+    439
+   ],
+   "size": [
+    607,
+    682
+   ],
+   "pivot": [
+    731.9,
+    720.3
+   ],
+   "note": "draw at pos (top-left, cockpit frame px), rotate around pivot; the wheel faces the eye so a 2D rotation is exact; it extends below the 740 px frame"
+  }
+ }
+}
