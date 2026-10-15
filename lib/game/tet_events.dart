@@ -94,6 +94,10 @@ class _TetEvents {
   late final List<_Ramp> ramps = _planRamps();
   late final List<_Hitch> hitches = _planHitches();
   late final double _callAtS = _planCall();
+  late final _Ferry? ferry = _planFerry();
+  _FerryStep _ferryStep = _FerryStep.none;
+  double _ferryT = 0;
+  double _queueS = 0;
 
   List<RoadZone> _highways({double minLength = 3000}) => [
         for (final z in g.layout.zones)
@@ -162,7 +166,7 @@ class _TetEvents {
     for (final z in _highways()) {
       var s = z.startS + _between(1500, 4000);
       while (s < z.endS - 800) {
-        final clear = !g.layout.nearFeature(s, margin: 500) && g.layout.stallsBetween(s - 350, s + 350).isEmpty;
+        final clear = !g.layout.nearFeature(s, margin: 500) && g.layout.stallsBetween(s - 350, s + 350).isEmpty && !inRiver(s, margin: 2500);
         final drop = s + _between(5, 11) * GameConfig.unitsPerKm;
         if (clear && drop < g.finishS - 600 && _r.nextDouble() < 0.7) {
           final (name, who, art) = _hitchPeople[_r.nextInt(_hitchPeople.length)];
@@ -223,7 +227,8 @@ class _TetEvents {
   bool get talkingWhileDriving => call?.stage == CallStage.talking && (call?.driving ?? false);
 
   /// Đang tự tấp vào / dừng giữ xe vì sự kiện (không cho tự lái).
-  bool get holding => pull != null || _holdT > 0 || (call?.stage == CallStage.talking && !(call?.driving ?? true));
+  bool get holding =>
+      pull != null || _holdT > 0 || ferryBusy || _ferryStep == _FerryStep.approach || (call?.stage == CallStage.talking && !(call?.driving ?? true));
 
   // ------------------------------------------------------- Trước khi xe đi
   /// Gọi trước khi xe chạy một bước: gió đẩy ngang, đi lề lúc tắc đường,
@@ -234,6 +239,9 @@ class _TetEvents {
     p.distraction = talkingWhileDriving ? 1 : 0;
     // Xe máy luồn lên lề lúc tắc đường: lề gồ ghề, đi chậm.
     if (onShoulder) p.speedCap = min(p.speedCap ?? double.infinity, GameConfig.shoulderSpeed);
+    // Bến phà: tự vào bến xếp hàng; lên phà rồi thì phà chở.
+    _ferryApproach(dt);
+    if (_ferryStep != _FerryStep.none) return;
     if (_holdT > 0) {
       _holdT -= dt;
       p
@@ -327,6 +335,7 @@ class _TetEvents {
     _stepWind(dt);
     _stepSand(dt);
     _stepJam(dt);
+    _stepFerry(dt);
     _stepTruck(dt);
     _stepHitches();
     _stepCall(dt);

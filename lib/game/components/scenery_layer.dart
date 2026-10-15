@@ -87,9 +87,12 @@ class SceneryLayer extends Component with HasGameReference<FlameGame> {
     });
   }
 
+  /// Quãng không trồng cây, dựng nhà (khúc sông bến phà…).
+  bool Function(double s)? skip;
+
   /// Sinh một món cảnh ở [s] phía [side]; trả về quãng của món kế tiếp.
   double _spawn(int side, double s) {
-    if (layout.nearFeature(s, margin: 20) || layout.nearStall(s, side, margin: 100)) {
+    if (layout.nearFeature(s, margin: 20) || layout.nearStall(s, side, margin: 100) || (skip?.call(s) ?? false)) {
       return s + 40;
     }
     return switch (layout.kindAt(s)) {
@@ -571,13 +574,16 @@ class PowerLines extends Component {
   static final Paint _poleEdge = Paint()..color = const Color(0xff5F5C57);
   static final Paint _arm = Paint()..color = const Color(0xff6B6F74);
 
+  /// Quãng không dựng cột (khúc sông bến phà).
+  bool Function(double s)? skip;
+
   void sync(double fromS, double toS, RoadLayout layout, {double? keepFrom}) {
     _poles.removeWhere((p) => p.$1 < (keepFrom ?? fromS) - 400);
     var s = _poles.isEmpty ? (fromS / 180).floor() * 180.0 - 360 : _poles.last.$1 + 180;
     while (s < toS + 400) {
       final kind = layout.kindAt(s);
-      // Cột điện ở lề trái: chừa chỗ cho quán phía bên đó.
-      if (kind != RoadKind.expressway && !layout.nearStall(s, -1, margin: 10)) {
+      // Cột điện ở lề trái: chừa chỗ cho quán phía bên đó (và khúc sông).
+      if (kind != RoadKind.expressway && !layout.nearStall(s, -1, margin: 10) && !(skip?.call(s) ?? false)) {
         final d = kind == RoadKind.city
             ? -(GameConfig.roadHalfWidth + 12)
             : -(GameConfig.roadHalfWidth + 40);

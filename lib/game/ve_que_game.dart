@@ -47,6 +47,7 @@ import 'vehicle_spec.dart';
 
 part 'driver/driver_view.dart';
 part 'event_layers.dart';
+part 'ferry.dart';
 part 'tet_events.dart';
 
 /// Một chặng lái xe. Flutter (GameController) điều khiển qua các hàm
@@ -297,7 +298,11 @@ class VeQueGame extends FlameGame {
   static const double _driverReach = 3900;
 
   bool get _driverActive =>
-      driverView && _driver.art != null && (phase == GamePhase.driving || phase == GamePhase.chase) && _job == null;
+      driverView &&
+      _driver.art != null &&
+      (phase == GamePhase.driving || phase == GamePhase.chase) &&
+      _job == null &&
+      !_events.ferryBusy;
 
   /// Bật / tắt góc nhìn ghế lái; lần đầu bật thì nạp ảnh (trả về khi xong).
   Future<void> setDriverView(bool on) async {
@@ -341,11 +346,13 @@ class VeQueGame extends FlameGame {
       ripeRice: setup.south || setup.theme == MapTheme.mekong,
       theme: setup.theme,
       ramps: [for (final r in _events.ramps) r.s],
+      river: _events.ferry == null ? null : (_events.ferry!.a, _events.ferry!.b),
     );
     _featureGround = FeatureGroundLayer(road: road, layout: layout)..gates = _gates;
     _featureOverhead = FeatureOverheadLayer(road: road, layout: layout);
-    _scenery = SceneryLayer(road: road, layout: layout, paints: _paints, random: Random(setup.seed * 13 + 5), theme: setup.theme);
-    _powerLines = PowerLines(road: road);
+    _scenery = SceneryLayer(road: road, layout: layout, paints: _paints, random: Random(setup.seed * 13 + 5), theme: setup.theme)
+      ..skip = ((s) => _events.inRiver(s, margin: 80));
+    _powerLines = PowerLines(road: road)..skip = ((s) => _events.inRiver(s, margin: 60));
     _trafficLayer = TrafficLayer(traffic: traffic, cross: cross, road: road);
     _riderSprite = Sprite(images.fromCache(Img.player(spec.kind)));
     _parkedSprite = spec.kind == VehicleKind.motorbike ? Sprite(images.fromCache(Img.imgScooterParked)) : _riderSprite;
@@ -385,6 +392,7 @@ class VeQueGame extends FlameGame {
     await world.addAll([
       _roadRenderer,
       _scenery,
+      _FerryLayer(this),
       _stalls,
       _featureGround,
       _nailLayer,
@@ -627,7 +635,7 @@ class VeQueGame extends FlameGame {
       despawnAheadS: dir > 0 ? _camRightS + 2500 : _camRightS + 400,
       stops: _stopPoints(),
       profileAt: _profileAt,
-      canSpawnAt: (s) => !layout.nearFeature(s, margin: 160),
+      canSpawnAt: (s) => !layout.nearFeature(s, margin: 160) && !_events.inRiver(s, margin: 400),
       // Nhìn xa gấp mấy lần bản đồ thì cho đông xe tương ứng.
       capScale: _driverActive ? _driver.trafficScale : 1,
     );
@@ -1119,6 +1127,7 @@ class VeQueGame extends FlameGame {
   bool get canUTurn =>
       phase == GamePhase.driving &&
       _uTurn == null &&
+      !_events.holding &&
       _wavedBy == null &&
       (!fuel.empty || pushing) &&
       player.speed <= GameConfig.uTurnMaxSpeed &&
@@ -1233,7 +1242,9 @@ class VeQueGame extends FlameGame {
   /// Quán cùng phía phía trước, còn đủ quãng để giảm tốc tấp vào: hiện nút
   /// "Vào quán" / "Vào đổ xăng"… (quán gần nhất).
   Stall? get stallAhead {
-    if (phase != GamePhase.driving || _uTurn != null || _approach != null || fuel.empty || _wavedBy != null || _events.pull != null) return null;
+    if (phase != GamePhase.driving || _uTurn != null || _approach != null || fuel.empty || _wavedBy != null || _events.pull != null || _events.holding) {
+      return null;
+    }
     final stopping = player.speed * player.speed / (2 * _approachDecel);
     final a = player.s, b = player.s + dir * GameConfig.stallApproachReach;
     Stall? best;
@@ -1812,7 +1823,7 @@ class VeQueGame extends FlameGame {
   }
 
   List<StopPoint> _stopPoints() {
-    final stops = <StopPoint>[..._events.stops()];
+    final stops = <StopPoint>[..._events.stops(), ..._events.ferryStops()];
     for (final l in layout.lightsBetween(_camLeftS - 300, _camRightS + 900)) {
       if (l.colorAt(_time) == LightColor.green) continue;
       stops
@@ -2191,7 +2202,8 @@ class VeQueGame extends FlameGame {
   double _between(double a, double b) => a + _random.nextDouble() * (b - a);
 
   bool _canPlace(double s, int lane) =>
-      !layout.nearFeature(s, margin: 80) && traffic.isLaneClear(lane, s, 160) && !_pickups.any((p) => (p.$1.s - s).abs() < 100);
+      !layout.nearFeature(s, margin: 80) &&
+      !_events.inRiver(s, margin: 120) && traffic.isLaneClear(lane, s, 160) && !_pickups.any((p) => (p.$1.s - s).abs() < 100);
 
   /// Thường nằm ở làn chiều mình; thỉnh thoảng nằm bên làn ngược chiều để
   /// dụ người chơi lấn làn (trừ cao tốc).
@@ -2257,6 +2269,7 @@ class VeQueGame extends FlameGame {
   List<double> get rampStarts => [for (final r in _events.ramps) r.s];
   List<double> get hitchSpots => [for (final h in _events.hitches) h.s];
   double? get jamHead => _events.jam?.head;
+  double? get ferryBank => _events.ferry?.a;
 
   /// Cho điện thoại reo ngay.
   void ringPhoneNow() => _events._ring();
@@ -2456,7 +2469,7 @@ class VeQueGame extends FlameGame {
     if (_animalTimer > 0) return;
     _animalTimer = 30 + _random.nextDouble() * 35;
     final spawnS = (dir > 0 ? _camRightS : _camLeftS) + dir * 160;
-    if (layout.kindAt(spawnS) != RoadKind.highway || layout.nearFeature(spawnS, margin: 450)) return;
+    if (layout.kindAt(spawnS) != RoadKind.highway || layout.nearFeature(spawnS, margin: 450) || _events.inRiver(spawnS, margin: 600)) return;
     if (animals.groups.any((g) => (g.s - spawnS).abs() < 1500)) return;
     if (traffic.vehicles.any((v) => (v.s - spawnS).abs() < 160)) return;
     final r = _random.nextDouble();

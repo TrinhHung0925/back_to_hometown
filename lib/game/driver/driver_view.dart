@@ -947,6 +947,19 @@ class _DriverView extends Component {
     for (final r in ev.ramps) {
       if (inView(r.s - 320)) _prop(items, a, 'sign_runaway_ramp', r.s - 320, _half + 28, fallbackH: 2.8, fallback: const Color(0xff2F6FB5));
     }
+    final f = ev.ferry;
+    if (f != null && dir > 0) {
+      if (inView(f.a - 900)) _prop(items, a, 'sign_ferry', f.a - 900, _half + 28, fallbackH: 2.8, fallback: const Color(0xff2F6FB5));
+      if (inView(f.a - 150)) _prop(items, a, 'ferry_booth', f.a - 150, _half + 52, fallbackH: 2.8, fallback: const Color(0xff2F6FB5));
+      // Phà thấy từ phía cầu dẫn (đầu gần bến A).
+      final near = f.center - _Ferry.length / 2;
+      final art = a.prop('ferry_front');
+      if (inView(near)) {
+        final h = art == null ? 120.0 : art.heightM * _u;
+        final o = _at(near, 0);
+        _board(items, o.dx, o.dy, art == null ? _Ferry.width : h * art.aspect, h, art?.image, fallback: const Color(0xff5E7066));
+      }
+    }
     for (final b in ev.fogBanks) {
       final s = dir > 0 ? b.from - 300 : b.to + 300;
       if (inView(s)) _prop(items, a, 'sign_fog', s, dir * (_half + 26), fallbackH: 2.6, fallback: const Color(0xffF2C12E));

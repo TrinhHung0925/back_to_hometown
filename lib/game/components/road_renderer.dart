@@ -30,6 +30,7 @@ class RoadRenderer extends Component {
     this.ripeRice = false,
     this.theme = MapTheme.delta,
     this.ramps = const [],
+    this.river,
   }) : super(priority: 0);
 
   final RoadPath road;
@@ -47,6 +48,9 @@ class RoadRenderer extends Component {
 
   /// Đường cứu nạn (đèo): chỗ dải sỏi bắt đầu rẽ khỏi đường bên phải.
   final List<double> ramps;
+
+  /// Khúc sông bến phà cắt ngang đường (bờ gần, bờ xa); null nếu không có.
+  final (double, double)? river;
 
   /// Giờ trôi (giây) — sóng biển, mặt kênh gợn.
   double time = 0;
@@ -161,7 +165,45 @@ class RoadRenderer extends Component {
       _crossings(g, l);
     }
     if (finishS >= fromS && finishS <= toS) _finish(g);
+    _river(g);
   }
+
+  /// Sông cắt ngang đường: mặt nước đục phù sa phủ cả đường, bờ bùn, hai
+  /// bến dốc bê tông xuống nước, gợn sóng trôi theo dòng.
+  void _river(GroundSink g) {
+    final r = river;
+    if (r == null) return;
+    final (a, b) = r;
+    final from = max(a - 40, fromS - 600), to = min(b + 40, toS + 600);
+    if (to <= from) return;
+    final water = road.samplesBetween(max(a, from), min(b, to)).toList(growable: false);
+    if (water.length > 1) _strip(g, water, -_ground, _ground, paints.river);
+    for (final bank in [a, b]) {
+      if (bank < from - 60 || bank > to + 60) continue;
+      final inward = bank == a ? 1.0 : -1.0;
+      _quad(g, bank - 22 * inward, bank + 14 * inward, -_ground, _ground, paints.mud);
+      // Dốc bến: nối mặt đường xuống nước.
+      _quad(g, bank - 30 * inward, bank + 70 * inward, -_half - 12, _half + 12, paints.concrete);
+      for (var i = 0; i < 5; i++) {
+        final s0 = bank + inward * (6 + i * 13);
+        _seg(g, s0, -_half - 8, _half + 8, _slipway);
+      }
+    }
+    // Gợn sóng chạy ngang theo dòng chảy.
+    for (var s = (max(a + 90, from) / 130).ceil() * 130.0; s < min(b - 90, to); s += 130) {
+      final drift = (time * 26 + s * 0.37) % 260 - 130;
+      _seg(g, s + 18 * sin(time * 0.9 + s), -_ground + drift, _ground + drift - 300, _ripple);
+    }
+  }
+
+  late final Paint _slipway = Paint()
+    ..color = const Color(0x55000000)
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 2;
+  late final Paint _ripple = Paint()
+    ..color = const Color(0x22FFFFFF)
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 2.4;
 
   static const double _blend = 260;
 

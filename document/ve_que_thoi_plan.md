@@ -178,7 +178,72 @@ Người chơi chê bản đồ cũ đơn điệu, không giống thật. Ở m�
   - Ảnh của góc nhìn này nằm trong `assets/images/driver/`, dựng bằng `build_driver_*.py`.
   - Ảnh chỉ nạp khi bật góc nhìn lần đầu (nút hiện "Đang tải…").
   - Thiếu ảnh nào thì cảnh đó vẽ tạm bằng khối màu.
-- **Khi nào dùng:** chỉ khi đang lái hoặc bị công an đuổi. Lúc dừng ở quán, cây xăng, chốt thì tự về góc nhìn từ trên để thấy rõ quán xá.
+- **Khi nào dùng:** chỉ khi đang lái hoặc bị công an đuổi. Lúc dừng ở quán, cây xăng, chốt, đang ở bến phà thì tự về góc nhìn từ trên để thấy rõ quán xá.
+- **Buồng lái sống động:**
+  - **Gương chiếu hậu:** gương giữa ô tô, xe khách và hai gương xe máy thấy đường và xe phía sau (lật trái phải như gương thật). Xe đi sau thấy đầu, ban đêm đèn pha chói; xe ngược chiều vừa qua thấy đuôi.
+  - **Đồng hồ:** kim tốc độ chạy theo xe. Kim vòng tua lên dần trong mỗi số rồi tụt khi sang số. Ban đêm kim sáng cam.
+  - **Xi-nhan:** đánh lái đổi làn thì tự bật, nháy trên táp-lô và trên xe (nhìn từ trên). Lúc tự tấp vào lề thì bật xi-nhan phải.
+  - Xe khác bật xi-nhan khi đổi làn. Xe tải mất phanh bật đèn khẩn cấp.
+- **Máy yếu:** khung hình chậm (dưới ~25 hình/giây) thì tự vẽ gần lại và bớt xe; máy khoẻ lại thì vẽ xa như cũ.
+
+### Chuyện dọc đường theo bản đồ
+Người chơi muốn mỗi bản đồ chơi một kiểu khác nhau, không chỉ khác cảnh.
+
+- **Đèo núi:**
+  - **Sương mù dày:** có ở 8/10 chặng đèo, phủ một đoạn 8–16 km.
+    - Nhìn từ trên: chỉ quanh xe mình còn thấy, xa dần trắng đục.
+    - Ghế lái: cảnh mờ dần theo khoảng cách, trời trắng đục.
+    - Có biển báo "SƯƠNG MÙ". Báo bật đèn, giảm tốc; không bật đèn thì nhắc. Bật đèn thấy xa hơn một chút.
+  - **Xe tải mất phanh đổ dốc:**
+    - Trước mỗi đường cứu nạn có biển "ĐƯỜNG CỨU NẠN". Đường cứu nạn là dải sỏi rẽ chéo khỏi lề phải, cuối có vạch đỏ trắng; hộ lan chừa lối vào.
+    - Có 3/4 khả năng bị báo trước 3 giây: "xe tải phía sau mất phanh, tránh sang làn sát lề phải!" (kèm mũi tên đỏ chỉ làn).
+    - Xe tải lao tới ở làn trong: còi hơi liên hồi, đèn khẩn cấp, má phanh bốc khói. Nó vượt qua, tạt vào đường cứu nạn rồi dừng hẳn.
+    - Đứng chắn làn của nó thì bị đâm.
+- **Ven biển:**
+  - **Gió biển giật** chừng 6–13 giây một lần, từ phía biển thổi vào. Xe máy bị đẩy dạt mạnh, xe khách vừa, ô tô ít. Thấy cát bay ngang đường.
+  - **Doi cát** tràn ra làn đường: đi nhanh qua thì bánh xe trượt.
+- **Sông nước — qua phà:**
+  - Mỗi chặng sông nước có một nhánh sông cắt ngang quốc lộ (rộng chừng 1.500 đơn vị). Có biển "BẾN PHÀ", chòi bán vé, hai bến dốc bê tông, nước phù sa có gợn sóng.
+  - Phà con thoi qua lại giữa hai bờ. Xe AI xếp hàng ở bến chờ phà.
+  - Tới gần bến, xe tự vào bến xếp hàng (bám xe phía trước). Sau đó:
+    1. Mua vé: 1 lì xì, cả lượt mất 12 phút trong game.
+    2. Chờ phà cập bến. Có xe chờ thì phà về nhanh.
+    3. Lái xe lên boong; xe xếp hàng trước mình lên cùng chuyến.
+    4. Phà rẽ sóng qua sông.
+    5. Cập bến bên kia: các xe trên boong xuống trước, mình xuống sau rồi tự lái tiếp.
+- **Cửa ngõ thành phố — tắc đường 28 Tết:**
+  - 6/10 lối vào phố (sau một đoạn quốc lộ) bị tắc chừng 2 km.
+  - Xe xếp hàng hai làn, CSGT đứng giữa đường phân luồng, cho đi từng đợt (dừng ~4,6 giây, đi ~3,2 giây).
+  - Ô tô, xe khách chịu khó nhích. Xe máy được luồn lên lề phải, đi chậm.
+  - Qua chỗ phân luồng thì xe chạy lại bình thường.
+
+### Chuyện vui dọc đường
+- **Mẹ gọi điện:**
+  - Chặng đầu 7/10, các chặng sau gần một nửa, mẹ gọi giữa chặng (chuông reo ~11 giây). Có ba lựa chọn:
+    - **Tấp vào nghe:** xe tự tấp lề dừng hẳn. Nghe xong tỉnh táo +10, mất 3 phút.
+    - **Nghe luôn:** vừa lái vừa nghe, tay lái kém nhạy hẳn. Đi qua chốt CSGT đúng lúc đó thì bị vẫy vào phạt lỗi "Sử dụng điện thoại khi đang điều khiển xe". Nghe xong tỉnh táo +4.
+    - **Lát gọi lại:** mẹ gọi lại sau 40–70 giây, lo hơn. Lần thứ ba là bố gọi. Lỡ cả ba thì mẹ nhắn tin trách.
+  - Câu chuyện theo tình huống: còn bao nhiêu cây, trời tối, trời mưa, đang buồn ngủ, sắp trễ giờ, cành đào, xe khách đông, nhà đã gói bánh chưng…
+- **Khách xin đi nhờ** (xe máy, ô tô):
+  - Ven quốc lộ thỉnh thoảng có người vẫy xe (cậu sinh viên, cô bán hàng…), cứ 6–12 km một người.
+  - Nút **Cho đi nhờ**: xe tự tấp vào đón; xe nặng thêm một chút.
+  - Nút **Thả khách** khi sắp tới chỗ họ xuống (5–11 km sau). Họ biếu 2–4 lì xì.
+  - Lỡ quá chỗ thì họ xin xuống luôn chỗ đó, bớt 1 lì xì.
+- **Cành đào sau xe máy:**
+  - Đi xe máy thì buộc một cành đào sau yên cả chuyến (100%).
+  - Bị hỏng dần theo va chạm: quẹt xe −30, tai nạn −70, ổ gà −6, quệt lề, gió giật mạnh, trượt cát.
+  - Còn đẹp bao nhiêu thì cộng điểm bấy nhiêu (×3 mỗi chặng) và được nhắc tới trong cảnh về nhà.
+
+### Về tới nhà, đón giao thừa
+Xong chặng cuối thì có cảnh về nhà trước bảng kết quả.
+
+1. **Xe vào ngõ:** xe của mình (xe máy chở túi đồ và cành đào, ô tô đỏ, xe khách) chạy vào ngõ làng, dừng trước cổng.
+2. **Cả nhà ra đón:**
+   - Nhà mái ngói, cổng treo "CHÚC MỪNG NĂM MỚI", câu đối, đèn lồng, cây đào.
+   - Bố, mẹ, bà, em bé vẫy tay; con chó chạy ra mừng.
+   - Ban ngày có hoa đào bay. Tới muộn (sau 21:30) thì cảnh đã là đêm, có đèn.
+   - Dòng chữ báo tới lúc mấy giờ, còn bao lâu nữa giao thừa, cành đào còn đẹp không.
+3. **Đón giao thừa:** bấm **Đón giao thừa** → chuyển sang đêm, đếm ngược 5 giây → pháo hoa nổ rộn trời, "Chúc Mừng Năm Mới!" → **Xem kết quả**.
 
 ### Đèn xanh đèn đỏ
 - Có ở các ngã tư trong đoạn nội thành. Đèn có **số đếm ngược giây** như đèn thật ở Việt Nam.
@@ -649,7 +714,7 @@ lib/
 - "Phạt nguội" (tuỳ chọn): chạy thoát nhưng cuối chuyến có thể nhận giấy phạt nguội. Hiện plan vẫn giữ đúng ý "chạy thoát thì không sao cả".
 - Chat cho người khác cùng thấy (cần máy chủ và lọc từ ngữ).
 - Nâng cấp xe ở trạm dừng nghỉ, mở khoá thêm xe, thêm điểm trên bản đồ.
-- Sự kiện vui: mẹ gọi "bao giờ con về?". Cảnh đoàn tụ khi về tới nhà. Quảng cáo có thưởng.
+- Quảng cáo có thưởng. (Mẹ gọi điện và cảnh đoàn tụ khi về tới nhà đã làm — xem mục 4.)
 
 ---
 

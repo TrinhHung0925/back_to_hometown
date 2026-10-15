@@ -69,6 +69,7 @@ class WorldPaints {
   late final Paint forest = optional(Img.texForest, 600, const Color(0xff3E5A34));
   late final Paint forestDeep = optional(Img.texForest, 600, const Color(0xff2B4125), tint: const Color(0xff8E9A8C));
   late final Paint canal = optional(Img.texCanal, 220, const Color(0xff6A6944));
+  late final Paint river = optional(Img.texCanal, 340, const Color(0xff7A7148), tint: const Color(0xffD8C79E));
   late final Paint mud = Paint()..color = const Color(0xff7A6A4C);
 
   /// Mặt biển trôi chầm chậm theo thời gian [t] (giây).

@@ -325,6 +325,17 @@ abstract class GameConfig {
   static const double callLineSeconds = 2.7;
   static const double callStopMinutes = 3;
 
+  /// Phà qua sông (bản đồ sông nước): sông rộng bao nhiêu, phà chạy nhanh
+  /// cỡ nào, đỗ bến bao lâu; xe tự vào bến từ quãng [ferryApproach]; cả lượt
+  /// chờ + qua sông tốn [ferryMinutes] phút trong game.
+  static const double riverWidth = 1500;
+  static const double ferrySpeed = 150;
+  static const double ferryDockSeconds = 3;
+  static const double ferryApproach = 700;
+  static const double ferryBoardSeconds = 2.2;
+  static const double ferryLandSeconds = 2.0;
+  static const double ferryMinutes = 12;
+
   /// Dừng xe bao nhiêu phút trong game dù chưa gọi món (dựng xe, ngồi xuống).
   static const double stallBaseMinutes = 2;
 

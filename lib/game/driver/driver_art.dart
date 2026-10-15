@@ -126,6 +126,9 @@ class DriverArt {
       final image = await _image(images, key);
       if (image != null) art.cockpits[key] = image;
     }
+    // Phà nhìn từ đầu cầu dẫn (cùng tỉ lệ ảnh xe: 80 điểm ảnh mỗi mét).
+    final ferry = await _image(images, 'ferry_front');
+    if (ferry != null) art.props['ferry_front'] = BillboardArt(ferry, ferry.height / vehiclePixelsPerMeter);
     for (final key in const ['sky_day', 'sky_dusk', 'sky_night']) {
       final image = await _image(images, key);
       if (image != null) art.props[key] = BillboardArt(image, 1);

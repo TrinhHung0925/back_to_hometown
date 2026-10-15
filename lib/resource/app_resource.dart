@@ -178,6 +178,8 @@ abstract class Img {
   static final List<String> rocks = [for (var i = 1; i <= 3; i++) '$assetsImgPath/img_rock_$i.png'];
 
   /// Ảnh xem trước của một bản đồ trong hộp chọn bản đồ.
+  static const String imgFerry = '$assetsImgPath/img_ferry.png';
+
   static String mapPreview(String theme) => '$assetsImgPath/img_map_$theme.jpg';
 
   static List<String> get themeArt => [
@@ -197,6 +199,7 @@ abstract class Img {
         ...basketBoats,
         ...sampans,
         ...rocks,
+        imgFerry,
       ];
 
   /// images — cây nhìn từ trên cao (Prime_8, CC0) và cảnh vật vẽ bằng code
