@@ -1,0 +1,408 @@
+{
+ "tree_broad_1": {
+  "h_m": 8.61,
+  "kind": "tree_broad",
+  "w_m": 9.9,
+  "px": [
+   690,
+   600
+  ]
+ },
+ "tree_broad_2": {
+  "h_m": 11.45,
+  "kind": "tree_broad",
+  "w_m": 8.98,
+  "px": [
+   486,
+   620
+  ]
+ },
+ "tree_broad_3": {
+  "h_m": 8.52,
+  "kind": "tree_broad",
+  "w_m": 8.14,
+  "px": [
+   554,
+   580
+  ]
+ },
+ "tree_broad_4": {
+  "h_m": 9.74,
+  "kind": "tree_broad",
+  "w_m": 8.31,
+  "px": [
+   512,
+   600
+  ]
+ },
+ "tree_bamboo_1": {
+  "h_m": 7.77,
+  "kind": "bamboo",
+  "w_m": 8.75,
+  "px": [
+   676,
+   600
+  ]
+ },
+ "tree_bamboo_2": {
+  "h_m": 8.66,
+  "kind": "bamboo",
+  "w_m": 12.26,
+  "px": [
+   878,
+   620
+  ]
+ },
+ "banana_1": {
+  "h_m": 4.06,
+  "kind": "banana",
+  "w_m": 3.87,
+  "px": [
+   400,
+   420
+  ]
+ },
+ "banana_2": {
+  "h_m": 3.83,
+  "kind": "banana",
+  "w_m": 3.5,
+  "px": [
+   384,
+   420
+  ]
+ },
+ "palm_coconut_1": {
+  "h_m": 12.64,
+  "kind": "palm",
+  "w_m": 11.73,
+  "px": [
+   594,
+   640
+  ]
+ },
+ "palm_coconut_2": {
+  "h_m": 10.55,
+  "kind": "palm",
+  "w_m": 9.28,
+  "px": [
+   528,
+   600
+  ]
+ },
+ "tree_casuarina_1": {
+  "h_m": 10.64,
+  "kind": "casuarina",
+  "w_m": 7.41,
+  "px": [
+   432,
+   620
+  ]
+ },
+ "tree_casuarina_2": {
+  "h_m": 8.75,
+  "kind": "casuarina",
+  "w_m": 4.97,
+  "px": [
+   318,
+   560
+  ]
+ },
+ "tree_pine_1": {
+  "h_m": 14.0,
+  "kind": "pine",
+  "w_m": 7.13,
+  "px": [
+   326,
+   640
+  ]
+ },
+ "tree_pine_2": {
+  "h_m": 10.39,
+  "kind": "pine",
+  "w_m": 6.13,
+  "px": [
+   354,
+   600
+  ]
+ },
+ "bush_1": {
+  "h_m": 1.47,
+  "kind": "bush",
+  "w_m": 1.52,
+  "px": [
+   310,
+   300
+  ]
+ },
+ "bush_2": {
+  "h_m": 1.1,
+  "kind": "hedge",
+  "w_m": 2.73,
+  "px": [
+   744,
+   300
+  ]
+ },
+ "bush_3": {
+  "h_m": 2.08,
+  "kind": "grass",
+  "w_m": 2.54,
+  "px": [
+   440,
+   360
+  ]
+ },
+ "flower_peach_1": {
+  "h_m": 2.58,
+  "kind": "flower_tree",
+  "w_m": 1.89,
+  "px": [
+   322,
+   440
+  ]
+ },
+ "flower_apricot_1": {
+  "h_m": 1.86,
+  "kind": "flower_tree",
+  "w_m": 1.49,
+  "px": [
+   320,
+   400
+  ]
+ },
+ "house_town_1": {
+  "h_m": 13.6,
+  "kind": "house_town",
+  "floors": 3,
+  "facade_w_m": 4.5,
+  "w_m": 4.5,
+  "px": [
+   298,
+   900
+  ]
+ },
+ "house_town_2": {
+  "h_m": 10.1,
+  "kind": "house_town",
+  "floors": 2,
+  "facade_w_m": 4.2,
+  "w_m": 4.2,
+  "px": [
+   315,
+   758
+  ]
+ },
+ "house_town_3": {
+  "h_m": 16.0,
+  "kind": "house_town",
+  "floors": 4,
+  "facade_w_m": 4.8,
+  "w_m": 4.8,
+  "px": [
+   270,
+   900
+  ]
+ },
+ "house_town_4": {
+  "h_m": 13.3,
+  "kind": "house_town",
+  "floors": 3,
+  "facade_w_m": 4.4,
+  "w_m": 4.4,
+  "px": [
+   298,
+   900
+  ]
+ },
+ "house_town_5": {
+  "h_m": 13.6,
+  "kind": "house_town",
+  "floors": 3,
+  "facade_w_m": 4.0,
+  "w_m": 4.0,
+  "px": [
+   265,
+   900
+  ]
+ },
+ "house_town_6": {
+  "h_m": 10.0,
+  "kind": "house_town",
+  "floors": 2,
+  "facade_w_m": 5.0,
+  "w_m": 5.0,
+  "px": [
+   375,
+   750
+  ]
+ },
+ "house_village_1": {
+  "h_m": 5.35,
+  "kind": "house_village",
+  "facade_w_m": 7.6,
+  "w_m": 7.6,
+  "px": [
+   851,
+   599
+  ]
+ },
+ "house_village_2": {
+  "h_m": 7.4,
+  "kind": "house_village",
+  "facade_w_m": 7.0,
+  "w_m": 7.0,
+  "px": [
+   665,
+   703
+  ]
+ },
+ "house_village_3": {
+  "h_m": 7.4,
+  "kind": "house_village",
+  "facade_w_m": 8.0,
+  "w_m": 8.0,
+  "px": [
+   760,
+   703
+  ]
+ },
+ "house_village_4": {
+  "h_m": 5.35,
+  "kind": "house_village",
+  "facade_w_m": 6.6,
+  "w_m": 6.6,
+  "px": [
+   739,
+   599
+  ]
+ },
+ "wall_side_1": {
+  "kind": "wall_tile",
+  "tile_m": 3.0,
+  "material": "plaster_yellow",
+  "px": [
+   512,
+   512
+  ]
+ },
+ "wall_side_2": {
+  "kind": "wall_tile",
+  "tile_m": 3.0,
+  "material": "plaster_cement",
+  "px": [
+   512,
+   512
+  ]
+ },
+ "wall_side_3": {
+  "kind": "wall_tile",
+  "tile_m": 3.0,
+  "material": "brick",
+  "px": [
+   512,
+   512
+  ]
+ },
+ "sky_day": {
+  "kind": "sky",
+  "span_deg": 180.0,
+  "el_deg": [
+   0.0,
+   40.0
+  ],
+  "tile_x": true,
+  "px": [
+   2048,
+   512
+  ]
+ },
+ "sky_dusk": {
+  "kind": "sky",
+  "span_deg": 180.0,
+  "el_deg": [
+   0.0,
+   40.0
+  ],
+  "tile_x": true,
+  "px": [
+   2048,
+   512
+  ]
+ },
+ "sky_night": {
+  "kind": "sky",
+  "span_deg": 180.0,
+  "el_deg": [
+   0.0,
+   40.0
+  ],
+  "tile_x": true,
+  "px": [
+   2048,
+   512
+  ]
+ },
+ "horizon_delta": {
+  "kind": "horizon",
+  "span_deg": 90.0,
+  "el_deg": [
+   0.0,
+   10.0
+  ],
+  "tile_x": true,
+  "px": [
+   2048,
+   256
+  ]
+ },
+ "horizon_mountain": {
+  "kind": "horizon",
+  "span_deg": 90.0,
+  "el_deg": [
+   0.0,
+   10.0
+  ],
+  "tile_x": true,
+  "px": [
+   2048,
+   256
+  ]
+ },
+ "horizon_coast": {
+  "kind": "horizon",
+  "span_deg": 90.0,
+  "el_deg": [
+   0.0,
+   10.0
+  ],
+  "tile_x": true,
+  "px": [
+   2048,
+   256
+  ]
+ },
+ "horizon_city": {
+  "kind": "horizon",
+  "span_deg": 90.0,
+  "el_deg": [
+   0.0,
+   10.0
+  ],
+  "tile_x": true,
+  "px": [
+   2048,
+   256
+  ]
+ },
+ "arch_tet": {
+  "h_m": 8.0,
+  "kind": "arch",
+  "span_m": 26.0,
+  "note": "mép ngoài hai trụ rộng 26 m; ảnh có lề 0.9 m mỗi bên",
+  "w_m": 27.79,
+  "px": [
+   1612,
+   464
+  ]
+ }
+}

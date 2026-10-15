@@ -1,9 +1,11 @@
 import 'dart:math';
+import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:flame/components.dart';
 import 'package:flame/game.dart';
 
+import '../model/map_theme.dart';
 import '../model/trip.dart';
 import '../resource/app_resource.dart';
 import 'components/animal_layer.dart';
@@ -21,6 +23,9 @@ import 'components/stall_layer.dart';
 import 'components/traffic_layer.dart';
 import 'components/vehicle_sprite.dart';
 import 'components/world_paints.dart';
+import 'driver/driver_art.dart';
+import 'driver/driver_camera.dart';
+import 'driver/ground_sink.dart';
 import 'game_config.dart';
 import 'logic/animals.dart';
 import 'logic/chase.dart';
@@ -39,6 +44,8 @@ import 'logic/vehicle_condition.dart';
 import 'logic/weather.dart';
 import 'stage.dart';
 import 'vehicle_spec.dart';
+
+part 'driver/driver_view.dart';
 
 /// Một chặng lái xe. Flutter (GameController) điều khiển qua các hàm
 /// set*/honk/toggleHeadlights/payFine/flee và nhận số liệu qua các callback.
@@ -86,7 +93,10 @@ class VeQueGame extends FlameGame {
   );
   late final RoadPath road = RoadPath.winding(
     random: Random(setup.seed * 7919 + 1),
-    styleAt: layout.curveStyleAt,
+    // Bản đồ đèo núi: quốc lộ thành đường đèo cua liên tục.
+    styleAt: setup.theme == MapTheme.mountain
+        ? (s) => layout.kindAt(s) == RoadKind.highway ? CurveStyle.mountain : layout.curveStyleAt(s)
+        : layout.curveStyleAt,
     keepStraight: (a, b) => layout.featureWithin(a, b, margin: 200),
   );
   late final PlayerPhysics player = PlayerPhysics(
@@ -263,6 +273,26 @@ class VeQueGame extends FlameGame {
 
   // Còi, đèn
   bool headlightsOn = false;
+
+  /// Góc nhìn ghế lái (bật bằng nút trên HUD). Ghé quán, gặp công an, sửa
+  /// xe… thì tạm về bản đồ nhìn từ trên cho dễ thấy.
+  bool driverView = false;
+  late final _DriverView _driver = _DriverView(this);
+  bool _driverShown = false;
+
+  /// Nhìn từ ghế lái thì thấy xa phía trước bấy nhiêu.
+  static const double _driverReach = 3900;
+
+  bool get _driverActive =>
+      driverView && _driver.art != null && (phase == GamePhase.driving || phase == GamePhase.chase) && _job == null;
+
+  /// Bật / tắt góc nhìn ghế lái; lần đầu bật thì nạp ảnh (trả về khi xong).
+  Future<void> setDriverView(bool on) async {
+    driverView = on;
+    if (on && _driver.art == null) {
+      _driver.art = await DriverArt.load(images, Img.traffic);
+    }
+  }
   double _hornCooldown = 0;
   double _honkBackTimer = -1;
 
@@ -295,11 +325,12 @@ class VeQueGame extends FlameGame {
       paints: _paints,
       images: images,
       seed: setup.seed,
-      ripeRice: setup.south,
+      ripeRice: setup.south || setup.theme == MapTheme.mekong,
+      theme: setup.theme,
     );
     _featureGround = FeatureGroundLayer(road: road, layout: layout)..gates = _gates;
     _featureOverhead = FeatureOverheadLayer(road: road, layout: layout);
-    _scenery = SceneryLayer(road: road, layout: layout, paints: _paints, random: Random(setup.seed * 13 + 5));
+    _scenery = SceneryLayer(road: road, layout: layout, paints: _paints, random: Random(setup.seed * 13 + 5), theme: setup.theme);
     _powerLines = PowerLines(road: road);
     _trafficLayer = TrafficLayer(traffic: traffic, cross: cross, road: road);
     _riderSprite = Sprite(images.fromCache(Img.player(spec.kind)));
@@ -362,6 +393,7 @@ class VeQueGame extends FlameGame {
       _speech,
     ]);
     await camera.viewport.add(_rainStreaks);
+    await add(_driver);
     _updateCamera(0);
     _syncVisuals();
     _announceZone(force: true);
@@ -448,6 +480,13 @@ class VeQueGame extends FlameGame {
         _stepFinished(step);
     }
     _updateCamera(step);
+    final shown = _driverActive;
+    if (shown != _driverShown) {
+      _driverShown = shown;
+      // Nhìn từ ghế lái thì không vẽ bản đồ phía sau cho nhẹ.
+      camera.world = shown ? null : world;
+    }
+    if (shown) _driver.place(step);
     _stepEffects(step);
     _syncVisuals();
     _pushHud();
@@ -562,6 +601,8 @@ class VeQueGame extends FlameGame {
       stops: _stopPoints(),
       profileAt: _profileAt,
       canSpawnAt: (s) => !layout.nearFeature(s, margin: 160),
+      // Nhìn xa gấp mấy lần bản đồ thì cho đông xe tương ứng.
+      capScale: _driverActive ? 3 : 1,
     );
     cross.update(dt, _time, layout.lightsBetween(_camLeftS - 300, _camRightS + 600), _playerBox);
     animals.update(dt);
@@ -2554,6 +2595,12 @@ class VeQueGame extends FlameGame {
   /// Quãng s đang thấy trong khung nhìn (đã xoay): dò dọc đường về hai phía
   /// tới chỗ mặt đường ra khỏi khung.
   void _updateVisibleRange(double w, double h) {
+    if (_driverActive) {
+      // Ghế lái: thấy xa phía trước, phía sau thì chỉ cần một đoạn ngắn.
+      _camLeftS = dir > 0 ? player.s - 500 : player.s - _driverReach;
+      _camRightS = dir > 0 ? player.s + _driverReach : player.s + 500;
+      return;
+    }
     final ux = cos(_camAngle), uy = sin(_camAngle);
     const margin = GameConfig.roadHalfWidth + 60;
     bool inView(double s) {
@@ -2578,7 +2625,8 @@ class VeQueGame extends FlameGame {
     final fromS = _camLeftS - 80, toS = _camRightS + 80;
     _roadRenderer
       ..fromS = fromS
-      ..toS = toS;
+      ..toS = toS
+      ..time = _time;
     _featureGround
       ..fromS = fromS
       ..toS = toS;
@@ -2768,6 +2816,14 @@ class VeQueGame extends FlameGame {
 
   /// Mức tối theo giờ trong ngày của đồng hồ chuyến đi (0 ngày .. 1 đêm).
   double get nightLevel {
+    switch (setup.sky) {
+      case SkyMode.day:
+        return 0;
+      case SkyMode.night:
+        return 1;
+      case SkyMode.clock:
+        break;
+    }
     final t = clock.minutes % 1440;
     double ramp(double a, double b, double x) => ((x - a) / (b - a)).clamp(0.0, 1.0);
     if (t >= GameConfig.duskStart) return ramp(GameConfig.duskStart, GameConfig.duskEnd, t);

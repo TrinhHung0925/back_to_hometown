@@ -57,4 +57,32 @@ class WorldPaints {
     texture(Img.texRoofIron, 90, tint: const Color(0xff7FA98A)),
   ];
   late final Paint roofFlat = texture(Img.texConcrete, 140, tint: const Color(0xffD9D6CE));
+
+  /// Vân của các bản đồ mới; ảnh chưa nạp thì tô màu gần giống.
+  Paint optional(String path, double worldSize, Color fallback, {Color? tint}) =>
+      _images.containsKey(path) ? texture(path, worldSize, tint: tint) : (Paint()..color = fallback);
+
+  late final Paint sand = optional(Img.texSand, 230, const Color(0xffE2D2AC));
+  late final Paint sandWet = optional(Img.texSandWet, 230, const Color(0xffBDAA84));
+  late final Paint scrub = optional(Img.texScrub, 260, const Color(0xffB7AD7C));
+  late final Paint rock = optional(Img.texRock, 210, const Color(0xff8B867D));
+  late final Paint forest = optional(Img.texForest, 460, const Color(0xff3E5A34));
+  late final Paint forestDeep = optional(Img.texForest, 460, const Color(0xff2B4125), tint: const Color(0xff8E9A8C));
+  late final Paint canal = optional(Img.texCanal, 280, const Color(0xff6A6944));
+  late final Paint mud = Paint()..color = const Color(0xff7A6A4C);
+
+  /// Mặt biển trôi chầm chậm theo thời gian [t] (giây).
+  Paint sea(double t) {
+    if (!_images.containsKey(Img.texSea)) return Paint()..color = const Color(0xff3E8DA6);
+    final image = _images.fromCache(Img.texSea);
+    const size = 380.0;
+    final m = Float64List(16)
+      ..[0] = size / image.width
+      ..[5] = size / image.height
+      ..[10] = 1
+      ..[15] = 1
+      ..[12] = (t * 9) % size
+      ..[13] = (t * 5) % size;
+    return Paint()..shader = ImageShader(image, TileMode.repeated, TileMode.repeated, m, filterQuality: FilterQuality.medium);
+  }
 }

@@ -1,11 +1,16 @@
 import 'package:get_storage/get_storage.dart';
 
+import '../model/map_theme.dart';
+
 enum LocalKey {
   intro,
   soundOn,
   currentTrip,
   records,
   cruiseTip,
+  driverView,
+  mapTheme,
+  skyMode,
 }
 
 class LocalService {
@@ -38,6 +43,26 @@ class LocalService {
 
   void saveCruiseTipShown() {
     storage.write(LocalKey.cruiseTip.name, true);
+  }
+
+  /// Người chơi chọn góc nhìn ghế lái (giữ cho các chặng sau).
+  bool getDriverView() => storage.read(LocalKey.driverView.name) ?? false;
+
+  void saveDriverView(bool on) {
+    storage.write(LocalKey.driverView.name, on);
+  }
+
+  /// Cảnh đường và trời người chơi chọn (áp cho các chặng sắp chơi).
+  MapTheme getMapTheme() => MapTheme.values.asNameMap()[storage.read<String>(LocalKey.mapTheme.name)] ?? MapTheme.auto;
+
+  void saveMapTheme(MapTheme theme) {
+    storage.write(LocalKey.mapTheme.name, theme.name);
+  }
+
+  SkyMode getSkyMode() => SkyMode.values.asNameMap()[storage.read<String>(LocalKey.skyMode.name)] ?? SkyMode.clock;
+
+  void saveSkyMode(SkyMode mode) {
+    storage.write(LocalKey.skyMode.name, mode.name);
   }
 
   /// Chuyến đi đang chơi dở (JSON của TripProgress).

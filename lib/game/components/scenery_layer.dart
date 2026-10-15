@@ -5,6 +5,7 @@ import 'package:flame/cache.dart';
 import 'package:flame/components.dart';
 import 'package:flame/game.dart';
 
+import '../../model/map_theme.dart';
 import '../../model/trip.dart';
 import '../../resource/app_resource.dart';
 import '../game_config.dart';
@@ -23,8 +24,34 @@ Offset toLocal(Offset world, double angle) =>
 /// Cảnh hai bên đường, sinh dần phía trước và bỏ dần phía sau, theo loại
 /// đường: phố (nhà ống san sát, mái bạt, cột điện), quốc lộ (ruộng, nhà rải
 /// rác, cây, chuối), cao tốc (cây thưa sau hộ lan).
+enum SceneryKind { tree, banana, house }
+
+/// Một món cảnh ven đường theo toạ độ đường ([d] có dấu: dương là bên phải
+/// chiều về quê) — góc nhìn ghế lái đọc để dựng lại bằng ảnh đứng.
+class SceneryItem {
+  const SceneryItem(this.kind, this.s, this.d, this.size, this.seed, {this.house, this.species});
+
+  final SceneryKind kind;
+  final double s;
+  final double d;
+
+  /// Cây: đường kính tán; nhà: bề ngang mặt tiền.
+  final double size;
+  final int seed;
+  final House? house;
+
+  /// Loài cây cho ảnh đứng ở góc nhìn ghế lái (tree_broad, palm_coconut,
+  /// tree_casuarina, tree_pine, banana, bush…); null: không có ảnh đứng
+  /// (thuyền, đá) hoặc cây thường.
+  final String? species;
+}
+
 class SceneryLayer extends Component with HasGameReference<FlameGame> {
-  SceneryLayer({required this.road, required this.layout, required this.paints, required this.random}) : super(priority: 1);
+  SceneryLayer({required this.road, required this.layout, required this.paints, required this.random, this.theme = MapTheme.delta})
+      : super(priority: 1);
+
+  /// Bản đồ đã chọn: đổi loài cây, nhà cửa, thuyền ven quốc lộ.
+  final MapTheme theme;
 
   final RoadPath road;
   final RoadLayout layout;
@@ -32,6 +59,9 @@ class SceneryLayer extends Component with HasGameReference<FlameGame> {
   final Random random;
 
   final List<(double, Component)> _items = [];
+
+  /// Cảnh đang có (cùng vòng đời với [_items]).
+  final List<SceneryItem> items = [];
   final Map<int, double> _next = {-1: 0, 1: 0};
 
   static const double _half = GameConfig.roadHalfWidth;
@@ -49,6 +79,7 @@ class SceneryLayer extends Component with HasGameReference<FlameGame> {
       _next[side] = s;
     }
     final keep = keepFrom ?? fromS;
+    items.removeWhere((item) => item.s < keep - 500);
     _items.removeWhere((item) {
       if (item.$1 >= keep - 500) return false;
       item.$2.removeFromParent();
@@ -63,7 +94,12 @@ class SceneryLayer extends Component with HasGameReference<FlameGame> {
     }
     return switch (layout.kindAt(s)) {
       RoadKind.city => _cityLot(side, s),
-      RoadKind.highway => _countryside(side, s),
+      RoadKind.highway => switch (theme) {
+          MapTheme.coast => _coast(side, s),
+          MapTheme.mountain => _mountain(side, s),
+          MapTheme.mekong => _mekong(side, s),
+          _ => _countryside(side, s),
+        },
       RoadKind.expressway => _expresswayVerge(side, s),
     };
   }
@@ -88,7 +124,10 @@ class SceneryLayer extends Component with HasGameReference<FlameGame> {
       awning: awning,
       awningDepth: _sidewalk - 6 - random.nextDouble() * 8,
     );
-    if (house != null) _add(center, house, side, front);
+    if (house != null) {
+      _add(center, house, side, front);
+      items.add(SceneryItem(SceneryKind.house, center, side * front, house.size.x, (center * 13).round() & 0xfffff, house: house));
+    }
     // Cây trồng trên vỉa hè.
     if (random.nextDouble() < 0.22) {
       _tree(center + (random.nextDouble() - 0.5) * width * 0.6, side, _half + 16, 60 + random.nextDouble() * 40);
@@ -178,9 +217,13 @@ class SceneryLayer extends Component with HasGameReference<FlameGame> {
         awning: random.nextDouble() < 0.3 ? _awningColors[random.nextInt(_awningColors.length)] : null,
         awningDepth: 22,
       );
-      if (house != null) _add(s + step / 2, house, side, front);
+      if (house != null) {
+        _add(s + step / 2, house, side, front);
+        items.add(SceneryItem(SceneryKind.house, s + step / 2, side * front, house.size.x, (s * 13).round() & 0xfffff, house: house));
+      }
       if (random.nextDouble() < 0.5) {
-        _sprite(Img.bananas[random.nextInt(2)], s + step + 10, side, front + 20 + random.nextDouble() * 40, 54 + random.nextDouble() * 20);
+        _sprite(Img.bananas[random.nextInt(2)], s + step + 10, side, front + 20 + random.nextDouble() * 40, 54 + random.nextDouble() * 20,
+            kind: SceneryKind.banana);
       }
       return s + step + 10 + random.nextDouble() * 40;
     }
@@ -188,9 +231,93 @@ class SceneryLayer extends Component with HasGameReference<FlameGame> {
     if (roll < 0.55) {
       _tree(s, side, _half + 80 + random.nextDouble() * 90, 70 + random.nextDouble() * 70);
     } else if (roll < 0.8) {
-      _sprite(Img.bananas[random.nextInt(2)], s, side, _half + 75 + random.nextDouble() * 60, 50 + random.nextDouble() * 24);
+      _sprite(Img.bananas[random.nextInt(2)], s, side, _half + 75 + random.nextDouble() * 60, 50 + random.nextDouble() * 24,
+          kind: SceneryKind.banana);
     }
     return s + 70 + random.nextDouble() * 200;
+  }
+
+  // ------------------------------------------------------- Ven biển
+  double _coast(int side, double s) {
+    final r = random.nextDouble();
+    if (side > 0) {
+      // Bãi cát: rặng phi lao sát đường, thúng chai phơi trên cát, dưới nước.
+      if (r < 0.55) {
+        _pick(Img.casuarinas, s, side, _half + 44 + random.nextDouble() * 34, 64 + random.nextDouble() * 40, 'tree_casuarina');
+      } else if (r < 0.75) {
+        _pick(Img.basketBoats, s, side, _half + 70 + random.nextDouble() * 150, 30 + random.nextDouble() * 10, null);
+      }
+      return s + 34 + random.nextDouble() * 80;
+    }
+    // Đất liền: rặng phi lao dày, thỉnh thoảng xóm chài mái tôn.
+    final village = sin(s / 2600 + 0.4) > 0.55;
+    if (village && r < 0.6) return _villageHouse(side, s, RoofKind.iron);
+    _pick(Img.casuarinas, s, side, _half + 60 + random.nextDouble() * 110, 70 + random.nextDouble() * 50, 'tree_casuarina');
+    return s + 26 + random.nextDouble() * 60;
+  }
+
+  // -------------------------------------------------------- Đèo núi
+  double _mountain(int side, double s) {
+    final r = random.nextDouble();
+    if (side > 0) {
+      // Ngọn thông dưới vực, thưa dần.
+      if (r < 0.6) _pick(Img.pines, s, side, _half + 60 + random.nextDouble() * 170, 60 + random.nextDouble() * 50, 'tree_pine');
+      return s + 40 + random.nextDouble() * 110;
+    }
+    // Trên đỉnh vách đá: thông; chân vách: đá lở.
+    if (r < 0.6) {
+      _pick(Img.pines, s, side, _half + 105 + random.nextDouble() * 110, 70 + random.nextDouble() * 50, 'tree_pine');
+    } else if (r < 0.75) {
+      _pick(Img.rocks, s, side, _half + 22 + random.nextDouble() * 12, 16 + random.nextDouble() * 14, null);
+    }
+    return s + 36 + random.nextDouble() * 90;
+  }
+
+  // ------------------------------------------------------ Sông nước
+  double _mekong(int side, double s) {
+    final r = random.nextDouble();
+    if (side > 0) {
+      // Dừa nước hai bờ kênh, xuồng ba lá dưới kênh, vườn dừa bên kia.
+      if (r < 0.45) {
+        _pick(Img.palmsNipa, s, side, random.nextBool() ? _half + 36 : _half + 154, 54 + random.nextDouble() * 26, 'bush');
+      } else if (r < 0.55) {
+        _pick(Img.sampans, s, side, _half + 70 + random.nextDouble() * 50, 70 + random.nextDouble() * 20, null, aligned: true);
+      } else if (r < 0.85) {
+        _pick(Img.palmsCoconut, s, side, _half + 175 + random.nextDouble() * 80, 80 + random.nextDouble() * 40, 'palm_coconut');
+      }
+      return s + 30 + random.nextDouble() * 60;
+    }
+    final village = sin(s / 2100 + 1.1) > 0.3;
+    if (village && r < 0.6) return _villageHouse(side, s, r < 0.3 ? RoofKind.clay : RoofKind.iron);
+    if (r < 0.75) {
+      _pick(Img.palmsCoconut, s, side, _half + 75 + random.nextDouble() * 110, 80 + random.nextDouble() * 40, 'palm_coconut');
+    } else if (r < 0.88) {
+      _sprite(Img.bananas[random.nextInt(2)], s, side, _half + 75 + random.nextDouble() * 60, 50 + random.nextDouble() * 24, kind: SceneryKind.banana);
+    } else {
+      _pick(Img.mangoes, s, side, _half + 90 + random.nextDouble() * 100, 90 + random.nextDouble() * 40, 'tree_broad');
+    }
+    return s + 40 + random.nextDouble() * 120;
+  }
+
+  /// Nhà một tầng ven quốc lộ (xóm chài, xóm vườn).
+  double _villageHouse(int side, double s, RoofKind roof) {
+    final width = 52 + random.nextDouble() * 30;
+    final front = _half + 64 + random.nextDouble() * 18;
+    final bend = _bend(s + width / 2, side);
+    final step = _lotStep(width, front, bend);
+    final house = _house(width: width, front: front, bend: bend, roof: roof, awning: null, awningDepth: 22);
+    if (house != null) {
+      _add(s + step / 2, house, side, front);
+      items.add(SceneryItem(SceneryKind.house, s + step / 2, side * front, house.size.x, (s * 13).round() & 0xfffff, house: house));
+    }
+    return s + step + 20 + random.nextDouble() * 50;
+  }
+
+  /// Một cây / thuyền ngẫu nhiên trong [paths] (ảnh chưa nạp thì bỏ qua).
+  void _pick(List<String> paths, double s, int side, double d, double size, String? species, {bool aligned = false}) {
+    final path = paths[random.nextInt(paths.length)];
+    if (!game.images.containsKey(path)) return;
+    _sprite(path, s, side, d, size, species: species, aligned: aligned);
   }
 
   // ----------------------------------------------------------- Cao tốc
@@ -207,7 +334,8 @@ class SceneryLayer extends Component with HasGameReference<FlameGame> {
     _sprite(path, s, side, d, size);
   }
 
-  void _sprite(String path, double s, int side, double d, double size) {
+  void _sprite(String path, double s, int side, double d, double size,
+      {SceneryKind kind = SceneryKind.tree, String? species, bool aligned = false}) {
     // Phía trong khúc cua gắt: không mọc lấn qua tâm cong sang đường.
     final inner = _innerBend(s, side, size);
     if (inner > 0 && (d + size / 2) * inner > 0.8) return;
@@ -215,7 +343,8 @@ class SceneryLayer extends Component with HasGameReference<FlameGame> {
     final c = ShadowedSprite(
       sprite: Sprite(game.images.fromCache(path)),
       size: Vector2.all(size),
-      angle: random.nextDouble() * pi * 2,
+      // Thuyền dưới kênh nằm dọc theo bờ; cây thì xoay bất kỳ.
+      angle: aligned ? road.at(s).heading + pi / 2 + (random.nextDouble() - 0.5) * 0.3 : random.nextDouble() * pi * 2,
       shadowLength: size * 0.12,
     );
     final (x, y) = road.worldAt(s, side * d);
@@ -223,6 +352,7 @@ class SceneryLayer extends Component with HasGameReference<FlameGame> {
     c.priority = 2;
     add(c);
     _items.add((s, c));
+    items.add(SceneryItem(kind, s, side * d, size, (s * 7).round() & 0xfffff, species: species));
   }
 
   void _add(double s, PositionComponent c, int side, double d) {
@@ -416,6 +546,9 @@ class PowerLines extends Component {
 
   final RoadPath road;
   final List<(double, double)> _poles = [];
+
+  /// Cột điện đang có: (s, d).
+  List<(double, double)> get poles => _poles;
 
   static final Paint _wire = Paint()
     ..color = const Color(0xff1E2124)

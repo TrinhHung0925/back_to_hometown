@@ -311,6 +311,8 @@ class _Panel extends StatelessWidget {
             controller.coachMode
                 ? const _CoachInfo()
                 : _VehicleSwitch(value: controller.vehicle.value, onChanged: controller.setVehicle),
+            SizedBox(height: 6.h),
+            _MapRow(summary: controller.mapSummary.value, onPressed: controller.pickMap),
             SizedBox(height: 8.h),
             Container(height: 1.h, color: AppColors.ffE3E5E9),
             SizedBox(height: 8.h),
@@ -329,6 +331,36 @@ class _Panel extends StatelessWidget {
           ],
         );
       }),
+    );
+  }
+}
+
+/// Dòng chọn bản đồ: cảnh hai bên đường và trời.
+class _MapRow extends StatelessWidget {
+  const _MapRow({required this.summary, required this.onPressed});
+
+  final String summary;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return CupertinoButton(
+      padding: EdgeInsets.zero,
+      minimumSize: Size.zero,
+      onPressed: onPressed,
+      child: Container(
+        height: 30.h,
+        padding: EdgeInsets.symmetric(horizontal: 10.h),
+        decoration: BoxDecoration(color: AppColors.ffF2F3F5, borderRadius: BorderRadius.circular(10.h)),
+        child: Row(
+          children: [
+            AppText.manrope('Bản đồ', fontSize: 11.h, fontWeight: FontWeight.w700, color: AppColors.ff6B7280),
+            SizedBox(width: 8.h),
+            Expanded(child: AppText.manrope(summary, fontSize: 12.5.h, fontWeight: FontWeight.w800, maxLines: 1, color: AppColors.ff1B1D22)),
+            AppText.manrope('Đổi ›', fontSize: 12.h, fontWeight: FontWeight.w800, color: AppColors.ffD62828),
+          ],
+        ),
+      ),
     );
   }
 }

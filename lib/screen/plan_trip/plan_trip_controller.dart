@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 
+import '../../dialog/map_picker_dialog.dart';
 import '../../dialog/place_picker_dialog.dart';
 import '../../game/debug/debug_launch.dart';
 import '../../game/vehicle_spec.dart';
@@ -17,6 +18,9 @@ class PlanTripController extends GetxController {
   final vehicle = VehicleKind.motorbike.obs;
   final activeField = TripField.from.obs;
   final plan = Rxn<TripPlan>();
+
+  /// Bản đồ và trời đang chọn (dòng tóm tắt trên bảng).
+  final mapSummary = MapPickerDialog.summary().obs;
 
   RouteService get routes => RouteService.shared;
 
@@ -47,6 +51,12 @@ class PlanTripController extends GetxController {
       if (fromId.value == id) fromId.value = null;
     }
     _replan();
+  }
+
+  /// Mở hộp chọn bản đồ (cảnh hai bên đường, trời ngày / đêm).
+  Future<void> pickMap() async {
+    await MapPickerDialog.open();
+    mapSummary.value = MapPickerDialog.summary();
   }
 
   /// Chạm vào ô: chọn ô đó và mở danh sách để tìm theo tên.

@@ -13,6 +13,8 @@
 > - **Chat khi đang chơi:** gõ chữ thì tin nhắn hiện lên phía trên màn hình.
 > - **Đâm xe thì công an tới:** nộp phạt, hoặc bỏ chạy. Chạy chậm bị bắt thì chuyến đi kết thúc.
 > - **Thua khi:** hết giờ, bị công an bắt, hoặc gặp tai nạn.
+> - **Nhiều bản đồ, ngày / đêm (15/10):** chọn cảnh hai bên đường (Tự động, Đồng bằng, Ven biển, Đèo núi, Sông nước) và trời (Theo giờ, Ban ngày, Ban đêm) ở màn lên lộ trình.
+> - **Góc nhìn ghế lái (15/10, đang thử):** nút "Ghế lái" trên HUD đổi sang nhìn từ chỗ người lái ngồi; lối chơi giữ nguyên.
 
 ---
 
@@ -123,7 +125,60 @@ Cả hai xe đều phải về kịp được; khác nhau ở cách chơi: xe m�
 | Nội thành | Đầu chuyến, cuối chuyến, khi đi qua thành phố | Nhà phố, hàng quán | Nhiều xe máy hơn một chút, ngã tư đèn xanh đèn đỏ, chạy chậm |
 | Quốc lộ | Giữa các thành phố | Ruộng, cây, quán ven đường | Cong nhẹ, xe tải, xe khách, ổ gà, xe ngược chiều, trạm thu phí BOT |
 | Cao tốc (chỉ ô tô) | Tuyến có cao tốc | Dải phân cách cứng, hàng rào | Gần như thẳng, chạy nhanh, không lấn được sang chiều ngược, trạm thu phí ở lối vào và lối ra |
-| Đèo, đường làng | — | — | Để sau MVP |
+| Đèo | Bản đồ "Đèo núi" (tự động: Tây Bắc, Tây Nguyên, Huế ↔ Đà Nẵng) | Vách đá taluy một bên, vực rừng thông một bên | Cua nối cua, nhiều khúc gắt, ít đoạn thẳng |
+| Đường làng | — | — | Để sau MVP |
+
+### Bản đồ và trời
+Người chơi chê bản đồ cũ đơn điệu, không giống thật. Ở màn lên lộ trình, dưới dòng chọn xe có dòng **Bản đồ … Đổi ›**. Bấm vào sẽ mở hộp chọn, chọn xong là lưu ngay và áp cho các chặng sắp chơi.
+
+- **Cảnh hai bên đường:**
+
+| Bản đồ | Cảnh | Ghi chú |
+|---|---|---|
+| Tự động (mặc định) | Đổi theo vùng của từng chặng | Có điểm Tây Bắc, Tây Nguyên, hoặc chặng Huế ↔ Đà Nẵng → đèo; điểm đến ven biển miền Trung, Hạ Long, Vũng Tàu → ven biển; điểm đến miền Tây → sông nước; còn lại → đồng bằng |
+| Đồng bằng | Ruộng lúa non (phía nam thì lúa chín vàng), lũy tre, xóm mái ngói, chuối | Như bản đồ cũ |
+| Ven biển | Một bên là bãi cát, rặng phi lao, biển xanh có sóng vỗ, thúng chai; bên kia là cát và cây bụi | Bờ biển uốn theo đường |
+| Đèo núi | Bên trái là vách đá dựng; bên phải là hộ lan rồi vực rừng tối dần, thông | Đường cua liên tục (kiểu cua riêng của đèo) |
+| Sông nước | Kênh chạy dọc một bên đường, dừa nước ven kênh, xuồng ba lá, dừa xiêm, xoài, lúa chín vàng | |
+
+  Phố và cao tốc giữ nguyên cảnh của mình ở mọi bản đồ.
+- **Trời:**
+  - **Theo giờ** (mặc định): trời tối dần theo đồng hồ chuyến đi.
+  - **Ban ngày**: luôn sáng.
+  - **Ban đêm**: luôn tối, phải bật đèn pha.
+- Ảnh các bản đồ mới (vân cát, biển, kênh, đá, rừng; cây, thuyền nhìn từ trên) dựng bằng `tool/asset_pipeline/build_theme_art.py`. Thiếu ảnh nào thì game vẽ tạm bằng màu.
+
+### Góc nhìn ghế lái (thử nghiệm)
+Đây là kiểu nhìn "như đang ngồi trên xe" mà người chơi muốn thử. Nút **Ghế lái** / **Trên cao** trên HUD dùng để đổi góc nhìn, và game nhớ lựa chọn cho lần sau. Lối chơi, luật, va chạm, cụm nút vẫn giữ nguyên; chỉ khác cách vẽ.
+
+- **Dựng cảnh:**
+  - Mặt đường, lề, ruộng, biển, kênh dùng chung đúng cách dựng của bản đồ nhìn từ trên. Khi ở góc ghế lái, các phần này được chiếu phối cảnh từ mắt người lái thay vì vẽ phẳng, nên hai góc nhìn luôn khớp nhau.
+  - Cây, người, quán, xe là ảnh đứng.
+  - Nhà, mái che cây xăng, vách đá, cổng chào là mặt đứng dán ảnh.
+  - Mọi thứ được xếp từ xa tới gần.
+- **Mắt người lái theo loại xe:**
+
+| Loại xe | Mắt cao | Góc nhìn | Khung trước mặt | Chuyển động |
+|---|---|---|---|---|
+| Xe máy | 1,65 m | 82° | Ghi-đông | Nghiêng theo cua |
+| Ô tô | 1,2 m | 74° | Táp-lô và vô-lăng | Vô-lăng xoay theo tay lái |
+| Xe khách | 2,5 m | 72° | Táp-lô và vô-lăng | Vô-lăng xoay theo tay lái |
+
+  Chạy nhanh thì góc nhìn mở rộng thêm một chút.
+- **Xe khác:**
+  - Xe cùng chiều thấy đuôi, phanh thì đèn hậu sáng.
+  - Xe ngược chiều thấy đầu, tối thì đèn pha chói.
+  - Xe ở đường ngang thấy hông.
+  - Ảnh xe dựng từ đúng mô hình 3D của xe nhìn từ trên (`tool/asset_pipeline/build_driver_views.py`).
+- **Trời và thời tiết:**
+  - Trời là ảnh toàn cảnh trôi theo hướng nhìn: ngày, hoàng hôn, đêm.
+  - Phía chân trời là dãy núi, lũy tre hoặc phố, tuỳ bản đồ.
+  - Ban đêm có vệt đèn pha; trời mưa có vệt mưa.
+- **Ảnh:**
+  - Ảnh của góc nhìn này nằm trong `assets/images/driver/`, dựng bằng `build_driver_*.py`.
+  - Ảnh chỉ nạp khi bật góc nhìn lần đầu (nút hiện "Đang tải…").
+  - Thiếu ảnh nào thì cảnh đó vẽ tạm bằng khối màu.
+- **Khi nào dùng:** chỉ khi đang lái hoặc bị công an đuổi. Lúc dừng ở quán, cây xăng, chốt thì tự về góc nhìn từ trên để thấy rõ quán xá.
 
 ### Đèn xanh đèn đỏ
 - Có ở các ngã tư trong đoạn nội thành. Đèn có **số đếm ngược giây** như đèn thật ở Việt Nam.

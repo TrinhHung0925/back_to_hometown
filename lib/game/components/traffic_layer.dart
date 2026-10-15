@@ -28,9 +28,13 @@ class TrafficLayer extends Component with HasGameReference<FlameGame> {
 
   Sprite _sprite(String path) => _cache.putIfAbsent(path, () => Sprite(game.images.fromCache(path)));
 
-  String _pathFor(TrafficType type, int variant) => raining && type == TrafficType.motorbike && variant % 3 != 0
-      ? Img.scootersRaincoat[variant % Img.scootersRaincoat.length]
-      : spritePath(type, variant);
+  String _pathFor(TrafficType type, int variant) => dressedPath(type, variant, raining: raining);
+
+  /// Ảnh xe theo thời tiết: trời mưa thì người đi xe máy trùm áo mưa.
+  static String dressedPath(TrafficType type, int variant, {required bool raining}) =>
+      raining && type == TrafficType.motorbike && variant % 3 != 0
+          ? Img.scootersRaincoat[variant % Img.scootersRaincoat.length]
+          : spritePath(type, variant);
 
   static String spritePath(TrafficType type, int variant) => switch (type) {
         TrafficType.motorbike => Img.scootersAi[variant % Img.scootersAi.length],

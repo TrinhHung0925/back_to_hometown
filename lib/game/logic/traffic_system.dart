@@ -234,6 +234,7 @@ class TrafficSystem {
     List<StopPoint> stops = const [],
     TrafficProfile Function(double s)? profileAt,
     bool Function(double s)? canSpawnAt,
+    int capScale = 1,
   }) {
     _laneChanges(dt, player, profileAt);
     _followLeaders(dt, player, stops);
@@ -246,7 +247,7 @@ class TrafficSystem {
     if (_spawnTimer <= 0) {
       _spawnTimer = _nextSpawnDelay();
       final profile = profileAt?.call(spawnS) ?? TrafficProfile.highway;
-      if (vehicles.length < profile.maxVehicles && (canSpawnAt?.call(spawnS) ?? true)) {
+      if (vehicles.length < profile.maxVehicles * capScale && (canSpawnAt?.call(spawnS) ?? true)) {
         // Đã quay đầu thì "xe cùng chiều" với mình là xe chạy ngược s.
         final chance = player.forward ? profile.oncomingChance : 1 - profile.oncomingChance;
         trySpawn(spawnS, oncoming: _random.nextDouble() < chance, profile: profile);

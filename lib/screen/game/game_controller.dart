@@ -54,6 +54,10 @@ class GameController extends GetxController {
   /// Lần đổ xăng gần nhất: mức bình trước / sau (bảng cột bơm chạy số).
   final pump = Rxn<(double, double)>();
 
+  /// Góc nhìn ghế lái (lưu lại cho lần chơi sau); đang nạp ảnh của góc này.
+  final driverView = false.obs;
+  final viewLoading = false.obs;
+
   /// Tán gẫu với nhân viên cây xăng (null khi không đứng ở cây xăng).
   final gasChat = Rxn<GasChatState>();
   final Set<int> _chatUsed = {};
@@ -188,6 +192,13 @@ class GameController extends GetxController {
       onNotice: _showNotice,
     );
     gameKey.value++;
+    driverView.value = LocalService.shared.getDriverView();
+    if (driverView.value) {
+      final created = game;
+      created.loaded.then((_) {
+        if (identical(created, game)) _applyView();
+      });
+    }
     _audio.startEngine(setup.vehicle.fourWheels ? AppAudio.sfxEngineCar : AppAudio.sfxEngineMoto);
     _audio.stopSiren();
     _audio.playMusic(AppAudio.musicMain);
@@ -249,6 +260,20 @@ class GameController extends GetxController {
     final before = game.fuel.level;
     final added = bottle ? game.buyBottle() : game.refuel(lixiSpent: lixi);
     if (added > 0) pump.value = (before, game.fuel.level);
+  }
+
+  /// Đổi góc nhìn bản đồ trên cao ↔ ghế lái.
+  Future<void> toggleView() async {
+    driverView.value = !driverView.value;
+    LocalService.shared.saveDriverView(driverView.value);
+    await _applyView();
+  }
+
+  Future<void> _applyView() async {
+    final g = game;
+    viewLoading.value = true;
+    await g.setDriverView(driverView.value);
+    if (identical(g, game)) viewLoading.value = false;
   }
 
   /// Nhân viên cây xăng hỏi chuyện tiếp (tối đa [GasChat.maxRounds] lượt).

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../model/map_theme.dart';
 import '../model/trip.dart';
 import 'logic/road_layout.dart';
 import 'logic/roadside.dart';
@@ -25,6 +26,8 @@ class StageSetup {
     this.seed = 0,
     this.south = false,
     this.laterMinutes = 0,
+    this.theme = MapTheme.delta,
+    this.sky = SkyMode.clock,
   });
 
   final VehicleKind vehicle;
@@ -57,6 +60,12 @@ class StageSetup {
   /// độ thường) — để HUD báo đang dư hay trễ giờ so với giao thừa.
   final double laterMinutes;
 
+  /// Cảnh hai bên đường của chặng (đã chọn cụ thể, không còn "tự động").
+  final MapTheme theme;
+
+  /// Trời theo giờ, luôn ngày hay luôn đêm.
+  final SkyMode sky;
+
   double get lengthKm => sections.fold(0, (sum, s) => sum + s.km);
   double get lengthUnits => lengthKm * GameConfig.unitsPerKm;
 
@@ -75,6 +84,8 @@ class StageSetup {
         seed: value,
         south: south,
         laterMinutes: laterMinutes,
+        theme: theme,
+        sky: sky,
       );
 }
 

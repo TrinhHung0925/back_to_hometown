@@ -4,6 +4,7 @@ import '../game/game_config.dart';
 import '../game/logic/trip_clock.dart';
 import '../game/logic/vehicle_condition.dart';
 import '../game/stage.dart';
+import '../model/place.dart';
 import '../model/trip.dart';
 import 'local_service.dart';
 import 'route_service.dart';
@@ -80,7 +81,17 @@ class TripService {
       seed: _random.nextInt(1 << 20),
       south: _isSouth(progress.plan, progress.stageIndex),
       laterMinutes: progress.plan.stages.skip(progress.stageIndex + 1).fold(0.0, (sum, s) => sum + stageGameMinutes(s)),
+      theme: LocalService.shared.getMapTheme().resolve(_place(stage.fromName), _place(stage.toName)),
+      sky: LocalService.shared.getSkyMode(),
     );
+  }
+
+  /// Điểm trên bản đồ có tên ở cuối tên điểm dừng của chặng.
+  static Place? _place(String name) {
+    for (final p in RouteService.shared.places) {
+      if (name.endsWith(p.name)) return p;
+    }
+    return null;
   }
 
   /// Chặng ở phía nam vĩ tuyến ~12,8° (từ Nha Trang trở vào): ruộng lúa

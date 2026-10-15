@@ -119,6 +119,18 @@ class CurveStyle {
     sCurveChance: 0.3,
   );
 
+  /// Đường đèo: cua nối cua, nhiều khúc gắt, ít đoạn thẳng.
+  static const mountain = CurveStyle(
+    maxHeading: GameConfig.maxRoadHeading,
+    minRadius: GameConfig.minCurveRadiusHighway,
+    maxRadius: 900,
+    minTurn: 0.6,
+    maxTurn: 1.6,
+    straightMin: 90,
+    straightMax: 360,
+    sCurveChance: 0.65,
+  );
+
   /// Phố: chủ yếu thẳng, thỉnh thoảng uốn nhẹ.
   static const city = CurveStyle(
     maxHeading: GameConfig.maxHeadingCity,

@@ -69,6 +69,8 @@ class GameHud extends StatelessWidget {
               ),
             ),
             SizedBox(width: 8.h),
+            _ViewToggle(controller: controller),
+            SizedBox(width: 8.h),
             _IconPill(icon: Img.icChat, onPressed: controller.openChat),
             SizedBox(width: 8.h),
             _IconPill(icon: Img.icPause, onPressed: controller.pause),
@@ -601,6 +603,46 @@ class _Pill extends StatelessWidget {
       ),
       child: child,
     );
+  }
+}
+
+/// Đổi góc nhìn: bản đồ trên cao ↔ ghế lái. Đang nạp ảnh thì nút mờ đi.
+class _ViewToggle extends StatelessWidget {
+  const _ViewToggle({required this.controller});
+
+  final GameController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(() {
+      final driver = controller.driverView.value;
+      final loading = controller.viewLoading.value;
+      return CupertinoButton(
+        onPressed: loading ? null : controller.toggleView,
+        padding: EdgeInsets.zero,
+        minimumSize: Size.zero,
+        child: Opacity(
+          opacity: loading ? 0.5 : 1,
+          child: Container(
+            height: 38.h,
+            padding: EdgeInsets.symmetric(horizontal: 11.h),
+            decoration: BoxDecoration(
+              color: AppColors.ff1B1D22.withValues(alpha: 0.6),
+              borderRadius: BorderRadius.circular(19.h),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                RoadIcon(driver ? RoadGlyph.aerial : RoadGlyph.steering, size: 19.h, color: AppColors.ffFFFFFF, accent: AppColors.ff5B6169),
+                SizedBox(width: 6.h),
+                AppText.manrope(loading ? 'Đang tải…' : (driver ? 'Trên cao' : 'Ghế lái'),
+                    fontSize: 12.h, fontWeight: FontWeight.w800, color: AppColors.ffFFFFFF),
+              ],
+            ),
+          ),
+        ),
+      );
+    });
   }
 }
 

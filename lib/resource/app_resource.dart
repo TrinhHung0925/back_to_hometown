@@ -158,6 +158,47 @@ abstract class Img {
   static const String texRoofIron = '$assetsImgPath/tex_roof_iron.jpg';
   static const String texPaint = '$assetsImgPath/tex_paint.png';
 
+  /// images — cảnh của các bản đồ ven biển, đèo núi, sông nước (vân mặt đất,
+  /// cây và thuyền nhìn từ trên; dựng bằng tool/asset_pipeline/build_theme_art.py)
+  static const String texSand = '$assetsImgPath/tex_sand.jpg';
+  static const String texSandWet = '$assetsImgPath/tex_sand_wet.jpg';
+  static const String texSea = '$assetsImgPath/tex_sea.jpg';
+  static const String texCanal = '$assetsImgPath/tex_canal.jpg';
+  static const String texRock = '$assetsImgPath/tex_rock.jpg';
+  static const String texForest = '$assetsImgPath/tex_forest.jpg';
+  static const String texScrub = '$assetsImgPath/tex_scrub.jpg';
+  static final List<String> palmsCoconut = [for (var i = 1; i <= 3; i++) '$assetsImgPath/img_palm_coconut_$i.png'];
+  static final List<String> palmsNipa = [for (var i = 1; i <= 2; i++) '$assetsImgPath/img_palm_nipa_$i.png'];
+  static final List<String> casuarinas = [for (var i = 1; i <= 3; i++) '$assetsImgPath/img_tree_casuarina_$i.png'];
+  static final List<String> pines = [for (var i = 1; i <= 3; i++) '$assetsImgPath/img_tree_pine_$i.png'];
+  static final List<String> mangoes = [for (var i = 1; i <= 2; i++) '$assetsImgPath/img_tree_mango_$i.png'];
+  static final List<String> bambooTops = [for (var i = 1; i <= 2; i++) '$assetsImgPath/img_bamboo_top_$i.png'];
+  static final List<String> basketBoats = [for (var i = 1; i <= 2; i++) '$assetsImgPath/img_boat_basket_$i.png'];
+  static final List<String> sampans = [for (var i = 1; i <= 2; i++) '$assetsImgPath/img_boat_sampan_$i.png'];
+  static final List<String> rocks = [for (var i = 1; i <= 3; i++) '$assetsImgPath/img_rock_$i.png'];
+
+  /// Ảnh xem trước của một bản đồ trong hộp chọn bản đồ.
+  static String mapPreview(String theme) => '$assetsImgPath/img_map_$theme.jpg';
+
+  static List<String> get themeArt => [
+        texSand,
+        texSandWet,
+        texSea,
+        texCanal,
+        texRock,
+        texForest,
+        texScrub,
+        ...palmsCoconut,
+        ...palmsNipa,
+        ...casuarinas,
+        ...pines,
+        ...mangoes,
+        ...bambooTops,
+        ...basketBoats,
+        ...sampans,
+        ...rocks,
+      ];
+
   /// images — cây nhìn từ trên cao (Prime_8, CC0) và cảnh vật vẽ bằng code
   static final List<String> trees = [
     for (var i = 1; i <= 13; i++) '$assetsImgPath/img_tree_${i.toString().padLeft(2, '0')}.png',

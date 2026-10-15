@@ -1,0 +1,361 @@
+{
+ "bus_shelter": {
+  "h_m": 2.946,
+  "w_m": 4.262,
+  "kind": "prop",
+  "depth_m": 1.01
+ },
+ "chicken_1": {
+  "h_m": 0.626,
+  "w_m": 0.79,
+  "kind": "animal",
+  "facing": "left",
+  "depth_m": 0.21
+ },
+ "chicken_2": {
+  "h_m": 0.514,
+  "w_m": 0.495,
+  "kind": "animal",
+  "facing": "left",
+  "depth_m": 0.18
+ },
+ "dog_1": {
+  "h_m": 0.719,
+  "w_m": 1.105,
+  "kind": "animal",
+  "facing": "left",
+  "depth_m": 0.24
+ },
+ "dog_2": {
+  "h_m": 0.702,
+  "w_m": 0.924,
+  "kind": "animal",
+  "facing": "left",
+  "depth_m": 0.24
+ },
+ "duck_1": {
+  "h_m": 0.412,
+  "w_m": 0.633,
+  "kind": "animal",
+  "facing": "left",
+  "depth_m": 0.21
+ },
+ "duck_2": {
+  "h_m": 0.419,
+  "w_m": 0.633,
+  "kind": "animal",
+  "facing": "left",
+  "depth_m": 0.21
+ },
+ "duck_white_1": {
+  "h_m": 0.412,
+  "w_m": 0.633,
+  "kind": "animal",
+  "facing": "left",
+  "depth_m": 0.21
+ },
+ "gas_canopy_fascia": {
+  "h_m": 1.5,
+  "w_m": 12.0,
+  "kind": "fascia",
+  "tile_x": true
+ },
+ "gas_price_sign": {
+  "h_m": 5.25,
+  "w_m": 1.717,
+  "kind": "gas_station",
+  "depth_m": 0.66
+ },
+ "gas_pump": {
+  "h_m": 1.96,
+  "w_m": 1.72,
+  "kind": "gas_station",
+  "depth_m": 0.86
+ },
+ "gas_shop": {
+  "h_m": 3.438,
+  "w_m": 6.629,
+  "kind": "gas_station",
+  "depth_m": 3.73
+ },
+ "gift_box": {
+  "h_m": 0.42,
+  "w_m": 0.445,
+  "kind": "pickup"
+ },
+ "gift_kumquat": {
+  "h_m": 0.748,
+  "w_m": 0.68,
+  "kind": "pickup"
+ },
+ "gift_peach": {
+  "h_m": 0.48,
+  "w_m": 1.575,
+  "kind": "pickup"
+ },
+ "lixi_float": {
+  "h_m": 0.163,
+  "w_m": 0.092,
+  "kind": "pickup"
+ },
+ "nail_sign": {
+  "h_m": 1.145,
+  "w_m": 0.655,
+  "kind": "prop",
+  "depth_m": 0.08
+ },
+ "person_1": {
+  "h_m": 1.659,
+  "w_m": 0.647,
+  "kind": "person",
+  "depth_m": 0.37
+ },
+ "person_2": {
+  "h_m": 1.724,
+  "w_m": 1.329,
+  "kind": "person",
+  "depth_m": 0.34
+ },
+ "person_3": {
+  "h_m": 1.665,
+  "w_m": 1.071,
+  "kind": "person",
+  "depth_m": 0.3
+ },
+ "person_4": {
+  "h_m": 2.235,
+  "w_m": 1.376,
+  "kind": "person",
+  "depth_m": 0.4
+ },
+ "person_5": {
+  "h_m": 1.688,
+  "w_m": 0.729,
+  "kind": "person",
+  "depth_m": 0.38
+ },
+ "person_6": {
+  "h_m": 1.512,
+  "w_m": 0.612,
+  "kind": "person",
+  "depth_m": 0.32
+ },
+ "person_7": {
+  "h_m": 1.641,
+  "w_m": 0.741,
+  "kind": "person",
+  "depth_m": 0.44
+ },
+ "person_8": {
+  "h_m": 1.241,
+  "w_m": 0.6,
+  "kind": "person",
+  "depth_m": 0.25
+ },
+ "person_hammock_1": {
+  "h_m": 1.506,
+  "w_m": 2.953,
+  "kind": "person"
+ },
+ "person_sit_1": {
+  "h_m": 1.153,
+  "w_m": 0.694,
+  "kind": "person"
+ },
+ "person_sit_2": {
+  "h_m": 1.1,
+  "w_m": 0.612,
+  "kind": "person"
+ },
+ "person_sit_3": {
+  "h_m": 1.165,
+  "w_m": 0.659,
+  "kind": "person"
+ },
+ "police_officer_radar": {
+  "h_m": 1.741,
+  "w_m": 0.929,
+  "kind": "police"
+ },
+ "police_officer_stand": {
+  "h_m": 1.741,
+  "w_m": 0.929,
+  "kind": "police"
+ },
+ "police_officer_wave": {
+  "h_m": 2.382,
+  "w_m": 1.576,
+  "kind": "police"
+ },
+ "police_sign": {
+  "h_m": 1.428,
+  "w_m": 1.389,
+  "kind": "police"
+ },
+ "police_tent": {
+  "h_m": 2.715,
+  "w_m": 4.677,
+  "kind": "police"
+ },
+ "pothole_warning_cone": {
+  "h_m": 0.717,
+  "w_m": 0.82,
+  "kind": "prop",
+  "depth_m": 0.46
+ },
+ "seller_1": {
+  "h_m": 1.665,
+  "w_m": 0.612,
+  "kind": "worker"
+ },
+ "seller_2": {
+  "h_m": 1.165,
+  "w_m": 0.6,
+  "kind": "worker"
+ },
+ "sign_city": {
+  "h_m": 3.0,
+  "w_m": 1.387,
+  "kind": "sign"
+ },
+ "sign_curve_left": {
+  "h_m": 2.9,
+  "w_m": 0.853,
+  "kind": "sign"
+ },
+ "sign_curve_right": {
+  "h_m": 2.9,
+  "w_m": 0.853,
+  "kind": "sign"
+ },
+ "sign_no_uturn": {
+  "h_m": 2.9,
+  "w_m": 0.853,
+  "kind": "sign"
+ },
+ "sign_speed_50": {
+  "h_m": 2.9,
+  "w_m": 0.853,
+  "kind": "sign"
+ },
+ "sign_speed_60": {
+  "h_m": 2.9,
+  "w_m": 0.853,
+  "kind": "sign"
+ },
+ "sign_speed_80": {
+  "h_m": 2.9,
+  "w_m": 0.853,
+  "kind": "sign"
+ },
+ "stall_banh_mi": {
+  "h_m": 2.481,
+  "w_m": 3.096,
+  "kind": "stall"
+ },
+ "stall_ca_phe_vong": {
+  "h_m": 2.422,
+  "w_m": 4.444,
+  "kind": "stall"
+ },
+ "stall_com": {
+  "h_m": 2.378,
+  "w_m": 4.607,
+  "kind": "stall"
+ },
+ "stall_nuoc_mia": {
+  "h_m": 2.496,
+  "w_m": 3.674,
+  "kind": "stall"
+ },
+ "stall_tra_da": {
+  "h_m": 2.37,
+  "w_m": 3.363,
+  "kind": "stall"
+ },
+ "stall_va_xe": {
+  "h_m": 2.43,
+  "w_m": 4.696,
+  "kind": "stall"
+ },
+ "stall_xang_le": {
+  "h_m": 2.341,
+  "w_m": 3.141,
+  "kind": "stall"
+ },
+ "toll_barrier": {
+  "h_m": 1.113,
+  "w_m": 3.56,
+  "kind": "toll",
+  "pivot": [
+   0.0772,
+   0.1018
+  ]
+ },
+ "toll_booth": {
+  "h_m": 3.192,
+  "w_m": 2.292,
+  "kind": "toll"
+ },
+ "toll_fascia": {
+  "h_m": 1.5,
+  "w_m": 8.0,
+  "kind": "fascia",
+  "tile_x": true
+ },
+ "traffic_cone": {
+  "h_m": 0.72,
+  "w_m": 0.52,
+  "kind": "prop"
+ },
+ "traffic_light_head_green": {
+  "h_m": 1.559,
+  "w_m": 0.909,
+  "kind": "traffic_light",
+  "depth_m": 0.1,
+  "mount": [
+   0.28,
+   0.0058
+  ]
+ },
+ "traffic_light_head_red": {
+  "h_m": 1.559,
+  "w_m": 0.909,
+  "kind": "traffic_light",
+  "depth_m": 0.1,
+  "mount": [
+   0.28,
+   0.0058
+  ]
+ },
+ "traffic_light_head_yellow": {
+  "h_m": 1.559,
+  "w_m": 0.909,
+  "kind": "traffic_light",
+  "depth_m": 0.1,
+  "mount": [
+   0.28,
+   0.0058
+  ]
+ },
+ "traffic_light_pole": {
+  "h_m": 6.0,
+  "w_m": 9.525,
+  "kind": "traffic_light",
+  "depth_m": 0.63,
+  "arm_tip": [
+   0.0276,
+   0.025
+  ]
+ },
+ "worker_attendant": {
+  "h_m": 1.7,
+  "w_m": 0.694,
+  "kind": "worker"
+ },
+ "worker_mechanic": {
+  "h_m": 1.094,
+  "w_m": 2.306,
+  "kind": "worker"
+ }
+}

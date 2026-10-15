@@ -21,6 +21,12 @@ enum RoadGlyph {
   drop,
   whistle,
   warning,
+
+  /// Vô-lăng: chuyển sang góc nhìn ghế lái.
+  steering,
+
+  /// Bản đồ nhìn từ trên: chuyển về góc nhìn trên cao.
+  aerial,
 }
 
 class RoadIcon extends StatelessWidget {
@@ -248,6 +254,32 @@ class RoadIconPainter extends CustomPainter {
           ..color = accent
           ..strokeWidth = 2.4);
         canvas.drawCircle(const Offset(12, 17.5), 1.3, soft);
+      case RoadGlyph.steering:
+        canvas.drawCircle(const Offset(12, 12), 9.2, stroke..strokeWidth = 2.6);
+        canvas.drawCircle(const Offset(12, 13), 2.6, fill);
+        canvas.drawLine(const Offset(3.2, 11.5), const Offset(9.6, 12.4), stroke..strokeWidth = 2.4);
+        canvas.drawLine(const Offset(20.8, 11.5), const Offset(14.4, 12.4), stroke);
+        canvas.drawLine(const Offset(12, 15.4), const Offset(12, 21), stroke);
+      case RoadGlyph.aerial:
+        // Đoạn đường cong nhìn từ trên với vạch giữa và chiếc xe nhỏ.
+        canvas.drawPath(
+          Path()
+            ..moveTo(7, 23)
+            ..cubicTo(7, 14, 15, 11, 15, 1)
+            ..lineTo(21, 1)
+            ..cubicTo(21, 13, 13, 15, 13, 23)
+            ..close(),
+          soft,
+        );
+        canvas.drawPath(
+          Path()
+            ..moveTo(10, 23)
+            ..cubicTo(10, 14, 18, 12, 18, 1),
+          stroke
+            ..strokeWidth = 1.4
+            ..color = color,
+        );
+        canvas.drawRRect(RRect.fromRectAndRadius(const Rect.fromLTWH(3, 7, 5, 8), const Radius.circular(1.5)), fill);
     }
   }
 
