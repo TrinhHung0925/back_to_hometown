@@ -2697,12 +2697,215 @@ def build_cockpit_car(out, info):
     print(f'cockpit_car: {time.time() - t0:.1f}s')
 
 
+# -------------------------------------------------------------- Xe khách
+class BusCabin:
+    """Khoang lái xe khách (tài xế bên trái, mắt cao ~2,5 m so với mặt đường):
+    kính lái toàn cảnh rộng hết thân xe, cột A mảnh, hộp bảng tuyến + đồng hồ
+    giờ dưới trần, gương trong treo đèn lồng đỏ ngày Tết, táp-lô rộng có cụm
+    đồng hồ, bảng công tắc, vô-lăng lớn gần như nằm ngửa."""
+
+    def __init__(self, eye=(-0.62, 1.55, 2.50), yb=0.25, zb=1.95, yd=0.95, hw=1.20):
+        self.eye = np.asarray(eye, np.float64)
+        self.yb, self.zb, self.yd, self.hw = yb, zb, yd, hw
+        self.dx = eye[0]
+        d = 0.62
+        a = math.radians(36.7)
+        H = (eye[0], eye[1] - d * math.cos(a), eye[2] - d * math.sin(a))
+        self.wf = WheelFrame(H, eye)
+        self.R = 0.25
+
+    def parts(self):
+        yb, zb, yd, hw = self.yb, self.zb, self.yd, self.hw
+        objs = []
+        # cột A trái mảnh (cột phải nằm ngoài khung hình), vách hông bên tài xế
+        pl = beam((-hw + 0.02, yb, zb - 0.05), (-hw + 0.06, yb + 0.22, 3.10), 0.020, 0.025, 0.015, (0, 1.0, 0.0))
+        pr = beam((hw - 0.02, yb, zb - 0.05), (hw - 0.06, yb + 0.22, 3.10), 0.020, 0.025, 0.015, (0, 1.0, 0.0))
+
+        def sidewall(p):
+            x, y, z = p
+            q = (np.abs(x), y, z)
+            sill = rbox(q, (hw + 0.02, 1.40, (1.4 + 2.08) / 2), (0.05, 1.15, (2.08 - 1.4) / 2), 0.03)
+            post = rbox(q, (hw + 0.02, 2.55, 2.6), (0.05, 0.05, 0.6), 0.02)
+            return np.minimum(sill, post)
+        objs.append(lit(Obj('pillars', lambda p: np.minimum(np.minimum(pl(p), pr(p)), sidewall(p)),
+                            Mat((52, 54, 58), rough=0.55, spec=0.4)), 0.8))
+
+        # hộp bảng tuyến dưới trần + đồng hồ giờ LED đỏ
+        def signbox(p):
+            return rbox(p, (0, 0.55, 3.0), (hw, 0.16, 0.16), 0.04)
+
+        def sign_tint(p, n, alb, idx):
+            x, y, z = p
+            face = n[1] > 0.5
+            clock = face & (np.abs(x - 0.10) < 0.11) & (np.abs(z - 2.97) < 0.035)
+            digits = clock & (np.abs(np.sin((x - 0.10) * 95)) > 0.35) & (np.abs(np.sin((z - 2.97) * 110)) > 0.25)
+            grille = face & (np.abs(np.abs(x) - 0.75) < 0.12) & (np.abs(z - 2.97) < 0.05) & (np.sin(x * 300) > 0.2)
+            out = np.where(clock[:, None], lin((12, 8, 8)), alb)
+            out = np.where(digits[:, None], lin((255, 40, 30)) * 3.0, out)
+            return np.where(grille[:, None], alb * 0.4, out)
+        objs.append(lit(Obj('signbox', signbox, Mat((48, 50, 54), rough=0.5, spec=0.4), tint=sign_tint), 0.8))
+
+        # gương trong + đèn lồng đỏ treo
+        mc = np.array([0.0, 0.62, 2.78])
+
+        def mirror(p):
+            x, y, z = p
+            stalk = capsule(p, (0, 0.60, 2.86), (0, mc[1], mc[2] + 0.03), 0.012)
+            u, v = rot(x - mc[0], y - mc[1], -0.30)
+            body = rbox((u, v, z - mc[2]), (0, 0, 0), (0.17, 0.025, 0.05), 0.022)
+            return smin(stalk, body, 0.01)
+
+        def mirror_pick(p, n):
+            x, y, z = p
+            u, v = rot(x - mc[0], y - mc[1], -0.30)
+            return ((v > 0.014) & (np.abs(u) < 0.155) & (np.abs(z - mc[2]) < 0.037)).astype(np.int32)
+        objs.append(Obj('rv_mirror', mirror, [Mat((28, 28, 30), rough=0.4, spec=0.5), Mat((120, 128, 140), rough=0.02, metal=1.0)],
+                        pick=mirror_pick))
+        lx, ly, lz = 0.06, 0.64, 2.62
+
+        def lantern(p):
+            x, y, z = p
+            string = capsule(p, (lx - 0.01, ly, mc[2] - 0.04), (lx, ly, lz + 0.045), 0.0025)
+            body = ellipsoid(p, (lx, ly, lz), (0.032, 0.032, 0.039))
+            caps = np.minimum(rbox(p, (lx, ly, lz + 0.039), (0.018, 0.018, 0.006), 0.004),
+                              rbox(p, (lx, ly, lz - 0.039), (0.018, 0.018, 0.006), 0.004))
+            tassel = round_cone(p, (lx, ly, lz - 0.044), (lx, ly, lz - 0.11), 0.007, 0.011)
+            return np.minimum(np.minimum(string, body), np.minimum(caps, tassel))
+
+        def lantern_pick(p, n):
+            x, y, z = p
+            idx = np.zeros(x.shape, np.int32)
+            idx[np.abs(z - lz) > 0.034] = 1
+            idx[(z < lz - 0.047)] = 0
+            idx[z > lz + 0.046] = 1
+            return idx
+
+        def lantern_tint(p, n, alb, idx):
+            x, y, z = p
+            ribs = (idx == 0) & (np.abs(z - lz) < 0.034) & (np.abs(np.sin(np.arctan2(y - ly, x - lx) * 6)) < 0.12)
+            band = (idx == 0) & (np.abs(z - lz) < 0.008)
+            out = np.where(ribs[:, None], alb * 0.55, alb)
+            return np.where(band[:, None], lin((235, 190, 70)), out)
+        objs.append(Obj('lantern', lantern, [Mat((205, 22, 26), rough=0.4, spec=0.6, sheen=0.4, emit=0.12),
+                                              Mat((222, 176, 64), rough=0.25, metal=0.8)], pick=lantern_pick, tint=lantern_tint))
+
+        # táp-lô rộng
+        GY, GZ = 0.72, 2.16
+
+        def dash(p):
+            x, y, z = p
+            ax = np.abs(x)
+            k = np.clip((y - yb) / (yd - yb), 0, 1)
+            top = zb + 0.015 + 0.05 * k
+            body = smax(smax(smax((z - top) / 1.01, y - yd, 0.06), yb - 0.06 - y, 0.02), ax - hw, 0.04)
+            body = smax(body, 1.30 - z, 0.02)
+            hood = rbox(p, (self.dx, GY - 0.07, GZ + 0.01), (0.25, 0.14, 0.10), 0.05)
+            recess = rbox(p, (self.dx, GY + 0.06, GZ - 0.005), (0.22, 0.12, 0.08), 0.04)
+            hood = smax(smax(hood, -recess, 0.012), 1.5 - z, 0.02)
+            # bảng công tắc nghiêng bên phải vô-lăng
+            pod = rbox(p, (self.dx + 0.55, 0.80, zb + 0.10), (0.24, 0.16, 0.09), 0.04)
+            return smin(smin(body, hood, 0.04), pod, 0.04)
+
+        def dash_pick(p, n):
+            x, y, z = p
+            idx = np.where(n[2] > 0.55, 0, 1).astype(np.int32)
+            pod = (np.abs(x - (self.dx + 0.55)) < 0.21) & (np.abs(y - 0.80) < 0.15) & (z > zb + 0.12) & (n[2] > 0.3)
+            idx[pod] = 2
+            return idx
+
+        def dash_tint(p, n, alb, idx):
+            x, y, z = p
+            out = alb
+            defrost = (n[2] > 0.55) & (np.abs(y - (yb + 0.07)) < 0.03) & (np.sin(x * 220) > 0.4)
+            out = np.where(defrost[:, None], alb * 0.35, out)
+            u, v = (x - (self.dx + 0.55)) / 0.21, (y - 0.80) / 0.15
+            sw = (idx == 2) & (np.abs(((u + 1) * 4) % 1 - 0.5) < 0.32) & (np.abs(((v + 1) * 2.5) % 1 - 0.5) < 0.28)
+            out = np.where(sw[:, None], lin((14, 14, 16)), out)
+            icon = sw & (np.abs(((u + 1) * 4) % 1 - 0.5) < 0.07) & (np.abs(((v + 1) * 2.5) % 1 - 0.5) < 0.07)
+            leds = icon & (np.sin(u * 13 + v * 7) > 0)
+            out = np.where(icon[:, None], lin((150, 152, 156)), out)
+            return np.where(leds[:, None], lin((60, 200, 90)) * 2.0, out)
+        objs.append(lit(Obj('dash', dash, [Mat((52, 52, 56), rough=0.72, spec=0.35), DASH_LOW, Mat((34, 34, 37), rough=0.5)],
+                            pick=dash_pick, tint=dash_tint), 0.8))
+
+        spd, rpm = dial_tex('speed', needle=62), dial_tex('rpm', needle=1.6)
+        tilt = 0.55
+
+        def gauge(p):
+            x, y, z = p
+            yy, zz = rot(y - GY, z - GZ, tilt)
+            return rbox((x - self.dx, yy, zz), (0, 0, 0), (0.20, 0.004, 0.07), 0.012)
+
+        def gauge_tint(p, n, alb, idx):
+            x, y, z = p
+            yy, zz = rot(y - GY, z - GZ, tilt)
+            u = x - self.dx
+            out = np.zeros((x.shape[0], 3)) + lin((8, 9, 11))
+            for cx, tex in ((-0.10, spd), (0.10, rpm)):
+                m = length2(u - cx, zz) < 0.066
+                if m.any():
+                    out[m] = sample_rgb(tex, (u[m] - cx) / 0.132 + 0.5, 0.5 - zz[m] / 0.132) ** 2.2
+            mid = (np.abs(u) < 0.026) & (np.abs(zz) < 0.035)
+            out[mid] = lin((40, 70, 90))
+            return out
+        objs.append(Obj('gauges', gauge, Mat((10, 10, 12), rough=0.1, spec=0.8, coat=0.8, emit=0.55), tint=gauge_tint))
+        H = self.wf.H
+        objs.append(Obj('column', lambda p: round_cone(p, (self.dx, yd - 0.05, zb - 0.12), tuple(H - self.wf.n * 0.06), 0.07, 0.05),
+                        DASH_LOW))
+        return objs
+
+    def wheel_parts(self):
+        return steering_wheel(self.wf, R=self.R, tube=0.021, spokes=4, hub=(0.085, 0.07))
+
+    def bounds(self):
+        return ((-1.35, -0.10, 1.25), (1.35, 2.70, 3.25))
+
+
+def wheel_layer(cab, cam, parts, wheel, fov, R, out, name, sun, scene_bounds):
+    """Vẽ riêng vô-lăng (cùng máy ảnh, khung sát quanh vành) → mục JSON."""
+    wf = cab.wf
+    ang = np.linspace(0, math.tau, 96, endpoint=False)
+    pts = [wf.H + (R + 0.03) * (math.cos(a) * wf.r + math.sin(a) * wf.u) for a in ang]
+    xs, ys = zip(*[cam.project(q) for q in pts])
+    x0, y0 = int(math.floor(min(xs))) - 4, int(math.floor(min(ys))) - 4
+    x1, y1 = int(math.ceil(max(xs))) + 4, int(math.ceil(max(ys))) + 4
+    w, h = x1 - x0, y1 - y0
+    wcam = PinholeCam(cab.eye, 0.0, pitch_for(CP_HORIZON * CP_SIZE[1], fov), fov, (w, h),
+                      shift=(cam.cx - x0 - w / 2, cam.cy - y0 - h / 2))
+    wcam.fl = cam.fl
+    ws = Scene(parts + wheel, scene_bounds, 1500.0, (0, 0), (1, 1), ao_scale=1.6)
+    ws.primary = wheel
+    render_cockpit(ws, wcam, near=0.05, sun=sun, fill=CABIN_FILL).save(f'{out}/{name}', optimize=True)
+    px, py = cam.project(wf.H)
+    return {'image': name, 'pos': [x0, y0], 'size': [w, h], 'pivot': [round(px, 1), round(py, 1)],
+            'note': 'draw at pos (top-left, cockpit frame px), rotate around pivot; the wheel faces the eye so a 2D '
+                    'rotation is exact; it extends below the 740 px frame'}
+
+
+def build_cockpit_bus(out, info):
+    t0 = time.time()
+    fov = 96.0
+    cab = BusCabin()
+    cam = PinholeCam(cab.eye, 0.0, pitch_for(CP_HORIZON * CP_SIZE[1], fov), fov, CP_SIZE)
+    parts, wheel = cab.parts(), cab.wheel_parts()
+    sc = Scene(parts, cab.bounds(), 1500.0, (0, 0), (1, 1), ao_scale=1.6)
+    render_cockpit(sc, cam, near=0.05, sun=CAR_SUN, fill=CABIN_FILL).save(f'{out}/cockpit_bus.png', optimize=True)
+    wl = wheel_layer(cab, cam, parts, wheel, fov, cab.R, out, 'cockpit_bus_wheel.png', CAR_SUN, cab.bounds())
+    info['bus'] = {'image': 'cockpit_bus.png', 'size': list(CP_SIZE), 'horizon_row': round(cam.horizon_row(), 1),
+                   'camera': {'eye_m': [float(v) for v in cab.eye], 'hfov_deg': fov, 'pitch_deg': round(pitch_for(296, fov), 3),
+                              'eye_height_m': float(cab.eye[2])},
+                   'wheel': wl}
+    print(f'cockpit_bus: {time.time() - t0:.1f}s')
+
+
 def build_cockpits(out, names):
     info = load_json(f'{out}/cockpits.json')
     if 'cockpit_moto' in names or 'cockpit' in names:
         build_cockpit_moto(out, info)
     if 'cockpit_car' in names or 'cockpit' in names:
         build_cockpit_car(out, info)
+    if 'cockpit_bus' in names or 'cockpit' in names:
+        build_cockpit_bus(out, info)
     with open(f'{out}/cockpits.json', 'w') as f:
         json.dump(info, f, indent=1)
 
@@ -2719,5 +2922,5 @@ if __name__ == '__main__':
     os.makedirs(out, exist_ok=True)
     sel = set(args or GROUPS)
     build_billboards(out, sel & set(GROUPS[:4]), sel)
-    if sel & {'cockpit', 'cockpit_moto', 'cockpit_car'}:
+    if sel & {'cockpit', 'cockpit_moto', 'cockpit_car', 'cockpit_bus'}:
         build_cockpits(out, sel)

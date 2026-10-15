@@ -50,5 +50,39 @@
    ],
    "note": "draw at pos (top-left, cockpit frame px), rotate around pivot; the wheel faces the eye so a 2D rotation is exact; it extends below the 740 px frame"
   }
+ },
+ "bus": {
+  "image": "cockpit_bus.png",
+  "size": [
+   1600,
+   740
+  ],
+  "horizon_row": 296.0,
+  "camera": {
+   "eye_m": [
+    -0.62,
+    1.55,
+    2.5
+   ],
+   "hfov_deg": 96.0,
+   "pitch_deg": -5.866,
+   "eye_height_m": 2.5
+  },
+  "wheel": {
+   "image": "cockpit_bus_wheel.png",
+   "pos": [
+    402,
+    448
+   ],
+   "size": [
+    796,
+    961
+   ],
+   "pivot": [
+    800.0,
+    800.0
+   ],
+   "note": "draw at pos (top-left, cockpit frame px), rotate around pivot; the wheel faces the eye so a 2D rotation is exact; it extends below the 740 px frame"
+  }
  }
 }
