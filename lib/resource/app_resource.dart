@@ -229,6 +229,13 @@ abstract class Img {
   static final List<String> scootersParked = [for (var i = 1; i <= 3; i++) '$assetsImgPath/img_scooter_parked_$i.png'];
   static const String imgDriverMoto = '$assetsImgPath/img_driver_moto.png';
 
+  /// Cảnh về tới nhà chiều 30 Tết / đêm giao thừa (build_home_scene.py).
+  static const String imgHomeDay = '$assetsImgPath/img_home_day.jpg';
+  static const String imgHomeNight = '$assetsImgPath/img_home_night.jpg';
+
+  /// Ảnh đứng của góc nhìn ghế lái (người nhà ra đón, xe mình nhìn ngang…).
+  static String driverArt(String key) => '$assetsImgPath/driver/$key.png';
+
   /// Ảnh mẹ đang gọi điện (thẻ cuộc gọi).
   static const String imgPortraitMom = '$assetsImgPath/img_portrait_mom.png';
   static const String imgDriverCar = '$assetsImgPath/img_driver_car.png';

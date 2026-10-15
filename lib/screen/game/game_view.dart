@@ -11,6 +11,7 @@ import 'chat_overlay.dart';
 import 'game_controller.dart';
 import 'game_hud.dart';
 import 'game_overlays.dart';
+import 'homecoming_overlay.dart';
 import 'phone_call_card.dart';
 import 'roadside_overlays.dart';
 import 'speedometer.dart';
@@ -209,6 +210,11 @@ class _GameViewState extends State<GameView> {
             Obx(() {
               final result = controller.result.value;
               if (result == null) return const SizedBox.shrink();
+              if (controller.homecoming.value) {
+                return Positioned.fill(
+                  child: HomecomingOverlay(result: result, vehicle: controller.setup.vehicle, onDone: () => controller.homecoming.value = false),
+                );
+              }
               return Positioned.fill(
                 child: ResultOverlay(controller: controller, result: result),
               );

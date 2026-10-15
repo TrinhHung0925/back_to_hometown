@@ -37,6 +37,9 @@ class GameController extends GetxController {
   /// Tổng kết cả chuyến khi vừa xong chặng cuối.
   final tripSummary = Rxn<TripSummary>();
 
+  /// Đang xem cảnh về tới nhà, đón giao thừa (trước bảng kết quả chặng cuối).
+  final homecoming = false.obs;
+
   /// Vì sao công an tới (để bảng chọn ghi đúng lý do) và chi tiết lỗi.
   final incidentKind = IncidentKind.collision.obs;
   final violation = Rxn<Violation>();
@@ -130,6 +133,7 @@ class GameController extends GetxController {
     hud.value = null;
     phase.value = GamePhase.driving;
     result.value = null;
+    homecoming.value = false;
     isPaused.value = false;
     chaseProgress.value = 0;
     stallVisit.value = null;
@@ -185,6 +189,7 @@ class GameController extends GetxController {
       onFinished: (value) {
         // Về tới cuối chặng thì lưu tiến độ ngay (trạm dừng nghỉ).
         if (value.won) tripSummary.value = TripService.shared.completeStage(value);
+        homecoming.value = value.won && isLastStage;
         result.value = value;
         if (value.won) {
           _audio.play(AppAudio.jingleWin, volume: 0.8);
