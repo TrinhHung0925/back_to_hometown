@@ -382,6 +382,7 @@ class HudData {
     this.riderMeters,
     this.peach,
     this.fog = false,
+    this.day = 30,
     this.reversed = false,
     this.fuel = 1,
     this.fuelKm = 0,
@@ -462,6 +463,9 @@ class HudData {
   /// Đang đi trong sương mù dày.
   final bool fog;
 
+  /// Ngày cuối năm âm lịch (30 = ngày giao thừa; chuyến dài xuất phát sớm hơn).
+  final int day;
+
   /// Đã quay đầu, đang đi ngược về phía điểm xuất phát.
   final bool reversed;
 
@@ -528,6 +532,7 @@ class HudData {
       other.riderMeters == riderMeters &&
       other.peach == peach &&
       other.fog == fog &&
+      other.day == day &&
       other.reversed == reversed &&
       other.fuel == fuel &&
       other.fuelKm == fuelKm &&
@@ -548,7 +553,7 @@ class HudData {
   @override
   int get hashCode => Object.hashAll([
         kmDone, kmTotal, speedKmh, cruiseKmh, spareMinutes, clockLabel, minutesLeft, lixi, cargo, danger, light, curve, headlightsOn, night, //
-        alert, drowse, canUTurn, stallPrompt, stallKind, stallMeters, driverSeat, hitchPrompt, hitchMeters, rider, riderMeters, peach, fog, reversed, fuel, fuelKm, tire, spare, rain, rainKind, raincoat,
+        alert, drowse, canUTurn, stallPrompt, stallKind, stallMeters, driverSeat, hitchPrompt, hitchMeters, rider, riderMeters, peach, fog, day, reversed, fuel, fuelKm, tire, spare, rain, rainKind, raincoat,
         soaked, speedLimit, pullOver, outOfFuel, pushing, fuelAhead, repairAhead, Object.hashAll(actions),
       ]);
 }

@@ -179,9 +179,16 @@ abstract class GameConfig {
   /// 2,5 phút chơi ↔ 2 giờ trong game (50 km/h).
   static const double gameSecondsPerPlaySecond = 2 * 3600 / 150;
 
-  /// Thời gian cho phép = thời gian ước tính × hệ số này.
-  /// Dư nhiều cho những chuyện dọc đường (ghé quán, đổ xăng, vá xe, bị phạt).
-  static const double timeBudgetFactor = 1.6;
+  /// Giờ xuất phát tính sao cho chạy đều [guaranteedKmh] km/h (chậm hơn
+  /// nhiều so với 50 km/h chạy thường) vẫn về kịp giao thừa, lại dư thêm
+  /// [stopAllowanceMinutes] mỗi chặng cho ghé quán, đổ xăng, qua phà, bị
+  /// phạt. Chỉ ai dừng quá nhiều, gặp nạn mấy lần mới bị lỡ giao thừa.
+  static const double guaranteedKmh = 20;
+  static const double stopAllowanceMinutes = 40;
+
+  /// Đánh dấu chuyến đã tính giờ theo cách trên (chuyến lưu từ bản cũ dùng
+  /// hệ số ×1,25 / ×1,6 thời gian chạy thường thì được lùi giờ cho đủ).
+  static const double timeBudgetFactor = 100;
 
   // ------------------------------------------------------- Lộ trình
   /// Mỗi km quốc lộ mất bao nhiêu giây chơi (100 km ≈ 2,5 phút).

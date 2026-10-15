@@ -736,11 +736,13 @@ class _Clock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final spare = hud.spareMinutes;
+    // Chuyến dài xuất phát từ mấy hôm trước: ghi kèm ngày.
+    final day = hud.day == 30 ? '' : '${hud.day} Tết · ';
     final (label, color) = spare < 0
-        ? ('trễ ${_span(-spare)}', AppColors.ffFF5A4E)
+        ? ('${day}trễ ${_span(-spare)}', AppColors.ffFF5A4E)
         : spare < 15
-            ? ('sát giờ · dư ${_span(spare)}', AppColors.ffFFD166)
-            : ('dư ${_span(spare)}', AppColors.ff4ADE80);
+            ? ('${day}sát giờ · dư ${_span(spare)}', AppColors.ffFFD166)
+            : ('${day}dư ${_span(spare)}', AppColors.ff4ADE80);
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.center,

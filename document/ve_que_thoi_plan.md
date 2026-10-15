@@ -58,7 +58,12 @@ Splash → Menu ─┬─ Về quê → Chọn cách về ─┬─ Tự lái xe
   - Các khoảng cách tính bằng km (quán, cây xăng, tiệm vá, bãi đinh, chốt CSGT, điểm đón, tầm xăng một bình) nhân đôi theo, để nhịp gặp chuyện mỗi giây chơi vẫn như cũ — chuyến đi chỉ ngắn lại, ít sự cố hơn, dễ về kịp hơn.
   - Đo bằng bot tự lái chặng 100 km: 2,5–3 phút chơi; thời gian dùng 0,94–1,47 lần ước tính (dư 1,6 lần), kể cả bot xe khách đâm 5 lần.
 - **Chia chặng:** mỗi chặng khoảng 1,5–3 phút (60–110 km), ưu tiên cắt ở các thành phố trên đường. Chuyến dài thì có nhiều chặng. Ví dụ TP.HCM → Hà Nội khoảng 1.700 km, tức khoảng 42 phút chơi, sẽ chia thành hơn 20 chặng và có thể chơi trong nhiều lần.
-- **Giờ xuất phát tính ngược từ giao thừa:** thời gian cho phép = thời gian ước tính × 1,25. Ví dụ chuyến 6 tiếng thì xuất phát lúc 16:30 chiều 30 Tết, phải về trước 24:00. Chuyến rất dài thì xuất phát từ 29 Tết.
+- **Giờ xuất phát tính ngược từ giao thừa** sao cho **chạy đều 20 km/h vẫn về kịp** (chạy thường là 50 km/h). Người chơi phàn nàn đang đi thì bị báo hết giờ: hết giờ vẫn có thể xảy ra, nhưng hiếm thôi.
+  - Thời gian cho phép = quãng đường ÷ 20 km/h + 40 phút mỗi chặng (ghé quán, đổ xăng, qua phà, bị phạt).
+  - Ví dụ chặng 100 km được 5 giờ 40 phút. Chạy đúng 20 km/h không dừng thì về tới còn dư 40 phút; chạy thường 50 km/h thì dư hơn 3 tiếng rưỡi.
+  - Chuyến dài xuất phát từ mấy hôm trước (27–29 Tết). Màn lên lộ trình ghi giờ kèm ngày; HUD ghi thêm ngày khi chưa tới 30 Tết.
+  - Chỉ ai dừng quá lâu, bị phạt và gặp nạn nhiều lần mới lỡ giao thừa.
+  - Chuyến lưu từ bản cũ được lùi giờ cho phần đường còn lại theo cách tính mới.
 - Đồng hồ trong game chạy theo giờ trong ngày, nên **trời tối dần theo giờ thật của chuyến đi**: chuyến dài xuất phát ban ngày, về cuối mới tối và mới cần bật đèn.
 
 ### Bản đồ: đề xuất làm bản đồ vẽ sẵn, chạy offline
@@ -559,7 +564,7 @@ Chia hai tay giống game MOBA: **tay trái đặt liên tục trên cần lái*
   - **Hết giờ:** quá giao thừa mà chưa về tới nhà.
   - **Bị công an bắt** khi bỏ chạy.
   - **Tai nạn nghiêm trọng:** đâm cực mạnh (đối đầu). Tai nạn thường chỉ bị phạt nặng, mất thời gian.
-- **Dư / trễ giờ:** dưới đồng hồ trên HUD luôn hiện "dư 1g05" (xanh), "sát giờ" (vàng) hoặc "trễ 12 phút" (đỏ) — nếu chạy tiếp ở tốc độ thường tới hết chuyến thì về tới nhà dư/trễ bao nhiêu so với giao thừa. Thời gian cho phép = ước tính × 1,6 (chừa cho ghé quán, đổ xăng, vá xe, bị phạt).
+- **Dư / trễ giờ:** dưới đồng hồ trên HUD luôn hiện "dư 1g05" (xanh), "sát giờ" (vàng) hoặc "trễ 12 phút" (đỏ) — nếu chạy tiếp ở tốc độ thường tới hết chuyến thì về tới nhà dư/trễ bao nhiêu so với giao thừa. Thời gian cho phép: chạy đều 20 km/h + 40 phút mỗi chặng (xem "Quy đổi thời gian").
 - Thua ở giữa một chuyến dài thì chơi lại thế nào: xem mục 9, câu 2.
 
 ---

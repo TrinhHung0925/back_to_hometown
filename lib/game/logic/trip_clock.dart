@@ -24,15 +24,20 @@ class TripClock {
   /// ("00:12") vì lúc đó đã thua.
   String get label {
     final total = minutes.floor();
-    final h = (total ~/ 60) % 24;
-    final m = total % 60;
+    final hours = (total / 60).floor();
+    final h = hours % 24;
+    final m = total - hours * 60;
     return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}';
   }
 
-  /// Giờ xuất phát tính ngược từ giao thừa: thời gian cho phép = thời gian
-  /// ước tính × [GameConfig.timeBudgetFactor].
-  static double departureFor(double estimatedPlaySeconds) {
-    final estimatedGameMinutes = estimatedPlaySeconds * GameConfig.gameSecondsPerPlaySecond / 60;
-    return midnight - estimatedGameMinutes * GameConfig.timeBudgetFactor;
-  }
+  /// Ngày cuối năm âm lịch: phút 0..1439 là ngày 30 Tết, âm là mấy ngày trước.
+  int get day => 30 + (minutes / 1440).floor();
+  String get dayLabel => '$day Tết';
+
+  /// Giờ xuất phát tính ngược từ giao thừa khi cho phép [allowedMinutes] phút.
+  static double departureFor(double allowedMinutes) => midnight - allowedMinutes;
+
+  /// Phút cho phép đi hết [km] km chia [stages] chặng (xem
+  /// [GameConfig.guaranteedKmh]).
+  static double allowedMinutes(double km, int stages) => km / GameConfig.guaranteedKmh * 60 + stages * GameConfig.stopAllowanceMinutes;
 }

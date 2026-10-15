@@ -3182,6 +3182,7 @@ class VeQueGame extends FlameGame {
       riderMeters: rider == null || rider.overshot ? null : _meters(max(0.0, rider.dropS - player.s)),
       peach: _events.peach >= 0 ? _events.peach.round() : null,
       fog: _events.fog > 0.3,
+      day: clock.day,
       stallMeters: ahead == null ? null : (max(0.0, (ahead.s - player.s) * dir) / GameConfig.unitsPerKm * 100).round() * 10,
       reversed: dir < 0,
       fuel: (fuel.level * 100).ceil() / 100,

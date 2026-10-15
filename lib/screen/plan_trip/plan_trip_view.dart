@@ -667,7 +667,7 @@ class _PlanSummary extends StatelessWidget {
             runSpacing: 4.h,
             children: [
               fact('Lái thật', hours(plan.realHours)),
-              fact('Xuất phát', TripClock(minutes: departure).label),
+              fact('Xuất phát', '${TripClock(minutes: departure).label} · ${TripClock(minutes: departure).dayLabel}'),
               if (plan.expresswayKm > 0) fact('Cao tốc', '${plan.expresswayKm.round()} km'),
               fact('Phố đèn đỏ', '${cityKm.round()} km'),
               fact('Thu phí', '${plan.tollBooths} trạm'),

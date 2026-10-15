@@ -37,9 +37,11 @@ class TripService {
     if (progress != null && !progress.finished && progress.budget < GameConfig.timeBudgetFactor) {
       // Chuyến lưu từ bản cũ (ít thời gian dư hơn): lùi đồng hồ cho phần
       // đường còn lại được dư như chuyến mới.
-      final remaining = progress.plan.stages.skip(progress.stageIndex).fold(0.0, (sum, s) => sum + stageGameMinutes(s));
+      final stages = progress.plan.stages.skip(progress.stageIndex);
+      final old = progress.budget * stages.fold(0.0, (sum, s) => sum + stageGameMinutes(s));
+      final now = TripClock.allowedMinutes(stages.fold(0.0, (sum, s) => sum + s.km), stages.length);
       progress
-        ..clockMinutes -= (GameConfig.timeBudgetFactor - progress.budget) * remaining
+        ..clockMinutes -= max(0.0, now - old)
         ..budget = GameConfig.timeBudgetFactor;
       _save(progress);
     }
@@ -49,7 +51,8 @@ class TripService {
   bool get hasTrip => current != null && !current!.finished;
 
   /// Giờ xuất phát: tính ngược từ giao thừa theo thời gian chơi ước tính.
-  static double departureFor(TripPlan plan) => TripClock.departureFor(RouteService.planPlaySeconds(plan));
+  static double departureFor(TripPlan plan) =>
+      TripClock.departureFor(TripClock.allowedMinutes(plan.stages.fold(0.0, (sum, s) => sum + s.km), plan.stages.length));
 
   TripProgress start(TripPlan plan) {
     final progress = TripProgress(

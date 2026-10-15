@@ -269,9 +269,23 @@ void main() {
       expect(clock.label, '22:00');
     });
 
-    test('giờ xuất phát = giao thừa trừ thời gian ước tính × hệ số', () {
-      // 150 giây chơi ước tính = 120 phút trong game → được 192 phút.
-      expect(TripClock.departureFor(150), closeTo(24 * 60 - 192, 1e-9));
+    test('giờ xuất phát: chạy đều 20 km/h cộng 40 phút mỗi chặng vẫn kịp giao thừa', () {
+      // 100 km một chặng: 5 giờ ở 20 km/h + 40 phút dừng nghỉ.
+      final allowed = TripClock.allowedMinutes(100, 1);
+      expect(allowed, closeTo(5 * 60 + 40, 1e-9));
+      expect(TripClock.departureFor(allowed), closeTo(24 * 60 - 340, 1e-9));
+      // Đi đúng 20 km/h không dừng thì tới nơi còn dư đúng phần dừng nghỉ.
+      final clock = TripClock(minutes: TripClock.departureFor(allowed));
+      final playSeconds = 100 * GameConfig.unitsPerKm / (GameConfig.normalSpeed * 20 / 50);
+      clock.advance(playSeconds);
+      expect(clock.minutesLeft, closeTo(40, 1e-6));
+    });
+
+    test('nhãn giờ và ngày khi xuất phát từ mấy hôm trước', () {
+      final clock = TripClock(minutes: -100);
+      expect(clock.label, '22:20');
+      expect(clock.dayLabel, '29 Tết');
+      expect(TripClock(minutes: -3 * 1440 + 11 * 60).dayLabel, '27 Tết');
     });
 
     test('quá giao thừa là hết giờ', () {
