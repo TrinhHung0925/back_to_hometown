@@ -129,7 +129,8 @@ class _DriverView extends Component {
       if (n > 0.2 && n < 0.9) ('sky_dusk', 1 - ((n - 0.55).abs() / 0.35).clamp(0.0, 1.0)),
       if (n > 0.6) ('sky_night', ((n - 0.6) / 0.3).clamp(0.0, 1.0)),
     ];
-    final tileW = cam.focal * pi / 2;
+    // Mỗi ảnh trời phủ 180° hướng nhìn, 0–40° độ cao.
+    final tileW = cam.focal * pi;
     final tileH = cam.focal * tan(40 * pi / 180);
     for (final (key, alpha) in layers) {
       final sky = a.props[key];
@@ -138,8 +139,9 @@ class _DriverView extends Component {
     }
     final hz = a.props[_horizonKey()];
     if (hz != null) {
-      final w = cam.focal * pi / 3;
-      final h = w * hz.image.height / hz.image.width;
+      // Mỗi ảnh chân trời phủ 90° hướng nhìn, 0–10° độ cao.
+      final w = cam.focal * pi / 2;
+      final h = cam.focal * tan(10 * pi / 180);
       _panorama(canvas, r, hz.image, w, hy - h + 3, h, 1, tint: _horizonColor);
     }
   }
@@ -327,12 +329,17 @@ class _DriverView extends Component {
         case SceneryKind.tree:
           final species = it.species ?? (!city && game.setup.theme == MapTheme.delta && it.seed % 5 == 0 ? 'tree_bamboo' : 'tree_broad');
           final art = a.prop('${species}_${1 + it.seed % (_variants[species] ?? 2)}');
-          final w = it.size * (_widthFactor[species] ?? 1.15);
-          _board(items, o.dx, o.dy, w, art == null ? w * 1.3 : w / art.aspect, art?.image, mirror: it.seed.isOdd);
+          if (art == null) {
+            final w = it.size * (_widthFactor[species] ?? 1.15);
+            _board(items, o.dx, o.dy, w, w * 1.3, null, mirror: it.seed.isOdd);
+          } else {
+            final h = art.heightM * _u * (it.size / (_refSize[species] ?? 100)).clamp(0.7, 1.3);
+            _board(items, o.dx, o.dy, h * art.aspect, h, art.image, mirror: it.seed.isOdd);
+          }
         case SceneryKind.banana:
           final art = a.prop('banana_${1 + it.seed % 2}');
-          final w = it.size * 1.1;
-          _board(items, o.dx, o.dy, w, art == null ? w : w / art.aspect, art?.image, mirror: it.seed.isOdd);
+          final h = (art?.heightM ?? 3.5) * _u * (it.size / 60).clamp(0.75, 1.3);
+          _board(items, o.dx, o.dy, art == null ? h : h * art.aspect, h, art?.image, mirror: it.seed.isOdd);
         case SceneryKind.house:
           _house(items, a, it, camS);
       }
@@ -347,6 +354,13 @@ class _DriverView extends Component {
     'tree_casuarina': 2,
     'tree_pine': 2,
     'bush': 3,
+    'banana': 2,
+  };
+  /// Cỡ tán nhìn từ trên ứng với cây cao đúng như ảnh đứng.
+  static const Map<String, double> _refSize = {
+    'palm_coconut': 125,
+    'tree_pine': 105,
+    'tree_casuarina': 90,
   };
   static const Map<String, double> _widthFactor = {
     'tree_broad': 1.15,
@@ -363,7 +377,7 @@ class _DriverView extends Component {
     final art = a.prop(key);
     final side = it.d.sign;
     final w = it.size;
-    final h = art == null ? (town ? 150.0 : 95.0) : w / art.aspect;
+    final h = art == null ? (town ? 150.0 : 95.0) : art.heightM * _u;
     // Đứng trên đường nhìn vào: bên phải thì đầu xa (s lớn) là mép trái ảnh.
     final left = _at(it.s + side * w / 2, it.d), right = _at(it.s - side * w / 2, it.d);
     if (art != null) {
@@ -377,7 +391,8 @@ class _DriverView extends Component {
     final depth = min(it.house?.size.y ?? 120, 140.0);
     final wallArt = a.prop('wall_side_${1 + it.seed % 3}');
     final a0 = _at(nearS, it.d), a1 = _at(nearS, it.d + side * depth);
-    final hw = h * 0.8;
+    // Nhà quê mái dốc: tường hông chỉ tới chân mái.
+    final hw = h * (town ? 0.8 : 0.5);
     if (wallArt != null) {
       final img = wallArt.image;
       final rep = img.width / (3 * _u);
@@ -655,8 +670,8 @@ class _DriverView extends Component {
     final f = game.finishS;
     if ((f - camS) * dir > 0 && (f - camS) * dir < cam.far) {
       final arch = a.prop('arch_tet');
-      final w = 2 * (_half + 40);
-      final h = arch == null ? 170.0 : w / arch.aspect;
+      final h = arch == null ? 170.0 : arch.heightM * _u;
+      final w = arch == null ? 2 * (_half + 40) : h * arch.aspect;
       final paint = arch != null ? _clamp(arch.image) : (Paint()..color = const Color(0xffC1121F));
       final iw = arch?.image.width.toDouble() ?? 1, ih = arch?.image.height.toDouble() ?? 1;
       _wall(items, _at(f, -dir * w / 2), _at(f, dir * w / 2), 0, h, paint, 0, iw, 0, ih);

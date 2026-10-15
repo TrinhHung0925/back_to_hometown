@@ -245,7 +245,7 @@ class SceneryLayer extends Component with HasGameReference<FlameGame> {
       if (r < 0.55) {
         _pick(Img.casuarinas, s, side, _half + 44 + random.nextDouble() * 34, 64 + random.nextDouble() * 40, 'tree_casuarina');
       } else if (r < 0.75) {
-        _pick(Img.basketBoats, s, side, _half + 70 + random.nextDouble() * 150, 30 + random.nextDouble() * 10, null);
+        _pick(Img.basketBoats, s, side, _half + 70 + random.nextDouble() * 150, 44 + random.nextDouble() * 8, null);
       }
       return s + 34 + random.nextDouble() * 80;
     }
@@ -261,12 +261,12 @@ class SceneryLayer extends Component with HasGameReference<FlameGame> {
     final r = random.nextDouble();
     if (side > 0) {
       // Ngọn thông dưới vực, thưa dần.
-      if (r < 0.6) _pick(Img.pines, s, side, _half + 60 + random.nextDouble() * 170, 60 + random.nextDouble() * 50, 'tree_pine');
+      if (r < 0.6) _pick(Img.pines, s, side, _half + 60 + random.nextDouble() * 170, 80 + random.nextDouble() * 45, 'tree_pine');
       return s + 40 + random.nextDouble() * 110;
     }
     // Trên đỉnh vách đá: thông; chân vách: đá lở.
     if (r < 0.6) {
-      _pick(Img.pines, s, side, _half + 105 + random.nextDouble() * 110, 70 + random.nextDouble() * 50, 'tree_pine');
+      _pick(Img.pines, s, side, _half + 105 + random.nextDouble() * 110, 85 + random.nextDouble() * 45, 'tree_pine');
     } else if (r < 0.75) {
       _pick(Img.rocks, s, side, _half + 22 + random.nextDouble() * 12, 16 + random.nextDouble() * 14, null);
     }
@@ -279,18 +279,20 @@ class SceneryLayer extends Component with HasGameReference<FlameGame> {
     if (side > 0) {
       // Dừa nước hai bờ kênh, xuồng ba lá dưới kênh, vườn dừa bên kia.
       if (r < 0.45) {
-        _pick(Img.palmsNipa, s, side, random.nextBool() ? _half + 36 : _half + 154, 54 + random.nextDouble() * 26, 'bush');
+        // Bờ gần sát đường thì khóm nhỏ, bờ bên kia khóm to.
+        final far = random.nextBool();
+        _pick(Img.palmsNipa, s, side, far ? _half + 156 : _half + 46, far ? 110 + random.nextDouble() * 40 : 72 + random.nextDouble() * 20, 'banana');
       } else if (r < 0.55) {
-        _pick(Img.sampans, s, side, _half + 70 + random.nextDouble() * 50, 70 + random.nextDouble() * 20, null, aligned: true);
+        _pick(Img.sampans, s, side, _half + 75 + random.nextDouble() * 40, 105 + random.nextDouble() * 15, null, aligned: true);
       } else if (r < 0.85) {
-        _pick(Img.palmsCoconut, s, side, _half + 175 + random.nextDouble() * 80, 80 + random.nextDouble() * 40, 'palm_coconut');
+        _pick(Img.palmsCoconut, s, side, _half + 185 + random.nextDouble() * 80, 110 + random.nextDouble() * 35, 'palm_coconut');
       }
       return s + 30 + random.nextDouble() * 60;
     }
     final village = sin(s / 2100 + 1.1) > 0.3;
     if (village && r < 0.6) return _villageHouse(side, s, r < 0.3 ? RoofKind.clay : RoofKind.iron);
     if (r < 0.75) {
-      _pick(Img.palmsCoconut, s, side, _half + 75 + random.nextDouble() * 110, 80 + random.nextDouble() * 40, 'palm_coconut');
+      _pick(Img.palmsCoconut, s, side, _half + 85 + random.nextDouble() * 110, 110 + random.nextDouble() * 35, 'palm_coconut');
     } else if (r < 0.88) {
       _sprite(Img.bananas[random.nextInt(2)], s, side, _half + 75 + random.nextDouble() * 60, 50 + random.nextDouble() * 24, kind: SceneryKind.banana);
     } else {
@@ -317,7 +319,7 @@ class SceneryLayer extends Component with HasGameReference<FlameGame> {
   void _pick(List<String> paths, double s, int side, double d, double size, String? species, {bool aligned = false}) {
     final path = paths[random.nextInt(paths.length)];
     if (!game.images.containsKey(path)) return;
-    _sprite(path, s, side, d, size, species: species, aligned: aligned);
+    _sprite(path, s, side, d, size, species: species, aligned: aligned, upright: species != null);
   }
 
   // ----------------------------------------------------------- Cao tốc
@@ -335,7 +337,7 @@ class SceneryLayer extends Component with HasGameReference<FlameGame> {
   }
 
   void _sprite(String path, double s, int side, double d, double size,
-      {SceneryKind kind = SceneryKind.tree, String? species, bool aligned = false}) {
+      {SceneryKind kind = SceneryKind.tree, String? species, bool aligned = false, bool upright = true}) {
     // Phía trong khúc cua gắt: không mọc lấn qua tâm cong sang đường.
     final inner = _innerBend(s, side, size);
     if (inner > 0 && (d + size / 2) * inner > 0.8) return;
@@ -352,7 +354,8 @@ class SceneryLayer extends Component with HasGameReference<FlameGame> {
     c.priority = 2;
     add(c);
     _items.add((s, c));
-    items.add(SceneryItem(kind, s, side * d, size, (s * 7).round() & 0xfffff, species: species));
+    // Thuyền, đá nằm sát đất: góc nhìn ghế lái không dựng thành ảnh đứng.
+    if (upright) items.add(SceneryItem(kind, s, side * d, size, (s * 7).round() & 0xfffff, species: species));
   }
 
   void _add(double s, PositionComponent c, int side, double d) {

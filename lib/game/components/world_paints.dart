@@ -65,17 +65,17 @@ class WorldPaints {
   late final Paint sand = optional(Img.texSand, 230, const Color(0xffE2D2AC));
   late final Paint sandWet = optional(Img.texSandWet, 230, const Color(0xffBDAA84));
   late final Paint scrub = optional(Img.texScrub, 260, const Color(0xffB7AD7C));
-  late final Paint rock = optional(Img.texRock, 210, const Color(0xff8B867D));
-  late final Paint forest = optional(Img.texForest, 460, const Color(0xff3E5A34));
-  late final Paint forestDeep = optional(Img.texForest, 460, const Color(0xff2B4125), tint: const Color(0xff8E9A8C));
-  late final Paint canal = optional(Img.texCanal, 280, const Color(0xff6A6944));
+  late final Paint rock = optional(Img.texRock, 300, const Color(0xff8B867D));
+  late final Paint forest = optional(Img.texForest, 600, const Color(0xff3E5A34));
+  late final Paint forestDeep = optional(Img.texForest, 600, const Color(0xff2B4125), tint: const Color(0xff8E9A8C));
+  late final Paint canal = optional(Img.texCanal, 220, const Color(0xff6A6944));
   late final Paint mud = Paint()..color = const Color(0xff7A6A4C);
 
   /// Mặt biển trôi chầm chậm theo thời gian [t] (giây).
   Paint sea(double t) {
     if (!_images.containsKey(Img.texSea)) return Paint()..color = const Color(0xff3E8DA6);
     final image = _images.fromCache(Img.texSea);
-    const size = 380.0;
+    const size = 400.0;
     final m = Float64List(16)
       ..[0] = size / image.width
       ..[5] = size / image.height

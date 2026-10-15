@@ -80,23 +80,27 @@
  },
  "gift_box": {
   "h_m": 0.42,
-  "w_m": 0.445,
-  "kind": "pickup"
+  "w_m": 0.46,
+  "kind": "pickup",
+  "depth_m": 0.28
  },
  "gift_kumquat": {
   "h_m": 0.748,
-  "w_m": 0.68,
-  "kind": "pickup"
+  "w_m": 0.695,
+  "kind": "pickup",
+  "depth_m": 0.38
  },
  "gift_peach": {
-  "h_m": 0.48,
-  "w_m": 1.575,
-  "kind": "pickup"
+  "h_m": 0.482,
+  "w_m": 1.59,
+  "kind": "pickup",
+  "depth_m": 0.53
  },
  "lixi_float": {
   "h_m": 0.163,
   "w_m": 0.092,
-  "kind": "pickup"
+  "kind": "pickup",
+  "depth_m": 0.03
  },
  "nail_sign": {
   "h_m": 1.145,
@@ -154,48 +158,57 @@
  },
  "person_hammock_1": {
   "h_m": 1.506,
-  "w_m": 2.953,
-  "kind": "person"
+  "w_m": 2.988,
+  "kind": "person",
+  "depth_m": 0.61
  },
  "person_sit_1": {
   "h_m": 1.153,
-  "w_m": 0.694,
-  "kind": "person"
+  "w_m": 0.706,
+  "kind": "person",
+  "depth_m": 0.75
  },
  "person_sit_2": {
   "h_m": 1.1,
-  "w_m": 0.612,
-  "kind": "person"
+  "w_m": 0.635,
+  "kind": "person",
+  "depth_m": 0.71
  },
  "person_sit_3": {
   "h_m": 1.165,
   "w_m": 0.659,
-  "kind": "person"
+  "kind": "person",
+  "depth_m": 0.76
  },
  "police_officer_radar": {
-  "h_m": 1.741,
-  "w_m": 0.929,
-  "kind": "police"
+  "h_m": 1.747,
+  "w_m": 1.012,
+  "kind": "police",
+  "depth_m": 0.39
  },
  "police_officer_stand": {
-  "h_m": 1.741,
-  "w_m": 0.929,
-  "kind": "police"
+  "h_m": 1.747,
+  "w_m": 1.012,
+  "kind": "police",
+  "depth_m": 0.39
  },
  "police_officer_wave": {
   "h_m": 2.382,
-  "w_m": 1.576,
-  "kind": "police"
+  "w_m": 1.588,
+  "kind": "police",
+  "depth_m": 0.39
  },
  "police_sign": {
   "h_m": 1.428,
-  "w_m": 1.389,
-  "kind": "police"
+  "w_m": 1.411,
+  "kind": "police",
+  "depth_m": 0.62
  },
  "police_tent": {
   "h_m": 2.715,
   "w_m": 4.677,
-  "kind": "police"
+  "kind": "police",
+  "depth_m": 2.67
  },
  "pothole_warning_cone": {
   "h_m": 0.717,
@@ -205,97 +218,115 @@
  },
  "seller_1": {
   "h_m": 1.665,
-  "w_m": 0.612,
-  "kind": "worker"
+  "w_m": 0.624,
+  "kind": "worker",
+  "depth_m": 0.38
  },
  "seller_2": {
   "h_m": 1.165,
-  "w_m": 0.6,
-  "kind": "worker"
+  "w_m": 0.612,
+  "kind": "worker",
+  "depth_m": 0.71
  },
  "sign_city": {
   "h_m": 3.0,
-  "w_m": 1.387,
-  "kind": "sign"
+  "w_m": 1.4,
+  "kind": "sign",
+  "depth_m": 0.3
  },
  "sign_curve_left": {
   "h_m": 2.9,
-  "w_m": 0.853,
-  "kind": "sign"
+  "w_m": 0.893,
+  "kind": "sign",
+  "depth_m": 0.3
  },
  "sign_curve_right": {
   "h_m": 2.9,
-  "w_m": 0.853,
-  "kind": "sign"
+  "w_m": 0.893,
+  "kind": "sign",
+  "depth_m": 0.3
  },
  "sign_no_uturn": {
   "h_m": 2.9,
-  "w_m": 0.853,
-  "kind": "sign"
+  "w_m": 0.867,
+  "kind": "sign",
+  "depth_m": 0.3
  },
  "sign_speed_50": {
   "h_m": 2.9,
-  "w_m": 0.853,
-  "kind": "sign"
+  "w_m": 0.867,
+  "kind": "sign",
+  "depth_m": 0.3
  },
  "sign_speed_60": {
   "h_m": 2.9,
-  "w_m": 0.853,
-  "kind": "sign"
+  "w_m": 0.867,
+  "kind": "sign",
+  "depth_m": 0.3
  },
  "sign_speed_80": {
   "h_m": 2.9,
-  "w_m": 0.853,
-  "kind": "sign"
+  "w_m": 0.867,
+  "kind": "sign",
+  "depth_m": 0.3
  },
  "stall_banh_mi": {
   "h_m": 2.481,
-  "w_m": 3.096,
-  "kind": "stall"
+  "w_m": 3.111,
+  "kind": "stall",
+  "depth_m": 2.67
  },
  "stall_ca_phe_vong": {
-  "h_m": 2.422,
+  "h_m": 2.43,
   "w_m": 4.444,
-  "kind": "stall"
+  "kind": "stall",
+  "depth_m": 2.49
  },
  "stall_com": {
-  "h_m": 2.378,
+  "h_m": 2.37,
   "w_m": 4.607,
-  "kind": "stall"
+  "kind": "stall",
+  "depth_m": 2.31
  },
  "stall_nuoc_mia": {
   "h_m": 2.496,
-  "w_m": 3.674,
-  "kind": "stall"
+  "w_m": 3.644,
+  "kind": "stall",
+  "depth_m": 2.44
  },
  "stall_tra_da": {
   "h_m": 2.37,
   "w_m": 3.363,
-  "kind": "stall"
+  "kind": "stall",
+  "depth_m": 2.4
  },
  "stall_va_xe": {
   "h_m": 2.43,
-  "w_m": 4.696,
-  "kind": "stall"
+  "w_m": 4.711,
+  "kind": "stall",
+  "depth_m": 2.72
  },
  "stall_xang_le": {
   "h_m": 2.341,
-  "w_m": 3.141,
-  "kind": "stall"
+  "w_m": 3.096,
+  "kind": "stall",
+  "depth_m": 2.03
  },
  "toll_barrier": {
   "h_m": 1.113,
-  "w_m": 3.56,
+  "w_m": 3.573,
   "kind": "toll",
+  "depth_m": 0.39,
   "pivot": [
-   0.0772,
+   0.0788,
    0.1018
   ]
  },
  "toll_booth": {
-  "h_m": 3.192,
-  "w_m": 2.292,
-  "kind": "toll"
+  "h_m": 3.2,
+  "w_m": 2.338,
+  "kind": "toll",
+  "depth_m": 2.89
  },
  "toll_fascia": {
   "h_m": 1.5,
@@ -305,8 +336,9 @@
  },
  "traffic_cone": {
   "h_m": 0.72,
-  "w_m": 0.52,
-  "kind": "prop"
+  "w_m": 0.533,
+  "kind": "prop",
+  "depth_m": 0.42
  },
  "traffic_light_head_green": {
   "h_m": 1.559,
@@ -350,12 +382,14 @@
  },
  "worker_attendant": {
   "h_m": 1.7,
-  "w_m": 0.694,
-  "kind": "worker"
+  "w_m": 0.835,
+  "kind": "worker",
+  "depth_m": 0.35
  },
  "worker_mechanic": {
   "h_m": 1.094,
   "w_m": 2.306,
-  "kind": "worker"
+  "kind": "worker",
+  "depth_m": 0.49
  }
 }

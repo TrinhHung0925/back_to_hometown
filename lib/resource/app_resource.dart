@@ -382,6 +382,7 @@ abstract class Img {
         texPaint,
         ...trees,
         ...bananas,
+        ...themeArt,
         ...potholes,
         ...roadPatches,
         ...oilStains,

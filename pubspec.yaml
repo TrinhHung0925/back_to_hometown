@@ -42,6 +42,7 @@ flutter:
   assets:
     - assets/images/
     - assets/images/map/
+    - assets/images/driver/
     - assets/icons/
     - assets/audio/
 
