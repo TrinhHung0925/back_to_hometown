@@ -1,0 +1,905 @@
+{
+ "_info": {
+  "ppm": 80.0,
+  "elevation_deg": 7.0,
+  "anchor": "bottom-center = ground contact line of the lowest tyre, vehicle centre at x = w/2",
+  "center_ground": "pixel of the ground point under the vehicle centre (y-mid of length) \u2014 the bottom row is the nearest tyre contact",
+  "side": "seen from the vehicle LEFT, nose pointing left (mirror for the other direction)"
+ },
+ "bus_1": {
+  "rear": {
+   "w": 226,
+   "h": 321,
+   "center_ground": [
+    113.0,
+    302.5
+   ]
+  },
+  "front": {
+   "w": 226,
+   "h": 325,
+   "center_ground": [
+    113.0,
+    302.6
+   ]
+  },
+  "side": {
+   "w": 732,
+   "h": 297,
+   "center_ground": [
+    366.0,
+    285.6
+   ]
+  },
+  "length_m": 8.5,
+  "width_m": 2.5
+ },
+ "bus_2": {
+  "rear": {
+   "w": 226,
+   "h": 321,
+   "center_ground": [
+    113.0,
+    302.5
+   ]
+  },
+  "front": {
+   "w": 226,
+   "h": 325,
+   "center_ground": [
+    113.0,
+    302.6
+   ]
+  },
+  "side": {
+   "w": 732,
+   "h": 297,
+   "center_ground": [
+    366.0,
+    285.6
+   ]
+  },
+  "length_m": 8.5,
+  "width_m": 2.5
+ },
+ "bus_3": {
+  "rear": {
+   "w": 226,
+   "h": 321,
+   "center_ground": [
+    113.0,
+    302.5
+   ]
+  },
+  "front": {
+   "w": 226,
+   "h": 325,
+   "center_ground": [
+    113.0,
+    302.6
+   ]
+  },
+  "side": {
+   "w": 732,
+   "h": 297,
+   "center_ground": [
+    366.0,
+    285.6
+   ]
+  },
+  "length_m": 8.5,
+  "width_m": 2.5
+ },
+ "container_1": {
+  "rear": {
+   "w": 226,
+   "h": 301,
+   "center_ground": [
+    113.0,
+    281.2
+   ]
+  },
+  "front": {
+   "w": 226,
+   "h": 326,
+   "center_ground": [
+    113.0,
+    297.4
+   ]
+  },
+  "side": {
+   "w": 666,
+   "h": 285,
+   "center_ground": [
+    333.0,
+    274.1
+   ]
+  },
+  "length_m": 8.11,
+  "width_m": 2.47
+ },
+ "container_2": {
+  "rear": {
+   "w": 226,
+   "h": 309,
+   "center_ground": [
+    113.0,
+    289.2
+   ]
+  },
+  "front": {
+   "w": 226,
+   "h": 339,
+   "center_ground": [
+    113.0,
+    310.4
+   ]
+  },
+  "side": {
+   "w": 666,
+   "h": 294,
+   "center_ground": [
+    333.0,
+    283.1
+   ]
+  },
+  "length_m": 8.11,
+  "width_m": 2.47
+ },
+ "mini_van": {
+  "rear": {
+   "w": 178,
+   "h": 157,
+   "center_ground": [
+    89.0,
+    143.6
+   ]
+  },
+  "front": {
+   "w": 178,
+   "h": 176,
+   "center_ground": [
+    89.0,
+    162.8
+   ]
+  },
+  "side": {
+   "w": 378,
+   "h": 159,
+   "center_ground": [
+    189.0,
+    150.5
+   ]
+  },
+  "length_m": 4.5,
+  "width_m": 1.78
+ },
+ "pickup_blue": {
+  "rear": {
+   "w": 184,
+   "h": 200,
+   "center_ground": [
+    92.0,
+    185.1
+   ]
+  },
+  "front": {
+   "w": 184,
+   "h": 234,
+   "center_ground": [
+    92.0,
+    217.8
+   ]
+  },
+  "side": {
+   "w": 462,
+   "h": 210,
+   "center_ground": [
+    231.0,
+    201.0
+   ]
+  },
+  "length_m": 5.28,
+  "width_m": 1.9
+ },
+ "pickup_gray": {
+  "rear": {
+   "w": 184,
+   "h": 167,
+   "center_ground": [
+    92.0,
+    152.1
+   ]
+  },
+  "front": {
+   "w": 184,
+   "h": 169,
+   "center_ground": [
+    92.0,
+    152.8
+   ]
+  },
+  "side": {
+   "w": 462,
+   "h": 160,
+   "center_ground": [
+    231.0,
+    151.0
+   ]
+  },
+  "length_m": 5.28,
+  "width_m": 1.9
+ },
+ "pickup_white": {
+  "rear": {
+   "w": 184,
+   "h": 196,
+   "center_ground": [
+    92.0,
+    181.1
+   ]
+  },
+  "front": {
+   "w": 184,
+   "h": 230,
+   "center_ground": [
+    92.0,
+    213.8
+   ]
+  },
+  "side": {
+   "w": 462,
+   "h": 203,
+   "center_ground": [
+    231.0,
+    194.0
+   ]
+  },
+  "length_m": 5.28,
+  "width_m": 1.9
+ },
+ "scooter_ai_1": {
+  "rear": {
+   "w": 66,
+   "h": 141,
+   "center_ground": [
+    33.0,
+    135.7
+   ]
+  },
+  "front": {
+   "w": 66,
+   "h": 141,
+   "center_ground": [
+    33.0,
+    134.3
+   ]
+  },
+  "side": {
+   "w": 166,
+   "h": 136,
+   "center_ground": [
+    83.0,
+    135.6
+   ]
+  },
+  "length_m": 1.99,
+  "width_m": 0.72
+ },
+ "scooter_ai_10": {
+  "rear": {
+   "w": 66,
+   "h": 141,
+   "center_ground": [
+    33.0,
+    135.7
+   ]
+  },
+  "front": {
+   "w": 66,
+   "h": 142,
+   "center_ground": [
+    33.0,
+    135.3
+   ]
+  },
+  "side": {
+   "w": 166,
+   "h": 136,
+   "center_ground": [
+    83.0,
+    135.6
+   ]
+  },
+  "length_m": 1.99,
+  "width_m": 0.72
+ },
+ "scooter_ai_2": {
+  "rear": {
+   "w": 66,
+   "h": 140,
+   "center_ground": [
+    33.0,
+    134.6
+   ]
+  },
+  "front": {
+   "w": 66,
+   "h": 145,
+   "center_ground": [
+    33.0,
+    138.2
+   ]
+  },
+  "side": {
+   "w": 164,
+   "h": 135,
+   "center_ground": [
+    82.0,
+    134.5
+   ]
+  },
+  "length_m": 1.962,
+  "width_m": 0.72
+ },
+ "scooter_ai_3": {
+  "rear": {
+   "w": 66,
+   "h": 141,
+   "center_ground": [
+    33.0,
+    135.7
+   ]
+  },
+  "front": {
+   "w": 66,
+   "h": 141,
+   "center_ground": [
+    33.0,
+    134.3
+   ]
+  },
+  "side": {
+   "w": 166,
+   "h": 136,
+   "center_ground": [
+    83.0,
+    135.6
+   ]
+  },
+  "length_m": 1.99,
+  "width_m": 0.72
+ },
+ "scooter_ai_4": {
+  "rear": {
+   "w": 66,
+   "h": 141,
+   "center_ground": [
+    33.0,
+    135.7
+   ]
+  },
+  "front": {
+   "w": 66,
+   "h": 141,
+   "center_ground": [
+    33.0,
+    134.3
+   ]
+  },
+  "side": {
+   "w": 166,
+   "h": 136,
+   "center_ground": [
+    83.0,
+    135.6
+   ]
+  },
+  "length_m": 1.99,
+  "width_m": 0.72
+ },
+ "scooter_ai_5": {
+  "rear": {
+   "w": 66,
+   "h": 140,
+   "center_ground": [
+    33.0,
+    134.6
+   ]
+  },
+  "front": {
+   "w": 66,
+   "h": 145,
+   "center_ground": [
+    33.0,
+    138.2
+   ]
+  },
+  "side": {
+   "w": 164,
+   "h": 135,
+   "center_ground": [
+    82.0,
+    134.5
+   ]
+  },
+  "length_m": 1.962,
+  "width_m": 0.72
+ },
+ "scooter_ai_6": {
+  "rear": {
+   "w": 78,
+   "h": 147,
+   "center_ground": [
+    39.0,
+    141.7
+   ]
+  },
+  "front": {
+   "w": 78,
+   "h": 162,
+   "center_ground": [
+    39.0,
+    155.3
+   ]
+  },
+  "side": {
+   "w": 172,
+   "h": 150,
+   "center_ground": [
+    86.0,
+    149.6
+   ]
+  },
+  "length_m": 1.99,
+  "width_m": 0.72
+ },
+ "scooter_ai_7": {
+  "rear": {
+   "w": 66,
+   "h": 141,
+   "center_ground": [
+    33.0,
+    135.7
+   ]
+  },
+  "front": {
+   "w": 66,
+   "h": 153,
+   "center_ground": [
+    33.0,
+    146.3
+   ]
+  },
+  "side": {
+   "w": 166,
+   "h": 140,
+   "center_ground": [
+    83.0,
+    139.6
+   ]
+  },
+  "length_m": 1.99,
+  "width_m": 0.72
+ },
+ "scooter_ai_8": {
+  "rear": {
+   "w": 66,
+   "h": 140,
+   "center_ground": [
+    33.0,
+    134.6
+   ]
+  },
+  "front": {
+   "w": 66,
+   "h": 145,
+   "center_ground": [
+    33.0,
+    138.2
+   ]
+  },
+  "side": {
+   "w": 164,
+   "h": 135,
+   "center_ground": [
+    82.0,
+    134.5
+   ]
+  },
+  "length_m": 1.962,
+  "width_m": 0.72
+ },
+ "scooter_ai_9": {
+  "rear": {
+   "w": 66,
+   "h": 157,
+   "center_ground": [
+    33.0,
+    151.6
+   ]
+  },
+  "front": {
+   "w": 66,
+   "h": 166,
+   "center_ground": [
+    33.0,
+    159.2
+   ]
+  },
+  "side": {
+   "w": 164,
+   "h": 156,
+   "center_ground": [
+    82.0,
+    155.5
+   ]
+  },
+  "length_m": 1.962,
+  "width_m": 0.72
+ },
+ "scooter_ai_raincoat_1": {
+  "rear": {
+   "w": 66,
+   "h": 141,
+   "center_ground": [
+    33.0,
+    135.7
+   ]
+  },
+  "front": {
+   "w": 66,
+   "h": 141,
+   "center_ground": [
+    33.0,
+    134.3
+   ]
+  },
+  "side": {
+   "w": 166,
+   "h": 136,
+   "center_ground": [
+    83.0,
+    135.6
+   ]
+  },
+  "length_m": 1.99,
+  "width_m": 0.72
+ },
+ "scooter_ai_raincoat_2": {
+  "rear": {
+   "w": 66,
+   "h": 141,
+   "center_ground": [
+    33.0,
+    135.7
+   ]
+  },
+  "front": {
+   "w": 66,
+   "h": 141,
+   "center_ground": [
+    33.0,
+    134.3
+   ]
+  },
+  "side": {
+   "w": 166,
+   "h": 136,
+   "center_ground": [
+    83.0,
+    135.6
+   ]
+  },
+  "length_m": 1.99,
+  "width_m": 0.72
+ },
+ "scooter_ai_raincoat_3": {
+  "rear": {
+   "w": 66,
+   "h": 141,
+   "center_ground": [
+    33.0,
+    135.7
+   ]
+  },
+  "front": {
+   "w": 66,
+   "h": 141,
+   "center_ground": [
+    33.0,
+    134.3
+   ]
+  },
+  "side": {
+   "w": 166,
+   "h": 136,
+   "center_ground": [
+    83.0,
+    135.6
+   ]
+  },
+  "length_m": 1.99,
+  "width_m": 0.72
+ },
+ "scooter_ai_raincoat_4": {
+  "rear": {
+   "w": 66,
+   "h": 141,
+   "center_ground": [
+    33.0,
+    135.7
+   ]
+  },
+  "front": {
+   "w": 66,
+   "h": 141,
+   "center_ground": [
+    33.0,
+    134.3
+   ]
+  },
+  "side": {
+   "w": 166,
+   "h": 136,
+   "center_ground": [
+    83.0,
+    135.6
+   ]
+  },
+  "length_m": 1.99,
+  "width_m": 0.72
+ },
+ "scooter_police": {
+  "rear": {
+   "w": 66,
+   "h": 141,
+   "center_ground": [
+    33.0,
+    135.7
+   ]
+  },
+  "front": {
+   "w": 66,
+   "h": 141,
+   "center_ground": [
+    33.0,
+    134.3
+   ]
+  },
+  "side": {
+   "w": 166,
+   "h": 136,
+   "center_ground": [
+    83.0,
+    135.6
+   ]
+  },
+  "length_m": 1.99,
+  "width_m": 0.72
+ },
+ "sedan_black": {
+  "rear": {
+   "w": 178,
+   "h": 129,
+   "center_ground": [
+    89.0,
+    116.6
+   ]
+  },
+  "front": {
+   "w": 178,
+   "h": 141,
+   "center_ground": [
+    89.0,
+    128.4
+   ]
+  },
+  "side": {
+   "w": 366,
+   "h": 129,
+   "center_ground": [
+    183.0,
+    120.6
+   ]
+  },
+  "length_m": 4.45,
+  "width_m": 1.82
+ },
+ "sedan_blue": {
+  "rear": {
+   "w": 178,
+   "h": 129,
+   "center_ground": [
+    89.0,
+    116.6
+   ]
+  },
+  "front": {
+   "w": 178,
+   "h": 141,
+   "center_ground": [
+    89.0,
+    128.4
+   ]
+  },
+  "side": {
+   "w": 366,
+   "h": 129,
+   "center_ground": [
+    183.0,
+    120.6
+   ]
+  },
+  "length_m": 4.45,
+  "width_m": 1.82
+ },
+ "sedan_brown": {
+  "rear": {
+   "w": 178,
+   "h": 129,
+   "center_ground": [
+    89.0,
+    116.6
+   ]
+  },
+  "front": {
+   "w": 178,
+   "h": 141,
+   "center_ground": [
+    89.0,
+    128.4
+   ]
+  },
+  "side": {
+   "w": 366,
+   "h": 129,
+   "center_ground": [
+    183.0,
+    120.6
+   ]
+  },
+  "length_m": 4.45,
+  "width_m": 1.82
+ },
+ "sedan_gray": {
+  "rear": {
+   "w": 178,
+   "h": 129,
+   "center_ground": [
+    89.0,
+    116.6
+   ]
+  },
+  "front": {
+   "w": 178,
+   "h": 141,
+   "center_ground": [
+    89.0,
+    128.4
+   ]
+  },
+  "side": {
+   "w": 366,
+   "h": 129,
+   "center_ground": [
+    183.0,
+    120.6
+   ]
+  },
+  "length_m": 4.45,
+  "width_m": 1.82
+ },
+ "sedan_green": {
+  "rear": {
+   "w": 178,
+   "h": 129,
+   "center_ground": [
+    89.0,
+    116.6
+   ]
+  },
+  "front": {
+   "w": 178,
+   "h": 141,
+   "center_ground": [
+    89.0,
+    128.4
+   ]
+  },
+  "side": {
+   "w": 366,
+   "h": 129,
+   "center_ground": [
+    183.0,
+    120.6
+   ]
+  },
+  "length_m": 4.45,
+  "width_m": 1.82
+ },
+ "sedan_silver": {
+  "rear": {
+   "w": 178,
+   "h": 129,
+   "center_ground": [
+    89.0,
+    116.6
+   ]
+  },
+  "front": {
+   "w": 178,
+   "h": 141,
+   "center_ground": [
+    89.0,
+    128.4
+   ]
+  },
+  "side": {
+   "w": 366,
+   "h": 129,
+   "center_ground": [
+    183.0,
+    120.6
+   ]
+  },
+  "length_m": 4.45,
+  "width_m": 1.82
+ },
+ "sedan_white": {
+  "rear": {
+   "w": 178,
+   "h": 129,
+   "center_ground": [
+    89.0,
+    116.6
+   ]
+  },
+  "front": {
+   "w": 178,
+   "h": 141,
+   "center_ground": [
+    89.0,
+    128.4
+   ]
+  },
+  "side": {
+   "w": 366,
+   "h": 129,
+   "center_ground": [
+    183.0,
+    120.6
+   ]
+  },
+  "length_m": 4.45,
+  "width_m": 1.82
+ },
+ "truck": {
+  "rear": {
+   "w": 226,
+   "h": 278,
+   "center_ground": [
+    113.0,
+    258.2
+   ]
+  },
+  "front": {
+   "w": 226,
+   "h": 280,
+   "center_ground": [
+    113.0,
+    251.4
+   ]
+  },
+  "side": {
+   "w": 666,
+   "h": 255,
+   "center_ground": [
+    333.0,
+    244.1
+   ]
+  },
+  "length_m": 8.11,
+  "width_m": 2.47
+ }
+}

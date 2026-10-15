@@ -42,7 +42,7 @@ class _DriverView extends Component {
     final moto = g.spec.kind == VehicleKind.motorbike;
     final (eye, fwd, side, fov) = switch (g.spec.kind) {
       VehicleKind.motorbike => (1.65 * _u, 0.0, 0.0, 82.0),
-      VehicleKind.car => (1.2 * _u, -0.06 * len, -0.2 * wid, 74.0),
+      VehicleKind.car => (1.3 * _u, -0.06 * len, -0.2 * wid, 74.0),
       VehicleKind.bus => (2.5 * _u, 0.4 * len, -0.26 * wid, 72.0),
     };
     cam
@@ -57,8 +57,15 @@ class _DriverView extends Component {
       _heading += VeQueGame._wrapAngle(target - _heading) * (1 - exp(-14 * dt));
     }
     cam.heading = _heading;
+    final shot = art?.cockpitInfo[switch (g.spec.kind) {
+      VehicleKind.motorbike => 'moto',
+      VehicleKind.car => 'car',
+      VehicleKind.bus => 'bus',
+    }];
+    final camInfo = shot is Map && g.spec.kind != VehicleKind.motorbike ? shot['camera'] : null;
+    final baseFov = camInfo is Map && camInfo['hfov_deg'] is num ? (camInfo['hfov_deg'] as num).toDouble() : fov;
     final speedRatio = (g.player.speed / g.spec.maxSpeed).clamp(0.0, 1.0);
-    cam.hfov = (fov + 7 * speedRatio) * pi / 180;
+    cam.hfov = (baseFov + 5 * speedRatio) * pi / 180;
     final steer = (g.player.lateralVelocity / g.spec.lateralSpeed).clamp(-1.0, 1.0);
     _steer += (steer - _steer) * (1 - exp(-8 * dt));
     // Xe máy nghiêng theo cua và theo tay lái; ô tô, xe khách không nghiêng.
@@ -788,7 +795,8 @@ class _DriverView extends Component {
       final same = (v.oncoming ? -1 : 1) == game.dir;
       final view = same ? 'rear' : 'front';
       final img = a.vehicle(path, view);
-      final o = _at(v.s, v.d);
+      // Mặt đuôi xe trước mặt / mặt đầu xe ngược chiều nằm ở đầu gần mình.
+      final o = _at(v.s - game.dir * v.type.length / 2, v.d);
       final scale = v.type == TrafficType.motorbike ? 1.15 : 1.0;
       final w = img == null ? v.type.width : img.width / DriverArt.vehiclePixelsPerMeter * _u * scale;
       final h = img == null ? v.type.width * 0.8 : img.height / DriverArt.vehiclePixelsPerMeter * _u * scale;
@@ -907,8 +915,9 @@ class _DriverView extends Component {
     final wheel = a.cockpits['${key}_wheel'];
     final info = a.cockpitInfo[kind == VehicleKind.car ? 'car' : 'bus'];
     if (wheel == null || info is! Map) return;
-    final rect = _rectOf(info['wheel_rect'] ?? info['wheel'], wheel, img);
-    final center = _pointOf(info['rotation_center'] ?? info['center'], rect.center);
+    final spec = info['wheel'];
+    final rect = _rectOf(spec, wheel, img);
+    final center = _pointOf(spec is Map ? spec['pivot'] : null, rect.center);
     final r = Rect.fromLTWH(rect.left * scale, top + rect.top * scale, rect.width * scale, rect.height * scale);
     final c = Offset(center.dx * scale, top + center.dy * scale);
     canvas.save();
@@ -921,8 +930,13 @@ class _DriverView extends Component {
   }
 
   /// Vị trí ảnh vô-lăng trong khung buồng lái (đọc từ cockpits.json, chấp
-  /// nhận vài kiểu ghi: [x, y, w, h] hoặc {x, y, w, h} / {left, top, width, height}).
+  /// nhận vài kiểu ghi: {pos, size}, [x, y, w, h] hoặc {x, y, w, h}).
   static Rect _rectOf(Object? v, Image wheel, Image frame) {
+    if (v is Map && v['pos'] is List) {
+      final pos = _pointOf(v['pos'], Offset.zero);
+      final size = _pointOf(v['size'], Offset(wheel.width.toDouble(), wheel.height.toDouble()));
+      return Rect.fromLTWH(pos.dx, pos.dy, size.dx, size.dy);
+    }
     if (v is List && v.length >= 4) {
       return Rect.fromLTWH((v[0] as num).toDouble(), (v[1] as num).toDouble(), (v[2] as num).toDouble(), (v[3] as num).toDouble());
     }
