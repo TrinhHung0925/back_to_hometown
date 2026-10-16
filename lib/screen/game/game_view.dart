@@ -16,6 +16,7 @@ import 'phone_call_card.dart';
 import 'roadside_overlays.dart';
 import 'speedometer.dart';
 import 'steering_stick.dart';
+import 'tutorial_coach.dart';
 
 class GameView extends StatefulWidget {
   GameView({super.key}) {
@@ -89,7 +90,8 @@ class _GameViewState extends State<GameView> {
                       final calling = controller.call.value != null;
                       return Positioned(
                         top: 56.h,
-                        left: resting ? 444.h : (calling ? 312.h : 0),
+                        // Chặng tập lái: thẻ hướng dẫn chiếm góc trái như thẻ cuộc gọi.
+                        left: resting ? 444.h : (calling || controller.setup.tutorial ? 312.h : 0),
                         right: resting ? 12.h : 214.h,
                         child: Column(
                           children: [
@@ -204,6 +206,8 @@ class _GameViewState extends State<GameView> {
                 ),
               ),
             ),
+            // Chặng tập lái: thẻ hướng dẫn, vòng sáng chỉ nút, bảng tổng kết.
+            if (controller.setup.tutorial) Positioned.fill(child: TutorialCoach(controller: controller)),
             Obx(() {
               if (controller.phase.value != GamePhase.incident) return const SizedBox.shrink();
               return Positioned.fill(child: IncidentOverlay(controller: controller));

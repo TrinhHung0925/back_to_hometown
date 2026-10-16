@@ -17,6 +17,7 @@ enum LocalKey {
   difficulty,
   haptics,
   tutorialDone,
+  daily,
 }
 
 class LocalService {
@@ -71,6 +72,16 @@ class LocalService {
 
   void saveTutorialDone() {
     storage.write(LocalKey.tutorialDone.name, true);
+  }
+
+  /// Thử thách hôm nay: kỷ lục trong ngày, chuỗi ngày (JSON của DailyRecord).
+  Map<String, dynamic>? getDaily() {
+    final value = storage.read(LocalKey.daily.name);
+    return value is Map ? Map<String, dynamic>.from(value) : null;
+  }
+
+  void saveDaily(Map<String, dynamic> json) {
+    storage.write(LocalKey.daily.name, json);
   }
 
   /// Hỗ trợ lái: giữ làn, bám xe trước, tự giảm tốc trước khúc cua (mặc định bật).

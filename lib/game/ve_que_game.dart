@@ -1199,7 +1199,9 @@ class VeQueGame extends FlameGame {
 
   // ------------------------------------------------------- Quay đầu
   /// Đủ chậm, không ở cao tốc (dải phân cách), không trong trạm thu phí.
+  /// Chặng tập lái chỉ đi một chiều.
   bool get canUTurn =>
+      !setup.tutorial &&
       phase == GamePhase.driving &&
       _uTurn == null &&
       !_events.holding &&
@@ -2103,11 +2105,26 @@ class VeQueGame extends FlameGame {
 
   // ------------------------------------------------------- Công an
   void _startIncident() {
+    // Chặng tập lái không có công an: nhắc một câu rồi lái tiếp.
+    if (setup.tutorial) return _forgiveTutorial();
     phase = GamePhase.incident;
     _policeVisible = true;
     _policeS = _behindEdgeS - dir * 120;
     _policeD = player.d;
     onPhaseChanged(phase);
+  }
+
+  /// Chặng tập lái: va quẹt, vượt đèn đỏ, đâm mạnh đều chỉ nhắc nhở.
+  void _forgiveTutorial({bool crash = false}) {
+    _crashSpin = 0;
+    violation = null;
+    _clearAroundPlayer();
+    onNotice(GameNotice(
+      !crash && incidentKind == IncidentKind.redLight
+          ? 'Vượt đèn đỏ rồi! Đi thật là bị CSGT phạt — ngã tư sau nhớ dừng trước vạch'
+          : 'Va quẹt rồi! Đi thật là bị lập biên bản — giữ khoảng cách với xe trước',
+      kind: NoticeKind.warning,
+    ));
   }
 
   void _stepIncident(double dt) {
@@ -2764,6 +2781,7 @@ class VeQueGame extends FlameGame {
   // -------------------------------------------------------- Kết thúc
   void _end(StageEndReason reason, {required double delay}) {
     if (phase == GamePhase.finished) return;
+    if (setup.tutorial && reason == StageEndReason.accident) return _forgiveTutorial(crash: true);
     phase = GamePhase.finished;
     _endReason = reason;
     _endDelay = delay;

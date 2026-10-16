@@ -16,6 +16,7 @@ import '../../resource/app_colors.dart';
 import '../../resource/app_resource.dart';
 import '../../resource/app_text.dart';
 import '../../service/audio_service.dart';
+import 'daily_result_banner.dart';
 import 'game_controller.dart';
 import 'road_icons.dart';
 
@@ -589,6 +590,12 @@ class ResultOverlay extends StatelessWidget {
               ],
             ],
           ),
+          // Thử thách hôm nay: kỷ lục trong ngày, chuỗi ngày.
+          Obx(() {
+            final daily = controller.dailyResult.value;
+            if (daily == null) return const SizedBox.shrink();
+            return Padding(padding: EdgeInsets.only(top: 10.h), child: DailyResultBanner(result: daily));
+          }),
           if (summary != null) ...[
             SizedBox(height: 10.h),
             Container(
