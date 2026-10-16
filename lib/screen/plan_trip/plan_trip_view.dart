@@ -73,7 +73,7 @@ class _PlanTripViewState extends State<PlanTripView> {
               ),
             ),
           ),
-          Positioned(left: left, top: top, child: _BackChip(onBack: controller.onBack)),
+          Positioned(left: left, top: top, child: _BackChip(title: controller.locked ? 'Thử thách hôm nay' : 'Lên lộ trình', onBack: controller.onBack)),
           Positioned(
             left: left + 150.h,
             right: right + panelW + gap,
@@ -108,8 +108,9 @@ class _PlanTripViewState extends State<PlanTripView> {
 
 /// Nút quay lại + tên màn, nền tối trong mờ nổi trên bản đồ.
 class _BackChip extends StatelessWidget {
-  const _BackChip({required this.onBack});
+  const _BackChip({required this.title, required this.onBack});
 
+  final String title;
   final VoidCallback onBack;
 
   @override
@@ -139,7 +140,7 @@ class _BackChip extends StatelessWidget {
               child: RotatedBox(quarterTurns: 2, child: Image.asset(Img.icPlay, width: 14.h, height: 14.h)),
             ),
             SizedBox(width: 10.h),
-            AppText.manrope(controller.locked ? 'Thử thách hôm nay' : 'Lên lộ trình', fontSize: 16.h, fontWeight: FontWeight.w800, color: AppColors.ffFFFFFF),
+            AppText.manrope(title, fontSize: 16.h, fontWeight: FontWeight.w800, color: AppColors.ffFFFFFF),
           ],
         ),
       ),
@@ -543,7 +544,7 @@ class _DailyInfo extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 AppText.manrope(
-                  '${vehicle.title} · ${challenge.difficulty.title}',
+                  '${switch (vehicle) { VehicleKind.motorbike => 'Xe máy', VehicleKind.car => 'Ô tô', VehicleKind.bus => 'Xe khách' }} · ${challenge.difficulty.title}',
                   fontSize: 14.h,
                   fontWeight: FontWeight.w800,
                   color: AppColors.ffFFFFFF,

@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import '../../dialog/map_picker_dialog.dart';
 import '../../dialog/place_picker_dialog.dart';
 import '../../game/debug/debug_launch.dart';
-import '../../game/stage.dart';
 import '../../game/vehicle_spec.dart';
 import '../../model/difficulty.dart';
 import '../../model/map_theme.dart';
