@@ -227,9 +227,11 @@ class TrafficSystem {
   static const double _stopDecel = 420;
   static const double _laneChangeSpeed = 75;
 
+  /// Độ đông xe (độ khó): lớn hơn 1 thì xe xuất hiện dày hơn.
+  double density = 1;
+
   double _nextSpawnDelay() =>
-      GameConfig.trafficSpawnIntervalMin +
-      _random.nextDouble() * (GameConfig.trafficSpawnIntervalMax - GameConfig.trafficSpawnIntervalMin);
+      (GameConfig.trafficSpawnIntervalMin + _random.nextDouble() * (GameConfig.trafficSpawnIntervalMax - GameConfig.trafficSpawnIntervalMin)) / density;
 
   /// [spawnS]: ngay ngoài mép phải màn hình; [despawnBehindS]: đã khuất
   /// sau mép trái; [despawnAheadS]: xe chạy quá xa phía trước.

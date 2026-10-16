@@ -1,12 +1,17 @@
 import 'package:get/get.dart';
 
 import '../../game/vehicle_spec.dart';
+import '../../model/difficulty.dart';
 import '../../route.dart';
+import '../../service/local_service.dart';
 
 class ChooseModeController extends GetxController {
-  @override
-  void onInit() {
-    super.onInit();
+  /// Độ khó cho chuyến sắp đi (lưu lại cho lần sau).
+  final difficulty = LocalService.shared.getDifficulty().obs;
+
+  void setDifficulty(Difficulty value) {
+    LocalService.shared.saveDifficulty(value);
+    difficulty.value = value;
   }
 
   void selfDrive() {

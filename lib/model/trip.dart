@@ -1,5 +1,6 @@
 import '../game/game_config.dart';
 import '../game/vehicle_spec.dart';
+import 'difficulty.dart';
 
 /// Loại đoạn đường trong một chặng.
 enum RoadKind {
@@ -127,9 +128,13 @@ class TripProgress {
     this.score = 0,
     this.budget = GameConfig.timeBudgetFactor,
     this.peach = -1,
+    this.difficulty = Difficulty.normal,
   });
 
   final TripPlan plan;
+
+  /// Độ khó chọn lúc lên đường (giữ nguyên cả chuyến).
+  final Difficulty difficulty;
 
   /// Chặng sắp chơi (hoặc đang chơi).
   int stageIndex;
@@ -163,6 +168,7 @@ class TripProgress {
         'score': score,
         'budget': budget,
         'peach': peach,
+        'difficulty': difficulty.name,
       };
 
   factory TripProgress.fromJson(Map<String, dynamic> json) => TripProgress(
@@ -175,6 +181,7 @@ class TripProgress {
         score: (json['score'] as int?) ?? 0,
         budget: (json['budget'] as num?)?.toDouble() ?? 1.25,
         peach: (json['peach'] as num?)?.toDouble() ?? -1,
+        difficulty: Difficulty.values.asNameMap()[json['difficulty']] ?? Difficulty.normal,
       );
 }
 

@@ -464,6 +464,26 @@ class _ViewSettings extends StatelessWidget {
               ),
             ),
           ),
+          SizedBox(height: 6.h),
+          CupertinoButton(
+            padding: EdgeInsets.zero,
+            minimumSize: Size.zero,
+            onPressed: () {
+              AudioService.shared.click();
+              controller.setHaptics(!controller.haptics.value);
+            },
+            child: Container(
+              height: 36.h,
+              padding: EdgeInsets.fromLTRB(10.h, 0, 8.h, 0),
+              decoration: BoxDecoration(color: AppColors.ffF2F3F5, borderRadius: BorderRadius.circular(10.h)),
+              child: Row(
+                children: [
+                  Expanded(child: AppText.manrope('Rung máy khi va chạm, quệt lề', fontSize: 12.h, fontWeight: FontWeight.w800, color: AppColors.ff1B1D22)),
+                  _Toggle(on: controller.haptics.value),
+                ],
+              ),
+            ),
+          ),
         ],
       );
     });

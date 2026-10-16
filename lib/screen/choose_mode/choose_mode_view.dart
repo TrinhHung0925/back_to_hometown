@@ -6,6 +6,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 
 import '../../common/screen_header.dart';
+import '../../model/difficulty.dart';
 import '../../resource/app_colors.dart';
 import '../../resource/app_resource.dart';
 import '../../resource/app_text.dart';
@@ -67,9 +68,73 @@ class _ChooseModeViewState extends State<ChooseModeView> {
                   ],
                 ),
               ),
+              SizedBox(height: 12.h),
+              Obx(() => _DifficultyBar(value: controller.difficulty.value, onChanged: controller.setDifficulty)),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Chọn độ khó: ba ô Dễ / Thường / Khó kèm một dòng mô tả.
+class _DifficultyBar extends StatelessWidget {
+  const _DifficultyBar({required this.value, required this.onChanged});
+
+  final Difficulty value;
+  final ValueChanged<Difficulty> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(5.h),
+      decoration: BoxDecoration(
+        color: AppColors.ffFFFFFF,
+        borderRadius: BorderRadius.circular(16.h),
+        border: Border.all(color: AppColors.ff1B1D22, width: 3.h),
+      ),
+      child: Row(
+        children: [
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 12.h),
+            child: AppText.manrope('Độ khó', fontSize: 15.h, fontWeight: FontWeight.w800, color: AppColors.ff1B1D22),
+          ),
+          for (final d in Difficulty.values)
+            Expanded(
+              child: CupertinoButton(
+                padding: EdgeInsets.zero,
+                minimumSize: Size.zero,
+                onPressed: () {
+                  AudioService.shared.click();
+                  onChanged(d);
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 160),
+                  width: double.infinity,
+                  margin: EdgeInsets.only(left: 5.h),
+                  padding: EdgeInsets.symmetric(horizontal: 10.h, vertical: 6.h),
+                  decoration: BoxDecoration(
+                    color: d == value ? AppColors.ffD62828 : AppColors.ffF2F3F5,
+                    borderRadius: BorderRadius.circular(11.h),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      AppText.manrope(d.title, fontSize: 14.h, fontWeight: FontWeight.w800, color: d == value ? AppColors.ffFFFFFF : AppColors.ff1B1D22),
+                      AppText.manrope(
+                        d.subtitle,
+                        fontSize: 9.5.h,
+                        fontWeight: FontWeight.w600,
+                        maxLines: 1,
+                        color: d == value ? AppColors.ffFFFFFF.withValues(alpha: 0.85) : AppColors.ff6B7280,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

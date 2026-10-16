@@ -1,3 +1,4 @@
+import '../../model/difficulty.dart';
 import '../game_config.dart';
 
 /// Đồng hồ trong game, tính bằng phút kể từ 00:00 ngày xuất phát.
@@ -37,7 +38,8 @@ class TripClock {
   /// Giờ xuất phát tính ngược từ giao thừa khi cho phép [allowedMinutes] phút.
   static double departureFor(double allowedMinutes) => midnight - allowedMinutes;
 
-  /// Phút cho phép đi hết [km] km chia [stages] chặng (xem
-  /// [GameConfig.guaranteedKmh]).
-  static double allowedMinutes(double km, int stages) => km / GameConfig.guaranteedKmh * 60 + stages * GameConfig.stopAllowanceMinutes;
+  /// Phút cho phép đi hết [km] km chia [stages] chặng: chạy đều
+  /// [Difficulty.guaranteedKmh] vẫn kịp, mỗi chặng dư thêm chút cho ghé quán.
+  static double allowedMinutes(double km, int stages, [Difficulty difficulty = Difficulty.normal]) =>
+      km / difficulty.guaranteedKmh * 60 + stages * difficulty.stopAllowanceMinutes;
 }

@@ -155,6 +155,7 @@ class RoadLayout {
     required int tollBooths,
     required Random random,
     bool withBusStops = false,
+    double checkpointFactor = 1,
   }) {
     final zones = <RoadZone>[];
     var s = startS;
@@ -209,7 +210,7 @@ class RoadLayout {
     final plain = RoadLayout._(zones, lights, tolls, startS, endS);
     for (final zone in zones.where((z) => z.kind == RoadKind.highway)) {
       final km = (zone.endS - zone.startS) / GameConfig.unitsPerKm;
-      final count = (km / GameConfig.checkpointEveryKm + random.nextDouble() * 0.6).floor();
+      final count = (km * checkpointFactor / GameConfig.checkpointEveryKm + random.nextDouble() * 0.6).floor();
       for (var i = 0; i < count; i++) {
         var at = zone.startS + (zone.endS - zone.startS) * (i + 0.3 + random.nextDouble() * 0.4) / count;
         while (plain.nearFeature(at, margin: GameConfig.speedSignAhead + 200) && at < zone.endS - 1500) {

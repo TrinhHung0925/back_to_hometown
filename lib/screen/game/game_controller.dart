@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import '../../game/debug/autopilot.dart';
@@ -31,6 +32,9 @@ class GameController extends GetxController {
 
   /// Hỗ trợ lái đang bật (giữ làn, bám xe trước, tự chậm trước khúc cua).
   final driveAssist = LocalService.shared.getDriveAssist().obs;
+
+  /// Rung máy khi va chạm, quệt lề, có nguy hiểm.
+  final haptics = LocalService.shared.getHaptics().obs;
 
   /// Tăng mỗi lần chơi lại để dựng GameWidget mới.
   final gameKey = 0.obs;
@@ -223,6 +227,7 @@ class GameController extends GetxController {
       },
       onSound: _onGameSound,
       onNotice: _showNotice,
+      onHaptic: _haptic,
     );
     game.driveAssist = driveAssist.value;
     gameKey.value++;
@@ -286,6 +291,7 @@ class GameController extends GetxController {
   /// Thông báo nguy hiểm chen ngay lên trước; thông báo thường không đè lên
   /// cái quan trọng hơn hay cái vừa hiện chưa kịp đọc mà xếp hàng chờ.
   void _showNotice(GameNotice value) {
+    if (value.kind == NoticeKind.danger) _haptic(GameHaptic.medium);
     final current = notice.value;
     if (current?.text == value.text || _noticeQueue.any((q) => q.$1.text == value.text)) return;
     if (current == null) return _presentNotice(value);
@@ -516,6 +522,25 @@ class GameController extends GetxController {
     game.resumeEngine();
     isPaused.value = false;
     _audio.resumeLoops();
+  }
+
+  void _haptic(GameHaptic kind) {
+    if (!haptics.value) return;
+    switch (kind) {
+      case GameHaptic.light:
+        HapticFeedback.lightImpact();
+      case GameHaptic.medium:
+        HapticFeedback.mediumImpact();
+      case GameHaptic.heavy:
+        HapticFeedback.heavyImpact();
+        Timer(const Duration(milliseconds: 140), HapticFeedback.heavyImpact);
+    }
+  }
+
+  void setHaptics(bool on) {
+    LocalService.shared.saveHaptics(on);
+    haptics.value = on;
+    if (on) HapticFeedback.mediumImpact();
   }
 
   /// Bật / tắt hỗ trợ lái (lưu cho các lần chơi sau).

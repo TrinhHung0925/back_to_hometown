@@ -1,5 +1,6 @@
 import 'package:get_storage/get_storage.dart';
 
+import '../model/difficulty.dart';
 import '../model/map_theme.dart';
 
 enum LocalKey {
@@ -13,6 +14,9 @@ enum LocalKey {
   skyMode,
   driveAssist,
   controlTip,
+  difficulty,
+  haptics,
+  tutorialDone,
 }
 
 class LocalService {
@@ -46,6 +50,27 @@ class LocalService {
 
   void saveCruiseTipShown() {
     storage.write(LocalKey.controlTip.name, true);
+  }
+
+  /// Độ khó chọn cho chuyến sắp đi.
+  Difficulty getDifficulty() => Difficulty.values.asNameMap()[storage.read<String>(LocalKey.difficulty.name)] ?? Difficulty.normal;
+
+  void saveDifficulty(Difficulty value) {
+    storage.write(LocalKey.difficulty.name, value.name);
+  }
+
+  /// Rung máy khi va chạm, quệt lề, sắp đâm (mặc định bật).
+  bool getHaptics() => storage.read(LocalKey.haptics.name) ?? true;
+
+  void saveHaptics(bool on) {
+    storage.write(LocalKey.haptics.name, on);
+  }
+
+  /// Đã chơi xong chặng tập lái chưa.
+  bool getTutorialDone() => storage.read(LocalKey.tutorialDone.name) ?? false;
+
+  void saveTutorialDone() {
+    storage.write(LocalKey.tutorialDone.name, true);
   }
 
   /// Hỗ trợ lái: giữ làn, bám xe trước, tự giảm tốc trước khúc cua (mặc định bật).

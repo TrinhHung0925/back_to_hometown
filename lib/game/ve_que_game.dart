@@ -64,6 +64,7 @@ class VeQueGame extends FlameGame {
     this.onRest,
     this.onJob,
     this.onCall,
+    this.onHaptic,
     this.fatigue = true,
   });
 
@@ -84,8 +85,14 @@ class VeQueGame extends FlameGame {
   /// Điện thoại từ nhà: đang reo / đang nói chuyện; null khi cúp máy.
   final void Function(PhoneCallState? call)? onCall;
 
+  /// Rung máy (va chạm, quệt lề, ổ gà).
+  final void Function(GameHaptic haptic)? onHaptic;
+
   /// Có tính buồn ngủ, xăng, mưa, sự cố không (nền màn menu thì tắt).
   final bool fatigue;
+
+  /// Lần rung "quệt lề" gần nhất (rung đều tay chứ không rung liên tục).
+  double _scrapeBuzz = 0;
 
   /// Hỗ trợ lái (người chơi bật / tắt ở menu tạm dừng): giữ làn, bám xe
   /// trước, tự giảm tốc trước khúc cua.
@@ -107,6 +114,7 @@ class VeQueGame extends FlameGame {
     tollBooths: setup.tollBooths,
     random: Random(setup.seed * 104729 + 3),
     withBusStops: setup.vehicle == VehicleKind.bus,
+    checkpointFactor: setup.difficulty.checkpoints,
   );
   late final RoadPath road = RoadPath.winding(
     random: Random(setup.seed * 7919 + 1),
@@ -125,7 +133,7 @@ class VeQueGame extends FlameGame {
     ..cargo = setup.startCargo
     // Vào chặng xe đang lăn bánh: giữ sẵn mức ga đó, khỏi tự trôi chậm lại.
     ..cruise = 0.6 * GameConfig.normalSpeed;
-  late final TrafficSystem traffic = TrafficSystem(Random(setup.seed * 31 + 7));
+  late final TrafficSystem traffic = TrafficSystem(Random(setup.seed * 31 + 7))..density = setup.difficulty.traffic;
   late final CrossTraffic cross = CrossTraffic(Random(setup.seed * 17 + 9));
   late final AnimalSystem animals = AnimalSystem(Random(setup.seed * 7 + 3));
   late double _animalTimer = 14 + _random.nextDouble() * 20;
@@ -752,6 +760,11 @@ class VeQueGame extends FlameGame {
     if (!_scrapePlayed) {
       _scrapePlayed = true;
       onSound(GameSound.skid);
+      onHaptic?.call(GameHaptic.medium);
+      _scrapeBuzz = _time;
+    } else if (_time - _scrapeBuzz > 0.28) {
+      _scrapeBuzz = _time;
+      onHaptic?.call(GameHaptic.light);
     }
     _notice('scrape${(player.s / 1500).floor()}', 'Vào cua nhanh quá — xe bị văng ra sát mép đường!', NoticeKind.warning);
   }
@@ -766,7 +779,7 @@ class VeQueGame extends FlameGame {
       // Ướt sũng, lạnh run thì mau mệt.
       final cold = 1 + (GameConfig.soakAlertFactor - 1) * soaked;
       final before = alert;
-      alert = max(0, alert - GameConfig.alertDecayPerSecond * night * cold * dt);
+      alert = max(0, alert - GameConfig.alertDecayPerSecond * night * cold * setup.difficulty.drowsiness * dt);
       if (before >= GameConfig.alertDrowsy && alert < GameConfig.alertDrowsy) {
         onNotice(const GameNotice('Bắt đầu buồn ngủ rồi… Ghé quán ven đường uống cốc trà đá đi!', kind: NoticeKind.warning));
       }
@@ -1949,6 +1962,7 @@ class VeQueGame extends FlameGame {
       {required void Function() onMinor, required void Function() stopOther, bool backOff = false, bool headOn = false}) {
     collisions++;
     final severity = classifyCollision(relative, headOn: headOn);
+    onHaptic?.call(severity == CollisionSeverity.crash || severity == CollisionSeverity.fatal ? GameHaptic.heavy : GameHaptic.medium);
     _impactFx(relative);
     _events.damagePeach(severity == CollisionSeverity.crash || severity == CollisionSeverity.fatal ? 70 : 30, 'Va quẹt mạnh quá, cành đào sau xe gãy mất mấy nhánh!');
     _finishUTurn();
@@ -2243,6 +2257,7 @@ class VeQueGame extends FlameGame {
           }
           player.bump();
           onSound(GameSound.pothole);
+          onHaptic?.call(GameHaptic.light);
           _shake = max(_shake, 0.18);
           // Xóc mạnh làm rơi một món quà (xe khách thì khách chỉ kêu ca).
           if (spec.kind == VehicleKind.bus) {
@@ -2565,6 +2580,7 @@ class VeQueGame extends FlameGame {
     player.speed *= dog ? 0.6 : 0.82;
     _shake = max(_shake, dog ? 0.3 : 0.12);
     onSound(GameSound.pothole);
+    onHaptic?.call(GameHaptic.medium);
     if (dog) {
       if (spec.kind == VehicleKind.motorbike) _tiltT = 0.6;
       _notice('dog${a.s.round()}', 'Chó lao ra đường — suýt ngã! Đi chậm thôi', NoticeKind.warning);

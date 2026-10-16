@@ -8,6 +8,7 @@ import 'package:back_to_hometown/game/logic/road_path.dart';
 import 'package:back_to_hometown/game/logic/traffic_system.dart';
 import 'package:back_to_hometown/game/logic/trip_clock.dart';
 import 'package:back_to_hometown/game/vehicle_spec.dart';
+import 'package:back_to_hometown/model/difficulty.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -342,6 +343,8 @@ void main() {
 
     test('giờ xuất phát: chạy đều 20 km/h cộng 40 phút mỗi chặng vẫn kịp giao thừa', () {
       // 100 km một chặng: 5 giờ ở 20 km/h + 40 phút dừng nghỉ.
+      expect(TripClock.allowedMinutes(100, 1, Difficulty.easy), greaterThan(TripClock.allowedMinutes(100, 1)));
+      expect(TripClock.allowedMinutes(100, 1, Difficulty.hard), lessThan(TripClock.allowedMinutes(100, 1)));
       final allowed = TripClock.allowedMinutes(100, 1);
       expect(allowed, closeTo(5 * 60 + 40, 1e-9));
       expect(TripClock.departureFor(allowed), closeTo(24 * 60 - 340, 1e-9));

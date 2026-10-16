@@ -14,6 +14,7 @@ import '../../resource/app_colors.dart';
 import '../../resource/app_resource.dart';
 import '../../resource/app_text.dart';
 import '../../service/audio_service.dart';
+import '../../service/local_service.dart';
 import '../../service/route_service.dart';
 import 'plan_trip_controller.dart';
 import 'trip_map.dart';
@@ -637,6 +638,7 @@ class _PlanSummary extends StatelessWidget {
             spacing: 4.h,
             runSpacing: 4.h,
             children: [
+              fact('Độ khó', LocalService.shared.getDifficulty().title),
               fact('Lái thật', hours(plan.realHours)),
               fact('Xuất phát', '${TripClock(minutes: departure).label} · ${TripClock(minutes: departure).dayLabel}'),
               if (plan.expresswayKm > 0) fact('Cao tốc', '${plan.expresswayKm.round()} km'),

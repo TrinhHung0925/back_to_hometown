@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../model/difficulty.dart';
 import '../model/map_theme.dart';
 import '../model/trip.dart';
 import 'logic/road_layout.dart';
@@ -29,6 +30,8 @@ class StageSetup {
     this.theme = MapTheme.delta,
     this.sky = SkyMode.clock,
     this.startPeach = -1,
+    this.difficulty = Difficulty.normal,
+    this.tutorial = false,
   });
 
   final VehicleKind vehicle;
@@ -70,6 +73,11 @@ class StageSetup {
   /// Cành đào buộc sau xe máy còn đẹp bao nhiêu (0..100); âm = không chở.
   final double startPeach;
 
+  final Difficulty difficulty;
+
+  /// Chặng tập lái (không thuộc chuyến đi nào, không có sự cố).
+  final bool tutorial;
+
   double get lengthKm => sections.fold(0, (sum, s) => sum + s.km);
   double get lengthUnits => lengthKm * GameConfig.unitsPerKm;
 
@@ -93,6 +101,8 @@ class StageSetup {
         theme: theme ?? this.theme,
         sky: sky ?? this.sky,
         startPeach: startPeach,
+        difficulty: difficulty,
+        tutorial: tutorial,
       );
 }
 
@@ -305,12 +315,15 @@ enum GameSound {
   fireworks,
 }
 
-/// Loại thông báo; [rank] cao hơn thì được chen lên trước, không bị thông
-/// báo thấp hơn đè mất ([danger]: nguy hiểm ngay trước mặt — xe tải mất
-/// phanh, đuôi đoạn tắc đường…).
+/// Rung máy: nhẹ (ổ gà, quệt lề), vừa (va quẹt), mạnh (tai nạn).
+enum GameHaptic { light, medium, heavy }
+
 /// Hỗ trợ lái đang tự giảm tốc vì gì (HUD ghi chú cạnh mức ga).
 enum AssistState { none, following, curve }
 
+/// Loại thông báo; [rank] cao hơn thì được chen lên trước, không bị thông
+/// báo thấp hơn đè mất ([danger]: nguy hiểm ngay trước mặt — xe tải mất
+/// phanh, đuôi đoạn tắc đường…).
 enum NoticeKind {
   info(0),
   money(1),

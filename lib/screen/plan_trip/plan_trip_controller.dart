@@ -102,7 +102,7 @@ class PlanTripController extends GetxController {
   /// Giờ xuất phát của lộ trình đang chọn (phút trong game).
   double? get departureMinutes {
     final p = plan.value;
-    return p == null ? null : TripService.departureFor(p);
+    return p == null ? null : TripService.departureFor(p, LocalService.shared.getDifficulty());
   }
 
   void start() {

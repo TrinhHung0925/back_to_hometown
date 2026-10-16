@@ -5,6 +5,7 @@ import '../game/logic/trip_clock.dart';
 import '../game/logic/vehicle_condition.dart';
 import '../game/stage.dart';
 import '../game/vehicle_spec.dart';
+import '../model/difficulty.dart';
 import '../model/map_theme.dart';
 import '../model/place.dart';
 import '../model/trip.dart';
@@ -40,7 +41,7 @@ class TripService {
       // đường còn lại được dư như chuyến mới.
       final stages = progress.plan.stages.skip(progress.stageIndex);
       final old = progress.budget * stages.fold(0.0, (sum, s) => sum + stageGameMinutes(s));
-      final now = TripClock.allowedMinutes(stages.fold(0.0, (sum, s) => sum + s.km), stages.length);
+      final now = TripClock.allowedMinutes(stages.fold(0.0, (sum, s) => sum + s.km), stages.length, progress.difficulty);
       progress
         ..clockMinutes -= max(0.0, now - old)
         ..budget = GameConfig.timeBudgetFactor;
@@ -52,14 +53,16 @@ class TripService {
   bool get hasTrip => current != null && !current!.finished;
 
   /// Giờ xuất phát: tính ngược từ giao thừa theo thời gian chơi ước tính.
-  static double departureFor(TripPlan plan) =>
-      TripClock.departureFor(TripClock.allowedMinutes(plan.stages.fold(0.0, (sum, s) => sum + s.km), plan.stages.length));
+  static double departureFor(TripPlan plan, [Difficulty difficulty = Difficulty.normal]) =>
+      TripClock.departureFor(TripClock.allowedMinutes(plan.stages.fold(0.0, (sum, s) => sum + s.km), plan.stages.length, difficulty));
 
   TripProgress start(TripPlan plan) {
+    final difficulty = LocalService.shared.getDifficulty();
     final progress = TripProgress(
       plan: plan,
+      difficulty: difficulty,
       stageIndex: 0,
-      clockMinutes: departureFor(plan),
+      clockMinutes: departureFor(plan, difficulty),
       lixi: 0,
       cargo: 0,
       // Đi vội, bình còn chừng nửa (chưa kịp đổ đầy).
@@ -91,6 +94,7 @@ class TripService {
       laterMinutes: progress.plan.stages.skip(progress.stageIndex + 1).fold(0.0, (sum, s) => sum + stageGameMinutes(s)),
       theme: themeFor(stage.fromName, stage.toName),
       sky: LocalService.shared.getSkyMode(),
+      difficulty: progress.difficulty,
     );
   }
 
