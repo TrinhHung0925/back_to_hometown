@@ -31,6 +31,7 @@ import 'driver/ground_sink.dart';
 import 'game_config.dart';
 import 'logic/alcohol.dart';
 import 'logic/animals.dart';
+import 'logic/border_gate.dart';
 import 'logic/chase.dart';
 import 'logic/cold_weather.dart';
 import 'logic/collision.dart';
@@ -40,6 +41,7 @@ import 'logic/gas_chat.dart';
 import 'logic/missions.dart';
 import 'logic/player_physics.dart';
 import 'logic/radio_bulletin.dart';
+import 'logic/provinces.dart';
 import 'logic/road_layout.dart';
 import 'logic/road_path.dart';
 import 'logic/roadside.dart';
@@ -52,6 +54,8 @@ import 'logic/weather.dart';
 import 'stage.dart';
 import 'vehicle_spec.dart';
 
+part 'border_events.dart';
+part 'driver/driver_culture.dart';
 part 'driver/driver_view.dart';
 part 'event_layers.dart';
 part 'family.dart';
@@ -147,6 +151,7 @@ class VeQueGame extends FlameGame {
     random: Random(setup.seed * 104729 + 3),
     withBusStops: setup.vehicle == VehicleKind.bus,
     checkpointFactor: setup.difficulty.checkpoints,
+    borders: BorderCrossing.forStage(setup.fromName, setup.toName, setup.vehicle),
   );
   late final RoadPath road = RoadPath.winding(
     random: Random(setup.seed * 7919 + 1),
@@ -294,8 +299,12 @@ class VeQueGame extends FlameGame {
 
   /// Chở cả nhà về quê (vợ + con nhỏ): bé có mức kiên nhẫn, hay hỏi han.
   late final _Family _family = _Family(this);
+
   /// Đêm 30 Tết, trời rét: chốt đo nồng độ cồn, sương muối, máy nguội, tay cóng.
   late final _NightCold _nightCold = _NightCold(this);
+
+  /// Cổng chào tỉnh, đặc sản địa phương.
+  late final _Culture _culture = _Culture(this);
   _RestStep _restStep = _RestStep.parking;
   double _restT = 0;
   List<String> _restChatter = const [];
@@ -410,7 +419,7 @@ class VeQueGame extends FlameGame {
     _featureOverhead = FeatureOverheadLayer(road: road, layout: layout);
     _scenery = SceneryLayer(road: road, layout: layout, paints: _paints, random: Random(setup.seed * 13 + 5), theme: setup.theme)
       ..skip = ((s) => _events.inRiver(s, margin: 80));
-    _powerLines = PowerLines(road: road)..skip = ((s) => _events.inRiver(s, margin: 60));
+    _powerLines = PowerLines(road: road)..skip = ((s) => _events.inRiver(s, margin: 60) || layout.gates.any((g) => g.near(s, margin: 40)));
     _trafficLayer = TrafficLayer(traffic: traffic, cross: cross, road: road);
     _riderSprite = Sprite(images.fromCache(_family.sprite ? Img.imgScooterFamily : Img.player(spec.kind)));
     _parkedSprite = spec.kind == VehicleKind.motorbike ? Sprite(images.fromCache(Img.imgScooterParked)) : _riderSprite;
@@ -468,6 +477,7 @@ class VeQueGame extends FlameGame {
       _crew,
       _police,
       _featureOverhead,
+      _GateLayer(this),
       _powerLines,
       _overtakeArrow,
       _EventProps(this),
@@ -657,6 +667,7 @@ class VeQueGame extends FlameGame {
     _family.step(dt);
     _radio.step(dt);
     _nightCold.step(dt);
+    _culture.step();
     _stepAnimals(dt);
     _stepNails();
     _stepStallNotices();
@@ -1491,7 +1502,7 @@ class VeQueGame extends FlameGame {
       final ahead = (stall.s - player.s) * dir;
       _parkTo = (ahead > 40 ? stall.s - dir * 10 : player.s + dir * 30, stall.side * (GameConfig.roadHalfWidth + spec.width / 2 - 4));
     }
-    _restChatter = _chatter(stall);
+    _restChatter = _culture.withPitch(stall, _chatter(stall));
     _family.stopAt();
     clock.addPenalty(GameConfig.stallBaseMinutes);
     onPhaseChanged(phase);
@@ -1518,6 +1529,7 @@ class VeQueGame extends FlameGame {
       kind: NoticeKind.money,
     ));
     _nightCold.ordered(item);
+    _culture.tasted(item);
     if (clock.isOver) leaveStall();
   }
 

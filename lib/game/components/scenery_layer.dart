@@ -109,7 +109,8 @@ class SceneryLayer extends Component with HasGameReference<FlameGame> {
 
   // ------------------------------------------------------------- Phố
   double _cityLot(int side, double s) {
-    final width = 52 + random.nextDouble() * 40;
+    // Nhà ống mặt phố rộng 4–5 m (như ảnh mặt tiền ở góc nhìn ghế lái).
+    final width = 84 + random.nextDouble() * 22;
     // Thỉnh thoảng có ngõ nhỏ giữa hai nhà.
     if (random.nextDouble() < 0.1) return s + 18 + random.nextDouble() * 16;
     final front = _half + _sidewalk + random.nextDouble() * 6;
@@ -160,8 +161,9 @@ class SceneryLayer extends Component with HasGameReference<FlameGame> {
     required RoofKind roof,
     required Color? awning,
     required double awningDepth,
+    double depth = House.fullDepth,
+    double yard = 0,
   }) {
-    var depth = House.fullDepth;
     var taper = 0.0;
     if (bend > 0) {
       final radius = 1 / bend;
@@ -179,6 +181,7 @@ class SceneryLayer extends Component with HasGameReference<FlameGame> {
       awning: awning,
       awningDepth: awningDepth,
       seed: random.nextInt(1 << 20),
+      yard: yard,
     );
   }
 
@@ -208,17 +211,26 @@ class SceneryLayer extends Component with HasGameReference<FlameGame> {
     // Nhà ven quốc lộ tụ thành xóm; giữa các xóm là ruộng, cây, chuối.
     final village = sin(s / 2300 + side * 1.7) > 0.35;
     if (village && random.nextDouble() < 0.75) {
-      final width = 56 + random.nextDouble() * 34;
-      final front = _half + 64 + random.nextDouble() * 18;
+      // Nhà cấp 4 mái ngói / mái tôn: rộng, nông, lùi vào sau sân gạch có
+      // tường rào; nhà mái bằng là nhà ống hẹp, sâu, sát đường.
+      final roof = _randomRoof(city: false);
+      final yard = roof != RoofKind.flat;
+      final width = yard ? 140 + random.nextDouble() * 30 : 84 + random.nextDouble() * 22;
+      final front = _half + (yard ? 104 : 64) + random.nextDouble() * 18;
+      if (_lotBlocked(s, width, side)) return s + 40;
       final bend = _bend(s + width / 2, side);
       final step = _lotStep(width, front, bend);
+      final awning = random.nextDouble() < 0.3 ? _awningColors[random.nextInt(_awningColors.length)] : null;
       final house = _house(
         width: width,
         front: front,
         bend: bend,
-        roof: _randomRoof(city: false),
-        awning: random.nextDouble() < 0.3 ? _awningColors[random.nextInt(_awningColors.length)] : null,
+        roof: roof,
+        awning: yard ? null : awning,
         awningDepth: 22,
+        // Nhà mái bằng ở xóm nông hơn nhà ống phố.
+        depth: yard ? _villageDepth() : 230,
+        yard: yard ? _yardDepth : 0,
       );
       if (house != null) {
         _add(s + step / 2, house, side, front);
@@ -310,13 +322,23 @@ class SceneryLayer extends Component with HasGameReference<FlameGame> {
     return s + 40 + random.nextDouble() * 120;
   }
 
-  /// Nhà một tầng ven quốc lộ (xóm chài, xóm vườn).
+  /// Lô đất rộng [width] bắt đầu ở [s] lấn vào ngã tư, quán, cổng chào.
+  bool _lotBlocked(double s, double width, int side) =>
+      layout.nearFeature(s + width / 2, margin: width / 2 + 10) || layout.nearStall(s + width / 2, side, margin: width / 2 + 20);
+
+  /// Sân gạch trước nhà cấp 4 (từ tường rào tới hiên) và chiều sâu nhà.
+  static const double _yardDepth = 46;
+  double _villageDepth() => 150 + random.nextDouble() * 24;
+
+  /// Nhà một tầng ven quốc lộ (xóm chài, xóm vườn): nhà cấp 4 có sân, rào.
   double _villageHouse(int side, double s, RoofKind roof) {
-    final width = 52 + random.nextDouble() * 30;
-    final front = _half + 64 + random.nextDouble() * 18;
+    final width = 140 + random.nextDouble() * 30;
+    final front = _half + 104 + random.nextDouble() * 18;
+    if (_lotBlocked(s, width, side)) return s + 40;
     final bend = _bend(s + width / 2, side);
     final step = _lotStep(width, front, bend);
-    final house = _house(width: width, front: front, bend: bend, roof: roof, awning: null, awningDepth: 22);
+    final house = _house(
+        width: width, front: front, bend: bend, roof: roof, awning: null, awningDepth: 22, depth: _villageDepth(), yard: _yardDepth);
     if (house != null) {
       _add(s + step / 2, house, side, front);
       items.add(SceneryItem(SceneryKind.house, s + step / 2, side * front, house.size.x, (s * 13).round() & 0xfffff, house: house));
@@ -412,9 +434,11 @@ class House extends PositionComponent {
     required int seed,
     double depth = fullDepth,
     this.taper = 0,
+    this.yard = 0,
   })  : _random = Random(seed),
         super(size: Vector2(width, depth), priority: 3) {
-    _iron = paints.roofIron[_random.nextInt(paints.roofIron.length)];
+    _ironIndex = _random.nextInt(paints.roofIron.length);
+    _iron = paints.roofIron[_ironIndex];
     _tank = _random.nextDouble() < 0.75;
     _tankX = (_random.nextDouble() - 0.5) * (width - 40);
     _tankY = 30 + _random.nextDouble() * 50;
@@ -429,6 +453,7 @@ class House extends PositionComponent {
         tone < 1 ? 0 : 210,
         (tone - 1).abs() * 0.9,
       );
+    _hip = roof == RoofKind.clay && yard > 0 && _random.nextDouble() < 0.6;
   }
 
   /// Chiều sâu nhà (từ mặt tiền ra sau) khi đường thẳng.
@@ -443,7 +468,13 @@ class House extends PositionComponent {
   final double taper;
   final Color? awning;
   final double awningDepth;
+
+  /// Nhà cấp 4 quê: sân gạch sâu [yard] phía trước (tường rào cổng sắt ở
+  /// mép sân), nóc mái chạy dọc mặt tiền; 0 là nhà ống (nóc chạy vào trong).
+  final double yard;
   final Random _random;
+  late final int _ironIndex;
+  late final bool _hip;
   late final Paint _iron;
   late final bool _tank;
   late final double _tankX;
@@ -471,6 +502,17 @@ class House extends PositionComponent {
     ..style = PaintingStyle.stroke
     ..strokeWidth = 1.2;
   static final Paint _image = Paint()..filterQuality = FilterQuality.medium;
+  static final Paint _fence = Paint()..color = const Color(0xffE6E2D6);
+  static final Paint _gate = Paint()..color = const Color(0xff3A3F45);
+
+  /// Màu mái để góc nhìn ghế lái lợp đúng như nhìn từ trên: ngói sẫm / nhạt,
+  /// tôn màu thứ mấy trong [WorldPaints.roofIron].
+  bool get clayDark => _clayDark;
+  int get ironTint => _ironIndex;
+
+  /// Mái bạt sọc trắng; mái ngói bốn dốc (mái chéo) của nhà cấp 4.
+  bool get striped => _striped;
+  bool get hip => _hip;
 
   @override
   void render(Canvas canvas) {
@@ -478,12 +520,13 @@ class House extends PositionComponent {
     final body = Rect.fromLTWH(-w / 2, 0, w, size.y);
     if (taper > 0) {
       final back = w / 2 * (1 - size.y * taper);
-      final front = w / 2 * (1 + awningDepth * taper);
+      final reach = max(awningDepth, yard);
+      final front = w / 2 * (1 + reach * taper);
       canvas.save();
       canvas.clipPath(Path()
         ..addPolygon([
-          Offset(-front - 8, -awningDepth - 2),
-          Offset(front + 8, -awningDepth - 2),
+          Offset(-front - 8, -reach - 2),
+          Offset(front + 8, -reach - 2),
           Offset(back, size.y + 30),
           Offset(-back, size.y + 30),
         ], true));
@@ -495,11 +538,14 @@ class House extends PositionComponent {
   }
 
   void _paint(Canvas canvas, double w, Rect body) {
+    if (yard > 0) _yardAndFence(canvas, w);
     // Bóng đổ của nhà và mái bạt.
     final o = toLocal(sunShadow * 1.6, angle);
     canvas.drawRect(body.shift(o), _shadow);
 
     switch (roof) {
+      case RoofKind.clay || RoofKind.iron when yard > 0:
+        _villageRoof(canvas, w, body);
       case RoofKind.clay:
         canvas.drawRect(body, _clayDark ? paints.roofClayDark : paints.roofClay);
         // Hai mái dốc: nửa xa nắng tối hơn, nóc ở giữa.
@@ -530,6 +576,7 @@ class House extends PositionComponent {
     canvas.drawRect(body, _edge);
 
     final a = awning;
+    if (a != null && yard > 0) return;
     if (a != null) {
       final rect = Rect.fromLTWH(-w / 2 + 3, -awningDepth, w - 6, awningDepth);
       canvas.drawRect(rect.shift(toLocal(sunShadow * 0.6, angle)), _shadow);
@@ -548,6 +595,52 @@ class House extends PositionComponent {
       );
       canvas.drawRect(rect, _edge);
     }
+  }
+}
+
+extension on House {
+  /// Sân gạch đỏ trước nhà, tường rào trắng có cổng sắt ở giữa.
+  void _yardAndFence(Canvas canvas, double w) {
+    final y = yard;
+    canvas.drawRect(Rect.fromLTWH(-w / 2, -y, w, y), paints.pavingRed);
+    final o = toLocal(sunShadow * 0.5, angle);
+    final gate = w * 0.17;
+    for (final r in [Rect.fromLTRB(-w / 2, -y - 1.5, -gate, -y + 1.5), Rect.fromLTRB(gate, -y - 1.5, w / 2, -y + 1.5)]) {
+      canvas.drawRect(r.shift(o), House._shadow);
+      canvas.drawRect(r, House._fence);
+    }
+    for (final x in [-w / 2, w / 2]) {
+      final r = Rect.fromLTRB(x - 1.5, -y, x + 1.5, 0);
+      canvas.drawRect(r.shift(o), House._shadow);
+      canvas.drawRect(r, House._fence);
+    }
+    canvas.drawRect(Rect.fromLTRB(-gate, -y - 1, gate, -y + 1), House._gate);
+    for (final x in [-gate, gate]) {
+      canvas.drawRect(Rect.fromCenter(center: Offset(x, -y), width: 5, height: 5), House._fence);
+    }
+  }
+
+  /// Mái nhà cấp 4: nóc chạy dọc mặt tiền ở giữa chiều sâu; mái chéo có
+  /// thêm hai mái tam giác ở hai đầu (bờ chảy chéo từ góc lên đầu nóc).
+  void _villageRoof(Canvas canvas, double w, Rect body) {
+    final d = size.y;
+    canvas.drawRect(body, roof == RoofKind.clay ? (clayDark ? paints.roofClayDark : paints.roofClay) : paints.roofIron[ironTint]);
+    canvas.drawRect(Rect.fromLTWH(-w / 2, 0, w, d / 2), House._light);
+    canvas.drawRect(Rect.fromLTWH(-w / 2, d / 2, w, d / 2), House._shade);
+    final inset = hip ? min(w / 2 * 0.7, d * 0.3) : 0.0;
+    final rx = w / 2 - inset;
+    if (hip) {
+      canvas.drawPath(Path()..addPolygon([Offset(-w / 2, 0), Offset(-rx, d / 2), Offset(-w / 2, d)], true), House._light);
+      canvas.drawPath(Path()..addPolygon([Offset(w / 2, 0), Offset(rx, d / 2), Offset(w / 2, d)], true), House._shade);
+      final hipLine = Paint()
+        ..color = const Color(0xff7A3E2A)
+        ..strokeWidth = 3;
+      for (final (cx, cy) in [(-w / 2, 0.0), (-w / 2, d), (w / 2, 0.0), (w / 2, d)]) {
+        canvas.drawLine(Offset(cx, cy), Offset(cx < 0 ? -rx : rx, d / 2), hipLine);
+      }
+    }
+    final ridge = roof == RoofKind.clay ? House._ridge : (Paint()..color = const Color(0x55000000));
+    canvas.drawRect(Rect.fromLTRB(-rx, d / 2 - 2.5, rx, d / 2 + 2.5), ridge);
   }
 }
 

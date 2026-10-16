@@ -1,0 +1,377 @@
+{
+ "gate_panel": {
+  "kind": "gate_panel",
+  "text_box": [
+   0.19,
+   0.16,
+   0.81,
+   0.84
+  ],
+  "h_m": 2.0,
+  "w_m": 13.5,
+  "px": [
+   2025,
+   300
+  ]
+ },
+ "gate_pillar_l": {
+  "kind": "gate_pillar",
+  "h_m": 8.9,
+  "w_m": 1.62,
+  "px": [
+   162,
+   890
+  ]
+ },
+ "gate_pillar_r": {
+  "kind": "gate_pillar",
+  "h_m": 8.9,
+  "w_m": 1.62,
+  "px": [
+   162,
+   890
+  ]
+ },
+ "gate_pillar_side": {
+  "kind": "gate_pillar",
+  "h_m": 8.9,
+  "w_m": 1.62,
+  "px": [
+   162,
+   890
+  ]
+ },
+ "gate_base": {
+  "kind": "gate_base",
+  "h_m": 1.1,
+  "w_m": 2.2,
+  "px": [
+   264,
+   132
+  ]
+ },
+ "gate_dragons": {
+  "kind": "gate_ornament",
+  "h_m": 1.6,
+  "w_m": 5.6,
+  "px": [
+   616,
+   176
+  ]
+ },
+ "gate_lantern": {
+  "kind": "lantern",
+  "h_m": 1.55,
+  "w_m": 0.95,
+  "px": [
+   152,
+   248
+  ]
+ },
+ "gate_finial": {
+  "kind": "finial",
+  "h_m": 1.1,
+  "w_m": 0.7,
+  "px": [
+   112,
+   176
+  ]
+ },
+ "house3d_flagpole": {
+  "kind": "flagpole",
+  "h_m": 7.2,
+  "w_m": 1.5,
+  "px": [
+   135,
+   648
+  ]
+ },
+ "house3d_shrine": {
+  "kind": "shrine",
+  "h_m": 2.3,
+  "w_m": 0.9,
+  "px": [
+   144,
+   368
+  ]
+ },
+ "wall_window_1": {
+  "kind": "wall_decal",
+  "h_m": 1.75,
+  "w_m": 1.5,
+  "px": [
+   180,
+   210
+  ]
+ },
+ "wall_window_2": {
+  "kind": "wall_decal",
+  "h_m": 1.75,
+  "w_m": 1.5,
+  "px": [
+   180,
+   210
+  ]
+ },
+ "wall_ad_1": {
+  "kind": "wall_decal",
+  "h_m": 1.6,
+  "w_m": 4.2,
+  "px": [
+   462,
+   176
+  ]
+ },
+ "wall_ad_2": {
+  "kind": "wall_decal",
+  "h_m": 1.6,
+  "w_m": 4.2,
+  "px": [
+   462,
+   176
+  ]
+ },
+ "wall_ad_3": {
+  "kind": "wall_decal",
+  "h_m": 1.6,
+  "w_m": 4.2,
+  "px": [
+   462,
+   176
+  ]
+ },
+ "wall_ad_4": {
+  "kind": "wall_decal",
+  "h_m": 1.6,
+  "w_m": 4.2,
+  "px": [
+   462,
+   176
+  ]
+ },
+ "house3d_body_1": {
+  "kind": "house3d_body",
+  "eave_m": 3.25,
+  "facade_w_m": 7.6,
+  "lamps": [
+   [
+    0.2917,
+    0.1809
+   ],
+   [
+    0.7083,
+    0.1809
+   ]
+  ],
+  "h_m": 3.25,
+  "w_m": 7.598,
+  "px": [
+   851,
+   364
+  ]
+ },
+ "house3d_fence_1": {
+  "kind": "house3d_fence",
+  "facade_w_m": 7.6,
+  "h_m": 3.2,
+  "w_m": 7.607,
+  "px": [
+   851,
+   358
+  ]
+ },
+ "house3d_side_1": {
+  "kind": "wall_tile",
+  "tile_m": 3.0,
+  "px": [
+   512,
+   512
+  ]
+ },
+ "house3d_body_2": {
+  "kind": "house3d_body",
+  "eave_m": 3.25,
+  "facade_w_m": 7.0,
+  "lamps": [
+   [
+    0.2881,
+    0.1809
+   ],
+   [
+    0.7119,
+    0.1809
+   ]
+  ],
+  "h_m": 3.25,
+  "w_m": 7.0,
+  "px": [
+   784,
+   364
+  ]
+ },
+ "house3d_fence_2": {
+  "kind": "house3d_fence",
+  "facade_w_m": 7.0,
+  "h_m": 2.3,
+  "w_m": 6.989,
+  "px": [
+   784,
+   258
+  ]
+ },
+ "house3d_side_2": {
+  "kind": "wall_tile",
+  "tile_m": 3.0,
+  "px": [
+   512,
+   512
+  ]
+ },
+ "house3d_body_3": {
+  "kind": "house3d_body",
+  "eave_m": 3.25,
+  "facade_w_m": 8.0,
+  "lamps": [
+   [
+    0.2938,
+    0.1809
+   ],
+   [
+    0.7062,
+    0.1809
+   ]
+  ],
+  "h_m": 3.25,
+  "w_m": 8.0,
+  "px": [
+   896,
+   364
+  ]
+ },
+ "house3d_fence_3": {
+  "kind": "house3d_fence",
+  "facade_w_m": 8.0,
+  "h_m": 2.3,
+  "w_m": 7.988,
+  "px": [
+   896,
+   258
+  ]
+ },
+ "house3d_side_3": {
+  "kind": "wall_tile",
+  "tile_m": 3.0,
+  "px": [
+   512,
+   512
+  ]
+ },
+ "house3d_body_4": {
+  "kind": "house3d_body",
+  "eave_m": 3.25,
+  "facade_w_m": 6.6,
+  "lamps": [],
+  "h_m": 3.25,
+  "w_m": 6.598,
+  "px": [
+   739,
+   364
+  ]
+ },
+ "house3d_fence_4": {
+  "kind": "house3d_fence",
+  "facade_w_m": 6.6,
+  "h_m": 2.3,
+  "w_m": 6.588,
+  "px": [
+   739,
+   258
+  ]
+ },
+ "house3d_side_4": {
+  "kind": "wall_tile",
+  "tile_m": 3.0,
+  "px": [
+   512,
+   512
+  ]
+ },
+ "house3d_body_5": {
+  "kind": "house3d_body",
+  "eave_m": 3.25,
+  "facade_w_m": 7.2,
+  "lamps": [
+   [
+    0.2894,
+    0.1809
+   ],
+   [
+    0.7106,
+    0.1809
+   ]
+  ],
+  "h_m": 3.25,
+  "w_m": 7.196,
+  "px": [
+   806,
+   364
+  ]
+ },
+ "house3d_fence_5": {
+  "kind": "house3d_fence",
+  "facade_w_m": 7.2,
+  "h_m": 3.2,
+  "w_m": 7.204,
+  "px": [
+   806,
+   358
+  ]
+ },
+ "house3d_side_5": {
+  "kind": "wall_tile",
+  "tile_m": 3.0,
+  "px": [
+   512,
+   512
+  ]
+ },
+ "house3d_body_6": {
+  "kind": "house3d_body",
+  "eave_m": 3.25,
+  "facade_w_m": 7.4,
+  "lamps": [
+   [
+    0.2905,
+    0.1809
+   ],
+   [
+    0.7095,
+    0.1809
+   ]
+  ],
+  "h_m": 3.25,
+  "w_m": 7.402,
+  "px": [
+   829,
+   364
+  ]
+ },
+ "house3d_fence_6": {
+  "kind": "house3d_fence",
+  "facade_w_m": 7.4,
+  "h_m": 2.3,
+  "w_m": 7.39,
+  "px": [
+   829,
+   258
+  ]
+ },
+ "house3d_side_6": {
+  "kind": "wall_tile",
+  "tile_m": 3.0,
+  "px": [
+   512,
+   512
+  ]
+ }
+}
