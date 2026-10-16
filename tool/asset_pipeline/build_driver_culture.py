@@ -559,9 +559,20 @@ ITEMS = {
 }
 for _k in range(len(AD_TEXTS)):
     ITEMS[f'wall_ad_{_k + 1}'] = ((lambda k=_k: wall_ad(k)), {'kind': 'wall_decal'})
+def body_lamps(spec):
+    """Tâm đèn lồng trên mặt tiền [u, v] (tỉ lệ ảnh) để game thắp sáng ban đêm."""
+    if spec.get('old'):
+        return []
+    W = spec['width']
+    xs = np.linspace(0.85, W - 0.85, 4)
+    y = Y_EAVE - 0.32 - 0.1 - 0.16 * 1.05
+    return [[round(float(x) / W, 4), round((Y_EAVE - y) / Y_EAVE, 4)] for x in (xs[1] - 0.6, xs[2] + 0.6)]
+
+
 for _n, _spec in VILLAGE3D.items():
     ITEMS[f'house3d_body_{_n}'] = ((lambda sp=_spec: village_body(sp)), {'kind': 'house3d_body', 'eave_m': Y_EAVE,
-                                                                        'facade_w_m': _spec['width']})
+                                                                        'facade_w_m': _spec['width'],
+                                                                        'lamps': body_lamps(_spec)})
     ITEMS[f'house3d_fence_{_n}'] = ((lambda sp=_spec: village_fence(sp)), {'kind': 'house3d_fence',
                                                                           'facade_w_m': _spec['width']})
     ITEMS[f'house3d_side_{_n}'] = ((lambda sp=_spec: village_side(sp)), {'kind': 'wall_tile', 'tile_m': 3.0})

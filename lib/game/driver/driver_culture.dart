@@ -232,8 +232,13 @@ extension _DriverCulture on _DriverView {
     // Mặt tiền: ảnh nhà (hiên cột, cửa, đèn lồng); mép trái ảnh ở x dương.
     final img = body.image;
     final iw = img.width.toDouble(), ih = img.height.toDouble();
-    meshes.add(_mesh(_side(at, hw, 0, -hw, 0, 0, he), [Offset.zero, Offset(iw, 0), Offset(iw, ih), Offset(0, ih)], _clamp(img),
-        center: center, ambient: 0.84, diffuse: 0.22));
+    final facade = _mesh(_side(at, hw, 0, -hw, 0, 0, he), [Offset.zero, Offset(iw, 0), Offset(iw, ih), Offset(0, ih)], _clamp(img),
+        center: center, ambient: 0.84, diffuse: 0.22);
+    meshes.add(facade);
+    final lamps = body.info['lamps'];
+    if (facade != null && lamps is List) {
+      _lanterns(at, w, [for (final l in lamps) if (l is List) ((l[0] as num).toDouble(), (1 - (l[1] as num).toDouble()) * he)], door: he * 0.45);
+    }
     // Gầm mái hắt phía trước (nhìn từ dưới lên) và diềm mái.
     final eaveX = hip ? hw + ov : hw + ovs;
     meshes.add(_mesh([at(-eaveX, -ov, ze - 0.06 * u), at(eaveX, -ov, ze - 0.06 * u), at(eaveX, 0, he), at(-eaveX, 0, he)], const [
@@ -382,8 +387,19 @@ extension _DriverCulture on _DriverView {
       meshes.add(_mesh([at(-hw, y0, z0), at(hw, y0, z0), gable, gable],
           [Offset(0, (zr - z0) * rep), Offset(w * rep, (zr - z0) * rep), Offset(hw * rep, 0), Offset(hw * rep, 0)], wallPaint, center: center));
     }
-    meshes.add(_mesh(_side(at, hw, 0, -hw, 0, 0, ht), [Offset.zero, Offset(img.width.toDouble(), 0), Offset(img.width.toDouble(), img.height.toDouble()),
-      Offset(0, img.height.toDouble())], _clamp(img), center: center, ambient: 0.84, diffuse: 0.22));
+    final facade = _mesh(_side(at, hw, 0, -hw, 0, 0, ht), [Offset.zero, Offset(img.width.toDouble(), 0),
+      Offset(img.width.toDouble(), img.height.toDouble()), Offset(0, img.height.toDouble())], _clamp(img), center: center, ambient: 0.84, diffuse: 0.22);
+    meshes.add(facade);
+    if (facade != null) {
+      // Đèn lồng treo trước nhà ống (theo ảnh mặt tiền: hàng dưới mái hiên
+      // tầng trệt, nhà trên hai tầng thêm một hàng ở ban công tầng hai).
+      final fw = ((art.info['facade_w_m'] as num?)?.toDouble() ?? w / u);
+      final row1 = 0.34 / fw;
+      _lanterns(at, w, [
+        if (const {1, 2, 3, 5}.contains(key)) ...[(row1, 3.3 * u), (1 - row1, 3.3 * u)],
+        if (const {1, 3, 5}.contains(key)) ...[(0.25, 6.6 * u), (0.75, 6.6 * u)],
+      ], door: 1.4 * u);
+    }
     // Mái bạt che vỉa hè: dốc ra phía đường, sọc màu, diềm rủ.
     final aw = h.awning;
     if (aw != null) {
@@ -410,6 +426,30 @@ extension _DriverCulture on _DriverView {
         }
       }));
     }
+  }
+
+  /// Ban đêm: đèn lồng trước nhà toả sáng đỏ, cửa nhà hắt ánh đèn vàng ấm
+  /// (đêm cuối năm nhà nào cũng sáng đèn). [lamps]: (u theo ảnh, độ cao).
+  void _lanterns(_P3 Function(double, double, double) at, double w, List<(double, double)> lamps, {required double door}) {
+    final dark = game.darkness;
+    if (dark < 0.25) return;
+    const u = _DriverView._u;
+    void glow(double lx, double z, double size, Color color) {
+      final p = at(lx, -0.4 * u, z);
+      final q = cam.toCam(p.$1, p.$2, p.$3);
+      if (q.z < DriverCamera.near * 2 || q.z > cam.far) return;
+      final o = cam.project(q);
+      if (o.dx < -50 || o.dx > cam.width + 50 || o.dy < -50 || o.dy > cam.height + 50) return;
+      final r = min(cam.focal / q.z * size, cam.height * 0.16);
+      if (r < 1.5) return;
+      final k = (dark - 0.25) / 0.75 * _fade(q.z);
+      _glows.add((o, r, Color.lerp(const Color(0xff000000), color, k)!));
+    }
+
+    for (final (fu, z) in lamps) {
+      glow(w / 2 - fu * w, z, 0.5 * u, const Color(0xffE8441F));
+    }
+    glow(0, door, 1.5 * u, const Color(0xff8A6232));
   }
 
   /// Cửa sổ nhỏ, chữ quảng cáo sơn tay trên tường hông nhà ống (lộ ra ở đầu
