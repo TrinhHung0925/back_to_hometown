@@ -48,7 +48,8 @@ class HomePlayController extends GetxController {
   }
 
   Future<void> startDaily() async {
-    await Get.toNamed(AppPage.game.routeName, arguments: DailyService.setupFor(challenge.value));
+    // Mở bản đồ lộ trình trước (chọn bản đồ, trời) rồi mới xuất phát.
+    await Get.toNamed(AppPage.planTrip.routeName, arguments: challenge.value);
     refreshStatus();
   }
 }
@@ -344,7 +345,7 @@ class _DailyCard extends StatelessWidget {
                     children: [
                       Image.asset(Img.icPlay, width: 15.h, height: 15.h, color: AppColors.ff7F0A14),
                       SizedBox(width: 5.h),
-                      AppText.manrope(best == null ? 'Chơi' : 'Chơi lại', fontSize: 14.h, fontWeight: FontWeight.w800, color: AppColors.ff7F0A14),
+                      AppText.manrope(best == null ? 'Lên đường' : 'Chơi lại', fontSize: 14.h, fontWeight: FontWeight.w800, color: AppColors.ff7F0A14),
                     ],
                   ),
                 ),

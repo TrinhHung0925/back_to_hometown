@@ -27,6 +27,7 @@ import '../../service/daily_service.dart';
 import '../../service/local_service.dart';
 import '../../service/route_service.dart';
 import '../../service/trip_service.dart';
+import '../home/home_play_cards.dart';
 
 class GameController extends GetxController {
   late StageSetup setup;
@@ -609,6 +610,8 @@ class GameController extends GetxController {
 
   @override
   void onClose() {
+    // Về màn chính: cập nhật thẻ Tập lái / Thử thách hôm nay.
+    if (Get.isRegistered<HomePlayController>()) Get.find<HomePlayController>().refreshStatus();
     _noticeTimer?.cancel();
     _cruiseTipTimer?.cancel();
     _chatTimer?.cancel();

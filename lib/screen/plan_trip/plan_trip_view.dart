@@ -9,12 +9,13 @@ import '../../common/app_button.dart';
 import '../../dialog/map_picker_dialog.dart';
 import '../../game/logic/trip_clock.dart';
 import '../../game/vehicle_spec.dart';
+import '../../model/difficulty.dart';
 import '../../model/trip.dart';
 import '../../resource/app_colors.dart';
 import '../../resource/app_resource.dart';
 import '../../resource/app_text.dart';
 import '../../service/audio_service.dart';
-import '../../service/local_service.dart';
+import '../../service/daily_service.dart';
 import '../../service/route_service.dart';
 import 'family_toggle.dart';
 import 'plan_trip_controller.dart';
@@ -138,7 +139,7 @@ class _BackChip extends StatelessWidget {
               child: RotatedBox(quarterTurns: 2, child: Image.asset(Img.icPlay, width: 14.h, height: 14.h)),
             ),
             SizedBox(width: 10.h),
-            AppText.manrope('Lên lộ trình', fontSize: 16.h, fontWeight: FontWeight.w800, color: AppColors.ffFFFFFF),
+            AppText.manrope(controller.locked ? 'Thử thách hôm nay' : 'Lên lộ trình', fontSize: 16.h, fontWeight: FontWeight.w800, color: AppColors.ffFFFFFF),
           ],
         ),
       ),
@@ -311,9 +312,11 @@ class _Panel extends StatelessWidget {
               ],
             ),
             SizedBox(height: 8.h),
-            controller.coachMode
-                ? const _CoachInfo()
-                : _VehicleSwitch(value: controller.vehicle.value, onChanged: controller.setVehicle),
+            controller.locked
+                ? _DailyInfo(challenge: controller.daily!)
+                : controller.coachMode
+                    ? const _CoachInfo()
+                    : _VehicleSwitch(value: controller.vehicle.value, onChanged: controller.setVehicle),
             SizedBox(height: 6.h),
             MapSkyRow(theme: controller.mapTheme.value, sky: controller.sky.value, onPickMap: controller.pickMap, onSky: controller.setSky),
             SizedBox(height: 8.h),
@@ -322,13 +325,13 @@ class _Panel extends StatelessWidget {
             Expanded(
               child: plan == null
                   ? _Steps(hasFrom: from != null, hasTo: to != null)
-                  : _PlanSummary(plan: plan, departure: controller.departureMinutes!, family: controller.family.value),
+                  : _PlanSummary(plan: plan, departure: controller.departureMinutes!, difficulty: controller.difficulty, family: controller.family.value),
             ),
             SizedBox(height: 8.h),
             Row(
               children: [
                 // Chở cả nhà: chọn ngay cạnh nút Xuất phát (đã có lộ trình).
-                if (plan != null && !controller.coachMode) ...[
+                if (plan != null && !controller.coachMode && !controller.locked) ...[
                   FamilyToggle(value: controller.family.value, onChanged: controller.setFamily),
                   SizedBox(width: 6.h),
                 ],
@@ -502,6 +505,64 @@ class _VehicleSwitch extends StatelessWidget {
 }
 
 /// Chế độ xe khách: thay cho nút chọn loại xe.
+/// Thử thách hôm nay: xe và độ khó cố định theo ngày (thay cho ô chọn xe).
+class _DailyInfo extends StatelessWidget {
+  const _DailyInfo({required this.challenge});
+
+  final DailyChallenge challenge;
+
+  @override
+  Widget build(BuildContext context) {
+    final vehicle = challenge.route.vehicle;
+    return Container(
+      height: 46.h,
+      padding: EdgeInsets.symmetric(horizontal: 8.h),
+      decoration: BoxDecoration(color: AppColors.ff7F0A14, borderRadius: BorderRadius.circular(12.h)),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 70.h,
+            child: Center(
+              child: RotatedBox(
+                quarterTurns: 1,
+                child: Image.asset(
+                  switch (vehicle) {
+                    VehicleKind.motorbike => Img.imgScooterPlayer,
+                    VehicleKind.car => Img.imgCarPlayer,
+                    VehicleKind.bus => Img.imgBusPlayer,
+                  },
+                  height: vehicle == VehicleKind.motorbike ? 44.h : 64.h,
+                ),
+              ),
+            ),
+          ),
+          SizedBox(width: 6.h),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppText.manrope(
+                  '${vehicle.title} · ${challenge.difficulty.title}',
+                  fontSize: 14.h,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.ffFFFFFF,
+                ),
+                AppText.manrope(
+                  'Chặng cố định trong ngày, mọi người cùng đua',
+                  fontSize: 9.5.h,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.ffFFFFFF.withValues(alpha: 0.85),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _CoachInfo extends StatelessWidget {
   const _CoachInfo();
 
@@ -598,10 +659,11 @@ class _Steps extends StatelessWidget {
 }
 
 class _PlanSummary extends StatelessWidget {
-  const _PlanSummary({required this.plan, required this.departure, this.family = false});
+  const _PlanSummary({required this.plan, required this.departure, required this.difficulty, this.family = false});
 
   final TripPlan plan;
   final double departure;
+  final Difficulty difficulty;
 
   /// Chở cả nhà (vợ + bé) về quê.
   final bool family;
@@ -653,7 +715,7 @@ class _PlanSummary extends StatelessWidget {
             spacing: 4.h,
             runSpacing: 4.h,
             children: [
-              fact('Độ khó', LocalService.shared.getDifficulty().title),
+              fact('Độ khó', difficulty.title),
               if (family) fact('Đi cùng', 'vợ + bé Bin'),
               fact('Lái thật', hours(plan.realHours)),
               fact('Xuất phát', '${TripClock(minutes: departure).label} · ${TripClock(minutes: departure).dayLabel}'),
