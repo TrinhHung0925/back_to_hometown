@@ -4,9 +4,11 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 
 import '../../game/stage.dart';
+import '../../game/ve_que_game.dart';
 import '../../resource/app_colors.dart';
 import '../../resource/app_resource.dart';
 import 'action_buttons.dart';
+import 'breath_test_overlay.dart';
 import 'chat_overlay.dart';
 import 'game_controller.dart';
 import 'game_hud.dart';
@@ -207,6 +209,12 @@ class _GameViewState extends State<GameView> {
             Obx(() {
               if (controller.phase.value != GamePhase.incident) return const SizedBox.shrink();
               return Positioned.fill(child: IncidentOverlay(controller: controller));
+            }),
+            // Chốt kiểm tra nồng độ cồn đêm 30 Tết: bảng thổi.
+            Obx(() {
+              final check = controller.phase.value == GamePhase.resting ? controller.game.breathCheck : null;
+              if (check == null) return const SizedBox.shrink();
+              return Positioned.fill(child: BreathTestOverlay(key: ValueKey(check.clock), controller: controller, check: check));
             }),
             Obx(() {
               if (!controller.chatOpen.value) return const SizedBox.shrink();

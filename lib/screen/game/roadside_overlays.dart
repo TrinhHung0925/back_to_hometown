@@ -19,6 +19,7 @@ import '../../resource/app_resource.dart';
 import '../../resource/app_text.dart';
 import 'game_controller.dart';
 import 'road_icons.dart';
+import 'tet_night_widgets.dart';
 
 /// Nút theo tình huống, hiện cạnh cụm nút lái: ghé quán / đổ xăng / vá xe
 /// khi dừng sát lề trước quán, quay đầu khi đủ chậm, xử lý hết xăng / lốp xẹp.
@@ -227,6 +228,7 @@ class ReversedChip extends StatelessWidget {
         if (hud.peach != null)
           _chip(RoadGlyph.blossom, hud.peach! > 0 ? 'Cành đào ${hud.peach}%' : 'Cành đào gãy mất rồi', hud.peach! >= 60 ? AppColors.ffD94F7A : AppColors.ff5B6169),
         if (hud.fog) _chip(RoadGlyph.fog, 'Sương mù — bật đèn, đi chậm', AppColors.ff5B6169),
+        ...NightColdChips.of(hud.cold),
       ];
       if (chips.isEmpty) return const SizedBox.shrink();
       return Column(
@@ -429,6 +431,7 @@ class StallSheet extends StatelessWidget {
                         enabled: lixi >= GameConfig.raincoatLixi,
                         onPressed: controller.buyRaincoat,
                       ),
+                    SeasonalOffers(controller: controller, lixi: lixi),
                   ],
                   SizedBox(height: 6.h),
                   Row(

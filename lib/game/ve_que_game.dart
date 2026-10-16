@@ -18,6 +18,7 @@ import 'components/police_component.dart';
 import 'components/rain_layer.dart';
 import 'components/road_features.dart';
 import 'components/road_renderer.dart';
+import 'components/road_signs.dart';
 import 'components/scenery_layer.dart';
 import 'components/stall_layer.dart';
 import 'components/traffic_layer.dart';
@@ -27,8 +28,10 @@ import 'driver/driver_art.dart';
 import 'driver/driver_camera.dart';
 import 'driver/ground_sink.dart';
 import 'game_config.dart';
+import 'logic/alcohol.dart';
 import 'logic/animals.dart';
 import 'logic/chase.dart';
+import 'logic/cold_weather.dart';
 import 'logic/collision.dart';
 import 'logic/cross_traffic.dart';
 import 'logic/gas_chat.dart';
@@ -48,6 +51,7 @@ import 'vehicle_spec.dart';
 part 'driver/driver_view.dart';
 part 'event_layers.dart';
 part 'ferry.dart';
+part 'night_cold.dart';
 part 'tet_events.dart';
 
 /// Một chặng lái xe. Flutter (GameController) điều khiển qua các hàm
@@ -122,7 +126,7 @@ class VeQueGame extends FlameGame {
     styleAt: setup.theme == MapTheme.mountain
         ? (s) => layout.kindAt(s) == RoadKind.highway ? CurveStyle.mountain : layout.curveStyleAt(s)
         : layout.curveStyleAt,
-    keepStraight: (a, b) => layout.featureWithin(a, b, margin: 200) || _events.keepStraight(a, b),
+    keepStraight: (a, b) => layout.featureWithin(a, b, margin: 200) || _events.keepStraight(a, b) || _nightCold.keepStraight(a, b),
   );
   late final PlayerPhysics player = PlayerPhysics(
     spec: spec,
@@ -259,6 +263,9 @@ class VeQueGame extends FlameGame {
   /// Chuyện dọc đường: sương mù, gió biển, tắc đường, xe tải mất phanh,
   /// điện thoại, khách đi nhờ, cành đào.
   late final _TetEvents _events = _TetEvents(this);
+
+  /// Đêm 30 Tết, trời rét: chốt đo nồng độ cồn, sương muối, máy nguội, tay cóng.
+  late final _NightCold _nightCold = _NightCold(this);
   _RestStep _restStep = _RestStep.parking;
   double _restT = 0;
   List<String> _restChatter = const [];
@@ -439,6 +446,7 @@ class VeQueGame extends FlameGame {
       _speech,
     ]);
     await camera.viewport.add(_rainStreaks);
+    await _nightCold.onLoad();
     await add(_driver);
     _updateCamera(0);
     _syncVisuals();
@@ -594,6 +602,7 @@ class VeQueGame extends FlameGame {
       _stepAlert(dt);
       _stepCondition(dt);
       _events.preMove(dt);
+      _nightCold.preMove(dt);
       _stepApproach(dt);
       _stepAssist();
       player.update(dt);
@@ -609,6 +618,7 @@ class VeQueGame extends FlameGame {
     _stepOvertakes(dt);
     _stepPickups(dt);
     _events.step(dt);
+    _nightCold.step(dt);
     _stepAnimals(dt);
     _stepNails();
     _stepStallNotices();
@@ -777,7 +787,7 @@ class VeQueGame extends FlameGame {
     if (player.speed > 20) {
       final night = nightLevel > 0.5 ? GameConfig.alertNightFactor : 1.0;
       // Ướt sũng, lạnh run thì mau mệt.
-      final cold = 1 + (GameConfig.soakAlertFactor - 1) * soaked;
+      final cold = (1 + (GameConfig.soakAlertFactor - 1) * soaked) * _nightCold.alertFactor;
       final before = alert;
       alert = max(0, alert - GameConfig.alertDecayPerSecond * night * cold * setup.difficulty.drowsiness * dt);
       if (before >= GameConfig.alertDrowsy && alert < GameConfig.alertDrowsy) {
@@ -1464,6 +1474,7 @@ class VeQueGame extends FlameGame {
       '${item.name}${item.price > 0 ? ' (−${item.price} lì xì)' : ''} · tỉnh táo +${item.alert.round()} · ${item.minutes.round()} phút',
       kind: NoticeKind.money,
     ));
+    _nightCold.ordered(item);
     if (clock.isOver) leaveStall();
   }
 
@@ -1643,6 +1654,7 @@ class VeQueGame extends FlameGame {
   (double, double) get _doorAt => (player.s, player.d + _restStall!.side * (spec.width / 2 + 6));
 
   void _stepResting(double dt) {
+    if (_nightCold.stepResting(dt)) return;
     if (_job != null) {
       _stepJob(dt);
       return;
@@ -1860,6 +1872,7 @@ class VeQueGame extends FlameGame {
     lines.add('$owner: Từ đây về ${setup.toName} còn chừng ${((finishS - s) / GameConfig.unitsPerKm).round()} cây nữa.');
     if (nightLevel > 0.3) lines.add('$owner: Tối rồi, nhớ bật đèn mà đi, đường quê tối lắm.');
     if (alert < GameConfig.alertDrowsy) lines.add('$owner: Mắt đỏ hết rồi kìa, nghỉ thêm chút đi, buồn ngủ là nguy lắm.');
+    lines.addAll(_nightCold.chatter(stall, owner));
     return lines;
   }
 
@@ -2982,6 +2995,7 @@ class VeQueGame extends FlameGame {
       _overtakeArrow.placeOn(road, _camLeftS + 60, Lanes.center(_events.truckWarn > 0 ? 0 : _overtakeLane));
     }
     _syncNight(night);
+    _nightCold.nightLights(_night);
   }
 
   /// Người lái đã xuống xe (đang đi bộ / ngồi quán).
@@ -3279,6 +3293,7 @@ class VeQueGame extends FlameGame {
       riderMeters: rider == null || rider.overshot ? null : _meters(max(0.0, rider.dropS - player.s)),
       peach: _events.peach >= 0 ? _events.peach.round() : null,
       fog: _events.fog > 0.3,
+      cold: _nightCold.hud,
       day: clock.day,
       stallMeters: ahead == null ? null : (max(0.0, (ahead.s - player.s) * dir) / GameConfig.unitsPerKm * 100).round() * 10,
       reversed: dir < 0,

@@ -113,6 +113,19 @@ abstract class AppColors {
   static const Color ff23408E = Color(0xff23408E);
   static const Color ffC4D23E = Color(0xffC4D23E);
 
+  /// Đêm 30 Tết, trời rét: chip rét xanh thép, nền đêm, bảng thổi nồng độ
+  /// cồn (máy đo thân than chì viền vàng, màn LCD xanh, vạch số tối).
+  static const Color ff3E6A92 = Color(0xff3E6A92);
+  static const Color ff0B1020 = Color(0xff0B1020);
+  static const Color ff16233A = Color(0xff16233A);
+  static const Color ff0E1626 = Color(0xff0E1626);
+  static const Color ff23262C = Color(0xff23262C);
+  static const Color ff3A3E46 = Color(0xff3A3E46);
+  static const Color ffE8B81E = Color(0xffE8B81E);
+  static const Color ffA8D88C = Color(0xffA8D88C);
+  static const Color ff7FB46A = Color(0xff7FB46A);
+  static const Color ff1E2A1A = Color(0xff1E2A1A);
+
   /// Thẻ bảng: nền kem nhạt, viền đậm.
   static const Color ffFFFBF2 = Color(0xffFFFBF2);
   static const Color ffF1E7D2 = Color(0xffF1E7D2);

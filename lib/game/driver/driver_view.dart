@@ -124,13 +124,16 @@ class _DriverView extends Component {
     final ground = PerspectiveGroundSink(canvas, cam);
     game._roadRenderer.paintGround(ground);
     _groundExtras(ground);
+    _coldGround(ground);
     _haze(canvas, big);
     _fog(canvas, big);
     _objects(canvas, a);
     canvas.restore();
     _night(canvas, size);
     _rainFx(canvas, size);
+    _coldScene(canvas, size);
     _cockpit(canvas, size, a);
+    _coldBreath(canvas, size);
   }
 
   double get _night01 => game.nightLevel;
@@ -287,6 +290,7 @@ class _DriverView extends Component {
     _stalls(items, a, camS);
     _features(items, a, camS);
     _eventProps(items, a, camS);
+    _tetNightProps(items, a, camS);
     _critters(items, a);
     _traffic(items, a);
     items.sort((x, y) => y.depth.compareTo(x.depth));
