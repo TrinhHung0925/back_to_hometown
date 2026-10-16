@@ -109,7 +109,7 @@ class PlanTripController extends GetxController {
   }
 
   void setVehicle(VehicleKind value) {
-    if (coachMode || locked) return;
+    if (coachMode) return;
     vehicle.value = value;
     _replan();
   }
@@ -147,7 +147,7 @@ class PlanTripController extends GetxController {
       // Thử thách: giữ nguyên chặng, hạt giống, độ khó; bản đồ và trời theo lựa chọn ở đây.
       final from = fromId.value;
       final to = toId.value;
-      final setup = DailyService.setupFor(challenge).copyWith(
+      final setup = DailyService.setupFor(challenge, vehicle: vehicle.value).copyWith(
         theme: mapTheme.value.resolve(from == null ? null : routes.place(from), to == null ? null : routes.place(to)),
         sky: sky.value,
       );

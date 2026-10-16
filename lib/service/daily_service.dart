@@ -193,16 +193,20 @@ class DailyService {
   }
 
   /// Chặng chơi của thử thách (lộ trình thật trên bản đồ).
-  static TripStage stageOf(DailyRoute route) => RouteService.shared.plan(route.fromId, route.toId, route.vehicle)!.stages.first;
+  static TripStage stageOf(DailyRoute route, [VehicleKind? vehicle]) =>
+      RouteService.shared.plan(route.fromId, route.toId, vehicle ?? route.vehicle)!.stages.first;
 
   /// Dựng chặng cho thử thách: giờ xuất phát tính như chuyến một chặng ở độ
   /// khó của ngày, chở cành đào nếu đi xe máy.
-  static StageSetup setupFor(DailyChallenge challenge) {
+  /// [vehicle]: xe máy hay ô tô do người chơi chọn ở màn lộ trình (mặc định
+  /// theo thử thách).
+  static StageSetup setupFor(DailyChallenge challenge, {VehicleKind? vehicle}) {
     final route = challenge.route;
-    final stage = stageOf(route);
+    final kind = vehicle ?? route.vehicle;
+    final stage = stageOf(route, kind);
     final to = RouteService.shared.place(route.toId);
     return StageSetup(
-      vehicle: route.vehicle,
+      vehicle: kind,
       fromName: stage.fromName,
       toName: stage.toName,
       sections: stage.sections,
@@ -210,7 +214,7 @@ class DailyService {
       startClockMinutes: TripClock.departureFor(TripClock.allowedMinutes(stage.km, 1, challenge.difficulty)),
       startLixi: 10,
       startFuel: challenge.startFuel,
-      startPeach: route.vehicle == VehicleKind.motorbike ? 100 : -1,
+      startPeach: kind == VehicleKind.motorbike ? 100 : -1,
       seed: challenge.seed,
       // Từ Nha Trang trở vào (vĩ tuyến ~12,8°): lúa chín vàng dịp Tết.
       south: 32 - to.y < 12.8,

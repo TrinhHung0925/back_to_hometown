@@ -15,7 +15,6 @@ import '../../resource/app_colors.dart';
 import '../../resource/app_resource.dart';
 import '../../resource/app_text.dart';
 import '../../service/audio_service.dart';
-import '../../service/daily_service.dart';
 import '../../service/route_service.dart';
 import 'family_toggle.dart';
 import 'plan_trip_controller.dart';
@@ -73,7 +72,7 @@ class _PlanTripViewState extends State<PlanTripView> {
               ),
             ),
           ),
-          Positioned(left: left, top: top, child: _BackChip(title: controller.locked ? 'Thử thách hôm nay' : 'Lên lộ trình', onBack: controller.onBack)),
+          Positioned(left: left, top: top, child: _BackChip(title: 'Lên lộ trình', onBack: controller.onBack)),
           Positioned(
             left: left + 150.h,
             right: right + panelW + gap,
@@ -313,11 +312,9 @@ class _Panel extends StatelessWidget {
               ],
             ),
             SizedBox(height: 8.h),
-            controller.locked
-                ? _DailyInfo(challenge: controller.daily!)
-                : controller.coachMode
-                    ? const _CoachInfo()
-                    : _VehicleSwitch(value: controller.vehicle.value, onChanged: controller.setVehicle),
+            controller.coachMode
+                ? const _CoachInfo()
+                : _VehicleSwitch(value: controller.vehicle.value, onChanged: controller.setVehicle, bus: controller.locked),
             SizedBox(height: 6.h),
             MapSkyRow(theme: controller.mapTheme.value, sky: controller.sky.value, onPickMap: controller.pickMap, onSky: controller.setSky),
             SizedBox(height: 8.h),
@@ -445,9 +442,12 @@ class _SwapButton extends StatelessWidget {
 }
 
 class _VehicleSwitch extends StatelessWidget {
-  const _VehicleSwitch({required this.value, required this.onChanged});
+  const _VehicleSwitch({required this.value, required this.onChanged, this.bus = false});
 
   final VehicleKind value;
+
+  /// Có cả xe khách (thử thách hôm nay chọn xe ngay ở đây).
+  final bool bus;
   final ValueChanged<VehicleKind> onChanged;
 
   @override
@@ -465,7 +465,7 @@ class _VehicleSwitch extends StatelessWidget {
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 160),
             height: 46.h,
-            padding: EdgeInsets.symmetric(horizontal: 8.h),
+            padding: EdgeInsets.symmetric(horizontal: bus ? 4.h : 8.h),
             decoration: BoxDecoration(
               color: selected ? AppColors.ffD62828 : AppColors.ffF2F3F5,
               borderRadius: BorderRadius.circular(12.h),
@@ -474,17 +474,18 @@ class _VehicleSwitch extends StatelessWidget {
               children: [
                 // Hình xe gốc quay đầu lên trên: xoay cho chạy sang phải.
                 SizedBox(
-                  width: 40.h,
-                  child: Center(child: RotatedBox(quarterTurns: 1, child: Image.asset(image, height: length))),
+                  width: bus ? 30.h : 40.h,
+                  child: Center(child: RotatedBox(quarterTurns: 1, child: Image.asset(image, height: bus ? length * 0.75 : length))),
                 ),
-                SizedBox(width: 6.h),
+                SizedBox(width: bus ? 3.h : 6.h),
                 Expanded(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      AppText.manrope(label, fontSize: 14.h, fontWeight: FontWeight.w800, color: selected ? AppColors.ffFFFFFF : AppColors.ff1B1D22),
-                      AppText.manrope(sub, fontSize: 9.5.h, fontWeight: FontWeight.w600, color: selected ? AppColors.ffFFFFFF.withValues(alpha: 0.85) : AppColors.ff6B7280),
+                      AppText.manrope(label, fontSize: bus ? 12.h : 14.h, fontWeight: FontWeight.w800, maxLines: 1, color: selected ? AppColors.ffFFFFFF : AppColors.ff1B1D22),
+                      if (!bus)
+                        AppText.manrope(sub, fontSize: 9.5.h, fontWeight: FontWeight.w600, color: selected ? AppColors.ffFFFFFF.withValues(alpha: 0.85) : AppColors.ff6B7280),
                     ],
                   ),
                 ),
@@ -500,70 +501,16 @@ class _VehicleSwitch extends StatelessWidget {
         option(VehicleKind.motorbike, 'Xe máy', 'Lách giỏi', Img.imgScooterPlayer, 34.h),
         SizedBox(width: 6.h),
         option(VehicleKind.car, 'Ô tô', 'Đi cao tốc', Img.imgCarPlayer, 40.h),
+        if (bus) ...[
+          SizedBox(width: 6.h),
+          option(VehicleKind.bus, 'Xe khách', 'Đón khách', Img.imgBusPlayer, 44.h),
+        ],
       ],
     );
   }
 }
 
 /// Chế độ xe khách: thay cho nút chọn loại xe.
-/// Thử thách hôm nay: xe và độ khó cố định theo ngày (thay cho ô chọn xe).
-class _DailyInfo extends StatelessWidget {
-  const _DailyInfo({required this.challenge});
-
-  final DailyChallenge challenge;
-
-  @override
-  Widget build(BuildContext context) {
-    final vehicle = challenge.route.vehicle;
-    return Container(
-      height: 46.h,
-      padding: EdgeInsets.symmetric(horizontal: 8.h),
-      decoration: BoxDecoration(color: AppColors.ff7F0A14, borderRadius: BorderRadius.circular(12.h)),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 70.h,
-            child: Center(
-              child: RotatedBox(
-                quarterTurns: 1,
-                child: Image.asset(
-                  switch (vehicle) {
-                    VehicleKind.motorbike => Img.imgScooterPlayer,
-                    VehicleKind.car => Img.imgCarPlayer,
-                    VehicleKind.bus => Img.imgBusPlayer,
-                  },
-                  height: vehicle == VehicleKind.motorbike ? 44.h : 64.h,
-                ),
-              ),
-            ),
-          ),
-          SizedBox(width: 6.h),
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                AppText.manrope(
-                  '${switch (vehicle) { VehicleKind.motorbike => 'Xe máy', VehicleKind.car => 'Ô tô', VehicleKind.bus => 'Xe khách' }} · ${challenge.difficulty.title}',
-                  fontSize: 14.h,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.ffFFFFFF,
-                ),
-                AppText.manrope(
-                  'Chặng cố định trong ngày, mọi người cùng đua',
-                  fontSize: 9.5.h,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.ffFFFFFF.withValues(alpha: 0.85),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _CoachInfo extends StatelessWidget {
   const _CoachInfo();
 

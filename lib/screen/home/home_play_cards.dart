@@ -59,6 +59,9 @@ class HomePlayController extends GetxController {
 class HomePlayCards extends StatefulWidget {
   const HomePlayCards({super.key});
 
+  /// Hiện thẻ "Thử thách hôm nay" trên màn chính (đang tắt theo ý người dùng).
+  static const bool showDaily = false;
+
   @override
   State<HomePlayCards> createState() => _HomePlayCardsState();
 }
@@ -81,14 +84,18 @@ class _HomePlayCardsState extends State<HomePlayCards> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Obx(() => _TutorialCard(done: controller.tutorialDone.value, onPressed: controller.startTutorial)),
-          SizedBox(height: 10.h),
-          Obx(() => _DailyCard(
-                challenge: controller.challenge.value,
-                km: controller.dailyKm.value,
-                best: controller.best.value,
-                streak: controller.streak.value,
-                onPressed: controller.startDaily,
-              )),
+          // Thử thách hôm nay: người dùng muốn màn chính chỉ có "Về quê" —
+          // thẻ tạm ẩn, bật lại bằng cờ này.
+          if (HomePlayCards.showDaily) ...[
+            SizedBox(height: 10.h),
+            Obx(() => _DailyCard(
+                  challenge: controller.challenge.value,
+                  km: controller.dailyKm.value,
+                  best: controller.best.value,
+                  streak: controller.streak.value,
+                  onPressed: controller.startDaily,
+                )),
+          ],
         ],
       ),
     );
