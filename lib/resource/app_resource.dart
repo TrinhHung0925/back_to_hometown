@@ -167,6 +167,9 @@ abstract class Img {
   static const String texRock = '$assetsImgPath/tex_rock.jpg';
   static const String texForest = '$assetsImgPath/tex_forest.jpg';
   static const String texScrub = '$assetsImgPath/tex_scrub.jpg';
+
+  /// Vân sương muối phủ ruộng lúc rét (tool/asset_pipeline/build_tet_night_items.py).
+  static const String texFrost = '$assetsImgPath/tex_frost.png';
   static final List<String> palmsCoconut = [for (var i = 1; i <= 3; i++) '$assetsImgPath/img_palm_coconut_$i.png'];
   static final List<String> palmsNipa = [for (var i = 1; i <= 2; i++) '$assetsImgPath/img_palm_nipa_$i.png'];
   static final List<String> casuarinas = [for (var i = 1; i <= 3; i++) '$assetsImgPath/img_tree_casuarina_$i.png'];
@@ -333,6 +336,13 @@ abstract class Img {
   static final String imgItemRaincoat = item('ao_mua');
   static final String imgItemNozzle = item('voi_xang');
   static final String imgItemBottle = item('chai_xang');
+
+  /// Chén rượu mừng xuân, đôi găng tay len (đêm 30 Tết, trời rét).
+  static final String imgItemToast = item('ruou');
+  static final String imgItemGloves = item('gang_tay');
+
+  /// CSGT cầm máy đo nồng độ cồn (bảng thổi ở chốt kiểm tra).
+  static const String imgOfficerBreath = 'assets/images/driver/police_officer_breath.png';
   static List<String> get items => [
         for (final art in const [
           'tra_da', 'nuoc_mia', 'nuoc_mia_tac', 'ca_phe', 'bac_xiu', 'huong_duong', 'ghe_nhua', 'vong', 'banh_mi', //
@@ -459,6 +469,12 @@ abstract class AppAudio {
   static const String sfxWindGust = 'sfx_wind_gust.wav';
   static const String sfxTruckHorn = 'sfx_truck_horn.wav';
   static const String sfxFireworks = 'sfx_fireworks.wav';
+
+  /// Đề ô tô buổi sáng rét, máy đo nồng độ cồn kêu bíp, hơi thổi vào ống
+  /// (tool/asset_pipeline/build_tet_night_audio.py).
+  static const String sfxStarterCrank = 'sfx_starter_crank.wav';
+  static const String sfxBreathBeep = 'sfx_breath_beep.wav';
+  static const String sfxBreathBlow = 'sfx_breath_blow.wav';
 
   static const String musicMain = 'music_main.m4a';
   static const String musicChase = 'music_chase.m4a';

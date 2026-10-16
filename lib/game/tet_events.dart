@@ -60,8 +60,9 @@ class _Hitch {
   bool greeted = false;
 }
 
-/// Đang tự tấp vào lề vì việc gì (đón khách, trả khách, nghe điện thoại).
-enum _PullKind { pickUp, dropOff, call }
+/// Đang tự tấp vào lề vì việc gì (đón khách, trả khách, nghe điện thoại,
+/// CSGT vẫy vào kiểm tra nồng độ cồn).
+enum _PullKind { pickUp, dropOff, call, breath }
 
 /// Cuộc gọi từ nhà.
 class _Call {
@@ -269,6 +270,7 @@ class _TetEvents {
       _PullKind.pickUp => _pullHitch!.s - g.dir * 10,
       _PullKind.dropOff => _pullHitch!.overshot ? _stopSpot : _pullHitch!.dropS,
       _PullKind.call => _stopSpot,
+      _PullKind.breath => g._nightCold.stopS,
     };
     if (g._pullInTo(target, dt)) _arrive(k);
   }
@@ -289,6 +291,8 @@ class _TetEvents {
       case _PullKind.call:
         final c = call;
         if (c != null) _startTalk(c, driving: false);
+      case _PullKind.breath:
+        g._nightCold.arrived();
     }
   }
 
@@ -715,7 +719,8 @@ class _TetEvents {
   /// Thôi tấp vào (vặn ga, đánh lái mạnh, bấm "Thôi").
   bool cancelPull() {
     final k = pull;
-    if (k == null) return false;
+    // CSGT vẫy vào kiểm tra nồng độ cồn thì không thôi được.
+    if (k == null || k == _PullKind.breath) return false;
     pull = null;
     if (k == _PullKind.call) {
       final c = call;

@@ -34,6 +34,12 @@ enum RoadGlyph {
   /// Sương mù: mấy vệt ngang mờ.
   fog,
 
+  /// Nhiệt kế (trời rét): ống thuỷ tinh, bầu thuỷ ngân, vạch chia.
+  thermometer,
+
+  /// Máy đo nồng độ cồn cầm tay: thân, màn hình, ống thổi, hơi thở.
+  breathalyzer,
+
   /// Tắc đường: ba xe nối đuôi nhau (nhìn từ phía sau), đèn phanh đỏ.
   jam,
 
@@ -300,6 +306,22 @@ class RoadIconPainter extends CustomPainter {
       case RoadGlyph.fog:
         for (final (y, x0, x1) in [(6.0, 4.0, 18.0), (11.0, 2.0, 22.0), (16.0, 6.0, 20.0), (21.0, 3.0, 15.0)]) {
           canvas.drawLine(Offset(x0, y), Offset(x1, y), stroke..strokeWidth = 2.4);
+        }
+      case RoadGlyph.thermometer:
+        canvas.drawRRect(RRect.fromLTRBR(7.4, 1.6, 13.6, 16.5, const Radius.circular(3.1)), stroke..strokeWidth = 1.8);
+        canvas.drawCircle(const Offset(10.5, 18.6), 4.4, fill);
+        canvas.drawRRect(RRect.fromLTRBR(9.3, 8.5, 11.7, 18, const Radius.circular(1.2)), fill);
+        canvas.drawCircle(const Offset(9.4, 17.6), 1.3, soft);
+        for (final y in [4.5, 8.0, 11.5]) {
+          canvas.drawLine(Offset(16.6, y), Offset(20, y), stroke..strokeWidth = 1.6);
+        }
+      case RoadGlyph.breathalyzer:
+        canvas.drawRRect(RRect.fromLTRBR(8, 7.5, 18.5, 23, const Radius.circular(2.6)), fill);
+        canvas.drawRRect(RRect.fromLTRBR(10, 10, 16.5, 14.8, const Radius.circular(1)), soft);
+        canvas.drawCircle(const Offset(13.25, 19), 1.5, soft);
+        canvas.drawLine(const Offset(13, 7.5), const Offset(9.8, 2.2), stroke..strokeWidth = 3);
+        for (final (y, x) in [(4.0, 1.5), (7.5, 2.5)]) {
+          canvas.drawLine(Offset(x, y + 1.2), Offset(x + 4.2, y), stroke..strokeWidth = 1.4);
         }
       case RoadGlyph.steering:
         canvas.drawCircle(const Offset(12, 12), 9.2, stroke..strokeWidth = 2.6);

@@ -4,6 +4,7 @@ import '../model/difficulty.dart';
 import '../model/map_theme.dart';
 import '../model/trip.dart';
 import 'logic/family.dart';
+import 'logic/cold_weather.dart';
 import 'logic/road_layout.dart';
 import 'logic/roadside.dart';
 import 'logic/vehicle_condition.dart';
@@ -324,6 +325,10 @@ enum GameSound {
   sputter,
   fuelPump,
 
+  /// Đề ô tô buổi sáng rét; máy (vừa đạp / đề) nổ — bật lại tiếng máy.
+  crank,
+  engineStart,
+
   /// Chuông điện thoại, gió giật, còi hơi xe tải mất phanh, pháo hoa.
   phoneRing,
   windGust,
@@ -448,6 +453,7 @@ class HudData {
     this.riderMeters,
     this.peach,
     this.fog = false,
+    this.cold,
     this.day = 30,
     this.reversed = false,
     this.fuel = 1,
@@ -536,6 +542,9 @@ class HudData {
   /// Đang đi trong sương mù dày.
   final bool fog;
 
+  /// Trời rét (nhiệt độ, tay cóng, máy nguội) và hơi men; null khi không có.
+  final NightColdHud? cold;
+
   /// Ngày cuối năm âm lịch (30 = ngày giao thừa; chuyến dài xuất phát sớm hơn).
   final int day;
 
@@ -611,6 +620,7 @@ class HudData {
       other.riderMeters == riderMeters &&
       other.peach == peach &&
       other.fog == fog &&
+      other.cold == cold &&
       other.day == day &&
       other.reversed == reversed &&
       other.fuel == fuel &&

@@ -122,6 +122,12 @@
   "kind": "prop",
   "depth_m": 1.81
  },
+ "flood_light": {
+  "h_m": 2.553,
+  "w_m": 1.08,
+  "kind": "police",
+  "depth_m": 0.82
+ },
  "gas_canopy_fascia": {
   "h_m": 1.5,
   "w_m": 12.0,
@@ -272,6 +278,18 @@
   "kind": "person",
   "depth_m": 0.76
  },
+ "police_officer_baton": {
+  "h_m": 2.435,
+  "w_m": 1.541,
+  "kind": "police",
+  "depth_m": 0.39
+ },
+ "police_officer_breath": {
+  "h_m": 1.741,
+  "w_m": 1.112,
+  "kind": "police",
+  "depth_m": 0.39
+ },
  "police_officer_radar": {
   "h_m": 1.747,
   "w_m": 1.012,
@@ -292,6 +310,12 @@
  },
  "police_sign": {
   "h_m": 1.428,
+  "w_m": 1.411,
+  "kind": "police",
+  "depth_m": 0.62
+ },
+ "police_sign_alcohol": {
+  "h_m": 1.561,
   "w_m": 1.411,
   "kind": "police",
   "depth_m": 0.62

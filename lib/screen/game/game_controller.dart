@@ -221,7 +221,8 @@ class GameController extends GetxController {
         phase.value = value;
         // Dựng xe vào quán thì tắt máy, lên đường thì nổ máy lại.
         if (value == GamePhase.resting) _audio.stopEngine();
-        if (previous == GamePhase.resting && value == GamePhase.driving) {
+        // Máy nguội vì rét thì chờ đạp / đề nổ (game báo engineStart) mới có tiếng máy.
+        if (previous == GamePhase.resting && value == GamePhase.driving && !game.engineCold) {
           _audio.startEngine(setup.vehicle.fourWheels ? AppAudio.sfxEngineCar : AppAudio.sfxEngineMoto);
         }
         // Bảng chọn hiện lên thì nhả hết ga/phanh đang giữ.
@@ -311,6 +312,10 @@ class GameController extends GetxController {
         _audio.play(AppAudio.sfxSputter, volume: 0.8);
       case GameSound.fuelPump:
         _audio.play(AppAudio.sfxFuelPump, volume: 0.7);
+      case GameSound.crank:
+        _audio.play(AppAudio.sfxStarterCrank, volume: 0.8);
+      case GameSound.engineStart:
+        _audio.startEngine(setup.vehicle.fourWheels ? AppAudio.sfxEngineCar : AppAudio.sfxEngineMoto);
       case GameSound.phoneRing:
         _audio.play(AppAudio.sfxPhoneRing, volume: 0.75);
       case GameSound.windGust:
