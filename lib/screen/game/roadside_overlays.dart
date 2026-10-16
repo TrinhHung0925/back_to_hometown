@@ -10,9 +10,11 @@ import '../../common/app_button.dart';
 import '../../common/lixi_icon.dart';
 import '../../game/game_config.dart';
 import '../../game/logic/gas_chat.dart';
+import '../../game/logic/provinces.dart';
 import '../../game/logic/roadside.dart';
 import '../../game/logic/vehicle_condition.dart';
 import '../../game/stage.dart';
+import '../../game/ve_que_game.dart';
 import '../../game/vehicle_spec.dart';
 import '../../resource/app_colors.dart';
 import '../../resource/app_resource.dart';
@@ -406,6 +408,21 @@ class StallSheet extends StatelessWidget {
                       StallKind.xangLe => _bottleOffers(hud, lixi),
                       StallKind.vaXe => _repairOffers(hud, lixi, stall),
                       _ => [
+                          // Đặc sản tỉnh đang đi qua (nhỉnh hơn món thường); quán
+                          // đã nhiều món thì chỉ bày một món cho bảng khỏi dài.
+                          for (final item in controller.game
+                              .specialtiesAt(stall)
+                              .take(stall.kind.menu.length + (raincoatOffer ? 1 : 0) >= 3 ? 1 : 2))
+                            _OfferRow(
+                              art: Img.item(item.art),
+                              title: item.name,
+                              caption: 'Đặc sản ${Provinces.provinceOf(item)?.name ?? 'địa phương'} · +${item.alert.round()} tỉnh táo · ${item.minutes.round()} phút',
+                              price: item.price,
+                              button: 'Gọi',
+                              accent: AppColors.ffEE9B2F,
+                              enabled: lixi >= item.price,
+                              onPressed: () => controller.order(item),
+                            ),
                           for (final item in stall.kind.menu)
                             _OfferRow(
                               art: Img.item(item.art),

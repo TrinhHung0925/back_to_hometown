@@ -2,6 +2,7 @@ import 'dart:math';
 
 import '../../model/trip.dart';
 import '../game_config.dart';
+import 'border_gate.dart';
 import 'road_path.dart';
 import 'roadside.dart';
 
@@ -147,6 +148,7 @@ class RoadLayout {
     this.stalls = const [],
     this.checkpoints = const [],
     this.nails = const [],
+    this.gates = const [],
   });
 
   factory RoadLayout.build({
@@ -156,6 +158,7 @@ class RoadLayout {
     required Random random,
     bool withBusStops = false,
     double checkpointFactor = 1,
+    List<BorderCrossing> borders = const [],
   }) {
     final zones = <RoadZone>[];
     var s = startS;
@@ -205,9 +208,11 @@ class RoadLayout {
         }
       }
     }
+    // Cổng chào ở ranh giới tỉnh (đoạn thẳng, không vướng phố, trạm thu phí).
+    final gates = placeBorderGates(crossings: borders, zones: zones, tolls: tolls, startS: startS, endS: endS);
     // Chốt CSGT: giữa các đoạn quốc lộ đủ dài, tránh trạm thu phí.
     final checkpoints = <Checkpoint>[];
-    final plain = RoadLayout._(zones, lights, tolls, startS, endS);
+    final plain = RoadLayout._(zones, lights, tolls, startS, endS, gates: gates);
     for (final zone in zones.where((z) => z.kind == RoadKind.highway)) {
       final km = (zone.endS - zone.startS) / GameConfig.unitsPerKm;
       final count = (km * checkpointFactor / GameConfig.checkpointEveryKm + random.nextDouble() * 0.6).floor();
@@ -220,7 +225,7 @@ class RoadLayout {
         checkpoints.add(Checkpoint(s: at, limitKmh: random.nextBool() ? 60 : 50, seed: random.nextInt(1 << 20)));
       }
     }
-    final layout = RoadLayout._(zones, lights, tolls, startS, endS, checkpoints: checkpoints);
+    final layout = RoadLayout._(zones, lights, tolls, startS, endS, checkpoints: checkpoints, gates: gates);
 
     // Điểm đón khách: rải đều trên phố và quốc lộ (cao tốc không đón khách),
     // tránh ngã tư và trạm thu phí.
@@ -269,6 +274,7 @@ class RoadLayout {
       stalls: roadside.stalls,
       checkpoints: checkpoints,
       nails: roadside.nails,
+      gates: gates,
     );
   }
 
@@ -279,6 +285,9 @@ class RoadLayout {
   final List<Stall> stalls;
   final List<Checkpoint> checkpoints;
   final List<NailPatch> nails;
+
+  /// Cổng chào tỉnh (theo s tăng dần).
+  final List<BorderGate> gates;
   final double startS;
   final double endS;
 
@@ -345,6 +354,9 @@ class RoadLayout {
     for (final c in checkpoints) {
       if ((c.s - s).abs() < 220 + margin) return true;
     }
+    for (final g in gates) {
+      if (g.near(s, margin: margin)) return true;
+    }
     return false;
   }
 
@@ -361,6 +373,10 @@ class RoadLayout {
     // Chốt CSGT đứng ở đoạn thẳng, nhìn thấy từ xa.
     for (final c in checkpoints) {
       if (c.s + 400 + margin > a && c.s - 600 - margin < b) return true;
+    }
+    // Cổng chào tỉnh nhìn thấy từ xa trên đoạn thẳng.
+    for (final g in gates) {
+      if (g.within(a, b, margin: margin)) return true;
     }
     return false;
   }

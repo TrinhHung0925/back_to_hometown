@@ -100,7 +100,7 @@ class DriverArt {
     } catch (_) {
       _available = const {};
     }
-    for (final manifest in ['scenery.json', 'props.json']) {
+    for (final manifest in ['scenery.json', 'props.json', 'culture.json']) {
       final entries = await _json(manifest);
       await Future.wait(entries.entries.map((e) async {
         final image = await _image(images, e.key);

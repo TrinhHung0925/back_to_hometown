@@ -124,11 +124,13 @@ class _DriverView extends Component {
     final ground = PerspectiveGroundSink(canvas, cam);
     game._roadRenderer.paintGround(ground);
     _groundExtras(ground);
+    _cultureGround(ground);
     _haze(canvas, big);
     _fog(canvas, big);
     _objects(canvas, a);
     canvas.restore();
     _night(canvas, size);
+    _cultureNight(canvas, size);
     _rainFx(canvas, size);
     _cockpit(canvas, size, a);
   }
@@ -286,6 +288,7 @@ class _DriverView extends Component {
     _poles(items);
     _stalls(items, a, camS);
     _features(items, a, camS);
+    _gates3d(items, a, camS);
     _eventProps(items, a, camS);
     _critters(items, a);
     _traffic(items, a);
@@ -431,7 +434,7 @@ class _DriverView extends Component {
           final h = (art?.heightM ?? 3.5) * _u * (it.size / 60).clamp(0.75, 1.3);
           _board(items, o.dx, o.dy, art == null ? h : h * art.aspect, h, art?.image, mirror: it.seed.isOdd);
         case SceneryKind.house:
-          _house(items, a, it, camS);
+          _house3d(items, a, it, camS);
       }
     }
   }
@@ -505,7 +508,7 @@ class _DriverView extends Component {
     final from = (min(camS - 200, camS + game.dir * cam.far) / step).floor() * step;
     final to = max(camS - 200 * game.dir, camS + game.dir * cam.far);
     for (var s = from; s < to; s += step) {
-      if (game.layout.kindAt(s) != RoadKind.highway || _stallNear(s, -1)) continue;
+      if (game.layout.kindAt(s) != RoadKind.highway || _stallNear(s, -1) || _gateNear(s)) continue;
       final ahead = (s - camS) * game.dir;
       if (ahead < -step * 2 || ahead > cam.far) continue;
       // Đỉnh vách nhấp nhô; vân bám theo độ cao thật để không bị kéo giãn.
@@ -544,7 +547,7 @@ class _DriverView extends Component {
         _ => const <double>[],
       };
       for (final side in sides) {
-        if (_stallNear(s0, side) || (side > 0 && _rampNear(s0))) continue;
+        if (_stallNear(s0, side) || (side > 0 && _rampNear(s0)) || _gateNear(s0)) continue;
         final d = side * (zone.kind == RoadKind.expressway ? _half + 30 : _half + 20);
         // Tấm tôn sáng phía trên, rãnh sóng tối phía dưới (cao 0,5–0,8 m).
         _wall(items, _at(s0, d), _at(s1, d), 13.5, 16.5, beam, 0, 1, 0, 1);
