@@ -19,6 +19,7 @@ import '../../model/trip.dart';
 import '../../resource/app_resource.dart';
 import '../../route.dart';
 import '../../service/audio_service.dart';
+import '../../service/daily_service.dart';
 import '../../service/local_service.dart';
 import '../../service/route_service.dart';
 import '../../service/trip_service.dart';
@@ -48,6 +49,9 @@ class GameController extends GetxController {
 
   /// Tổng kết cả chuyến khi vừa xong chặng cuối.
   final tripSummary = Rxn<TripSummary>();
+
+  /// Thử thách hôm nay: điểm lần này, kỷ lục trong ngày, chuỗi ngày.
+  final dailyResult = Rxn<DailyResult>();
 
   /// Đang xem cảnh về tới nhà, đón giao thừa (trước bảng kết quả chặng cuối).
   final homecoming = false.obs;
@@ -118,7 +122,8 @@ class GameController extends GetxController {
     final args = Get.arguments;
     setup = args is StageSetup ? args : _fallbackStage();
     _createGame();
-    if (!LocalService.shared.getCruiseTipShown()) {
+    // Chặng tập lái đã có thẻ hướng dẫn riêng.
+    if (!setup.tutorial && !LocalService.shared.getCruiseTipShown()) {
       cruiseTip.value = true;
       LocalService.shared.saveCruiseTipShown();
       _cruiseTipTimer = Timer(const Duration(seconds: 12), () => cruiseTip.value = false);
@@ -157,6 +162,7 @@ class GameController extends GetxController {
     hud.value = null;
     phase.value = GamePhase.driving;
     result.value = null;
+    dailyResult.value = null;
     homecoming.value = false;
     isPaused.value = false;
     chaseProgress.value = 0;
@@ -214,8 +220,15 @@ class GameController extends GetxController {
         chaseTimeLeft.value = timeLeft;
       },
       onFinished: (value) {
-        // Về tới cuối chặng thì lưu tiến độ ngay (trạm dừng nghỉ).
-        if (value.won) tripSummary.value = TripService.shared.completeStage(value);
+        // Chặng tập lái: thẻ hướng dẫn tự hiện bảng kết thúc, không lưu gì.
+        if (setup.tutorial) return;
+        // Về tới cuối chặng thì lưu tiến độ ngay (trạm dừng nghỉ); thử thách
+        // hôm nay không thuộc chuyến đi nào, chỉ lưu kỷ lục trong ngày.
+        if (setup.daily) {
+          dailyResult.value = DailyService.shared.submit(value);
+        } else if (value.won) {
+          tripSummary.value = TripService.shared.completeStage(value);
+        }
         homecoming.value = value.won && isLastStage;
         result.value = value;
         if (value.won) {
@@ -228,6 +241,8 @@ class GameController extends GetxController {
       onSound: _onGameSound,
       onNotice: _showNotice,
       onHaptic: _haptic,
+      // Tập lái: không buồn ngủ, không hết xăng, không mưa, không sự cố.
+      fatigue: !setup.tutorial,
     );
     game.driveAssist = driveAssist.value;
     gameKey.value++;
@@ -566,13 +581,15 @@ class GameController extends GetxController {
     if (chosenSky != sky.value) setSky(chosenSky);
     final theme = TripService.themeFor(setup.fromName, setup.toName);
     if (theme == setup.theme) return;
-    setup = setup.copyWith(theme: theme, seed: _random.nextInt(1 << 20));
+    // Thử thách hôm nay giữ nguyên hạt giống (cùng chặng với mọi người).
+    setup = setup.copyWith(theme: theme, seed: setup.daily ? null : _random.nextInt(1 << 20));
     _createGame();
   }
 
   /// Thua thì chơi lại chặng này từ trạm dừng nghỉ gần nhất.
   void retry() {
-    setup = setup.withSeed(_random.nextInt(1 << 20));
+    // Thử thách hôm nay chơi lại đúng chặng đó.
+    if (!setup.daily) setup = setup.withSeed(_random.nextInt(1 << 20));
     _createGame();
   }
 

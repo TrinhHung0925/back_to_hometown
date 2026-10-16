@@ -12,6 +12,7 @@ import '../../resource/app_resource.dart';
 import '../../resource/app_text.dart';
 import 'home_backdrop.dart';
 import 'home_controller.dart';
+import 'home_play_cards.dart';
 
 class HomeView extends StatefulWidget {
   HomeView({super.key}) {
@@ -126,6 +127,12 @@ class _HomeViewState extends State<HomeView> {
                 ),
               ],
             ),
+          ),
+          // Tập lái, thử thách hôm nay: góc dưới bên phải.
+          Positioned(
+            right: max(insets.right, 16.h),
+            bottom: max(insets.bottom, 14.h),
+            child: const HomePlayCards(),
           ),
           Positioned(
             top: max(insets.top, 12.h),

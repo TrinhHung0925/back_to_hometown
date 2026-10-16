@@ -32,6 +32,7 @@ class StageSetup {
     this.startPeach = -1,
     this.difficulty = Difficulty.normal,
     this.tutorial = false,
+    this.daily = false,
   });
 
   final VehicleKind vehicle;
@@ -78,6 +79,10 @@ class StageSetup {
   /// Chặng tập lái (không thuộc chuyến đi nào, không có sự cố).
   final bool tutorial;
 
+  /// Thử thách hôm nay: một chặng lẻ, không thuộc chuyến đi nào (chơi lại
+  /// giữ nguyên chặng, lưu kỷ lục trong ngày).
+  final bool daily;
+
   double get lengthKm => sections.fold(0, (sum, s) => sum + s.km);
   double get lengthUnits => lengthKm * GameConfig.unitsPerKm;
 
@@ -103,6 +108,7 @@ class StageSetup {
         startPeach: startPeach,
         difficulty: difficulty,
         tutorial: tutorial,
+        daily: daily,
       );
 }
 
