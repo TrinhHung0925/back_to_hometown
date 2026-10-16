@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
@@ -9,6 +10,7 @@ import '../../game/debug/debug_launch.dart';
 import '../../game/game_config.dart';
 import '../../game/logic/family.dart';
 import '../../game/logic/gas_chat.dart';
+import '../../game/logic/missions.dart';
 import '../../game/logic/roadside.dart';
 import '../../game/logic/soundscape.dart';
 import '../../game/logic/vehicle_condition.dart';
@@ -111,6 +113,10 @@ class GameController extends GetxController {
   /// Tăng mỗi lần bóp còi thành công — nút Còi chạy vòng hồi chiêu.
   final hornTick = 0.obs;
 
+  /// Nhiệm vụ phụ của chặng đang tới đâu (menu tạm dừng); báo khi vừa xong / hỏng.
+  final missions = <MissionCheck>[].obs;
+  final MissionWatch _missionWatch = MissionWatch();
+
   /// Đang hiện thẻ chỉ cách dùng ga giữ mức (chỉ lần đầu chơi).
   final cruiseTip = false.obs;
   Timer? _cruiseTipTimer;
@@ -193,6 +199,7 @@ class GameController extends GetxController {
       setup: setup,
       onHud: (data) {
         hud.value = data;
+        _syncMissions();
         _audio.setEngineLevel(data.speedKmh / maxSpeedKmh);
         if (!isPaused.value && !chatOpen.value) {
           _audio.setRain(data.rain);
@@ -265,6 +272,8 @@ class GameController extends GetxController {
     );
     game.driveAssist = driveAssist.value;
     game.radioOn = radio.value;
+    _missionWatch.reset();
+    missions.assignAll(Missions.checkAll(setup.missions, MissionStats(), elapsed: 0, peach: setup.startPeach));
     gameKey.value++;
     driverView.value = LocalService.shared.getDriverView();
     if (driverView.value) {
@@ -281,6 +290,21 @@ class GameController extends GetxController {
   }
 
   AudioService get _audio => AudioService.shared;
+
+  /// Chấm lại nhiệm vụ phụ; vừa xong / vừa hỏng thì hiện thông báo.
+  void _syncMissions() {
+    if (setup.missions.isEmpty || phase.value == GamePhase.finished) return;
+    final checks = game.missionChecks;
+    if (!listEquals(checks, missions)) missions.assignAll(checks);
+    for (final c in _missionWatch.changes(checks)) {
+      _showNotice(GameNotice(
+        c.done
+            ? 'Xong nhiệm vụ “${c.mission.title}” — tới nơi được thưởng ${c.mission.reward} lì xì!'
+            : 'Hỏng nhiệm vụ “${c.mission.title}” rồi',
+        kind: c.done ? NoticeKind.money : NoticeKind.info,
+      ));
+    }
+  }
 
   void _onGameSound(GameSound sound) {
     switch (sound) {

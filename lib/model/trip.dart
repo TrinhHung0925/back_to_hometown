@@ -1,6 +1,7 @@
 import '../game/game_config.dart';
 import '../game/vehicle_spec.dart';
 import 'difficulty.dart';
+import 'shop.dart';
 
 /// Loại đoạn đường trong một chặng.
 enum RoadKind {
@@ -130,7 +131,10 @@ class TripProgress {
     this.peach = -1,
     this.difficulty = Difficulty.normal,
     this.family = false,
-  });
+    Set<Upgrade>? upgrades,
+    List<Gift>? gifts,
+  })  : upgrades = upgrades ?? {},
+        gifts = gifts ?? [];
 
   final TripPlan plan;
 
@@ -160,6 +164,12 @@ class TripProgress {
   /// Cành đào buộc sau xe máy còn đẹp bao nhiêu (0..100); âm = không chở.
   double peach;
 
+  /// Nâng cấp xe đã mua ở cửa hàng trạm dừng nghỉ (giữ cả chuyến).
+  final Set<Upgrade> upgrades;
+
+  /// Quà Tết đã mua cho người nhà (mỗi người một món).
+  final List<Gift> gifts;
+
   bool get finished => stageIndex >= plan.stages.length;
 
   Map<String, dynamic> toJson() => {
@@ -174,6 +184,8 @@ class TripProgress {
         'peach': peach,
         'difficulty': difficulty.name,
         'family': family,
+        'upgrades': [for (final u in upgrades) u.name],
+        'gifts': [for (final g in gifts) g.name],
       };
 
   factory TripProgress.fromJson(Map<String, dynamic> json) => TripProgress(
@@ -188,6 +200,8 @@ class TripProgress {
         peach: (json['peach'] as num?)?.toDouble() ?? -1,
         difficulty: Difficulty.values.asNameMap()[json['difficulty']] ?? Difficulty.normal,
         family: json['family'] == true,
+        upgrades: Upgrade.parse(json['upgrades']),
+        gifts: Gift.parse(json['gifts']),
       );
 }
 
@@ -234,9 +248,12 @@ class TripRecord {
 
 /// Tổng kết khi về tới nhà.
 class TripSummary {
-  const TripSummary({required this.record, required this.newRecord, this.previousBest});
+  const TripSummary({required this.record, required this.newRecord, this.previousBest, this.giftBonus = 0});
 
   final TripRecord record;
   final bool newRecord;
   final int? previousBest;
+
+  /// Điểm thưởng quà Tết mang về biếu cả nhà (đã cộng vào [record]).
+  final int giftBonus;
 }

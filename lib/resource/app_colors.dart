@@ -130,6 +130,9 @@ abstract class AppColors {
   static const Color ffFFFBF2 = Color(0xffFFFBF2);
   static const Color ffF1E7D2 = Color(0xffF1E7D2);
 
+  /// Cửa hàng: nền thẻ món đã mua (xanh lá rất nhạt).
+  static const Color ffE6F4EC = Color(0xffE6F4EC);
+
   /// Bóng mờ (viền ổ gà, bóng đổ).
   static const Color shadowSoft = Color(0x55000000);
   static const Color ff2B3038 = Color(0xff2B3038);

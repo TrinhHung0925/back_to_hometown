@@ -452,15 +452,17 @@ class TrafficSystem {
   }
 
   /// Bóp còi: xe cùng chiều ngay phía trước mũi xe người chơi tránh sang
-  /// làn bên (xe tải, xe khách có khi không nhường mà bóp còi lại).
-  YieldResult requestYield(PlayerSnapshot player) {
+  /// làn bên (xe tải, xe khách có khi không nhường mà bóp còi lại). Còi hơi
+  /// vang xa hơn ([reach]), xe to ít lờ đi hơn ([ignoreChance]).
+  YieldResult requestYield(PlayerSnapshot player,
+      {double reach = GameConfig.hornReach, double ignoreChance = GameConfig.heavyIgnoreHornChance}) {
     TrafficVehicle? target;
     var best = double.infinity;
     for (final v in vehicles) {
       if (!player.sameWay(v) || v.targetLane != null) continue;
       if ((v.d - player.d).abs() > (v.type.width + player.width) / 2 + 6) continue;
       final ahead = player.forward ? v.s - player.s : player.s - v.s;
-      if (ahead <= 0 || ahead > GameConfig.hornReach) continue;
+      if (ahead <= 0 || ahead > reach) continue;
       if (ahead < best) {
         best = ahead;
         target = v;
@@ -468,7 +470,7 @@ class TrafficSystem {
     }
     final v = target;
     if (v == null) return YieldResult.nobody;
-    if (v.type.heavy && _random.nextDouble() < GameConfig.heavyIgnoreHornChance) return YieldResult.honkedBack;
+    if (v.type.heavy && _random.nextDouble() < ignoreChance) return YieldResult.honkedBack;
     // Tránh sang làn bên cùng chiều (nếu làn đó trống).
     return _startLaneChange(v, Lanes.neighbour(v.lane), player) ? YieldResult.yielded : YieldResult.noRoom;
   }

@@ -24,6 +24,7 @@ class ActionButtons extends StatelessWidget {
     this.onHeadlight,
     this.headlightOn = false,
     this.hornTick = 0,
+    this.hornCooldown = GameConfig.hornCooldown,
   });
 
   final ValueChanged<bool> onThrottle;
@@ -36,6 +37,9 @@ class ActionButtons extends StatelessWidget {
 
   /// Đổi giá trị mỗi lần bóp còi thành công — nút còi chạy vòng hồi chiêu.
   final int hornTick;
+
+  /// Thời gian hồi còi (giây; còi hơi hồi nhanh hơn).
+  final double hornCooldown;
 
   /// 0..1 mức ga đang giữ (so với tốc độ tối đa) để vẽ vòng quanh nút ga.
   final double gasFraction;
@@ -81,6 +85,7 @@ class ActionButtons extends StatelessWidget {
             62.h,
             _Cooldown(
               tick: hornTick,
+              seconds: hornCooldown,
               size: 62.h,
               child: _TapButton(size: 62.h, icon: Img.icHorn, label: 'Còi', onTap: onHorn),
             ),
@@ -245,9 +250,10 @@ class _TapButtonState extends State<_TapButton> {
 
 /// Vòng hồi chiêu kiểu skill MOBA: phủ tối rồi quét tròn mở dần.
 class _Cooldown extends StatefulWidget {
-  const _Cooldown({required this.tick, required this.size, required this.child});
+  const _Cooldown({required this.tick, required this.size, required this.child, this.seconds = GameConfig.hornCooldown});
 
   final int tick;
+  final double seconds;
   final double size;
   final Widget child;
 
@@ -258,13 +264,14 @@ class _Cooldown extends StatefulWidget {
 class _CooldownState extends State<_Cooldown> with SingleTickerProviderStateMixin {
   late final AnimationController _anim = AnimationController(
     vsync: this,
-    duration: Duration(milliseconds: (GameConfig.hornCooldown * 1000).round()),
+    duration: Duration(milliseconds: (widget.seconds * 1000).round()),
     value: 1,
   );
 
   @override
   void didUpdateWidget(covariant _Cooldown oldWidget) {
     super.didUpdateWidget(oldWidget);
+    _anim.duration = Duration(milliseconds: (widget.seconds * 1000).round());
     if (oldWidget.tick != widget.tick) _anim.forward(from: 0);
   }
 

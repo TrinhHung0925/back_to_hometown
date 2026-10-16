@@ -445,6 +445,8 @@ class _NightCold {
     if (stage != _BreathStep.testing && stage != _BreathStep.parking) return;
     final r = _reading ?? blow();
     if (r.positive) {
+      // Dính phạt nồng độ cồn: hỏng nhiệm vụ "Không bị phạt".
+      g.missionStats.incidents++;
       final fine = min(g.lixi, r.tier.fineLixi);
       g.lixi -= fine;
       if (fine > 0) g._popAt(g.player.s, g.player.d, '−$fine', const Color(0xffFF8A80));

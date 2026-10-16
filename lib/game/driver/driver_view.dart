@@ -1130,22 +1130,33 @@ class _DriverView extends Component {
     if (dark > 0.02) {
       canvas.drawRect(Offset.zero & size, Paint()..color = const Color(0xff050A18).withValues(alpha: 0.68 * dark));
       if (game.headlightsOn || game.nightLevel > 0.3) {
-        // Vệt đèn pha xe mình hắt lên mặt đường phía trước.
+        // Vệt đèn pha xe mình hắt lên mặt đường phía trước (đèn LED: chùm
+        // trắng xanh, sáng hơn, rọi gần tới chân trời).
         final hy = cam.horizonY;
+        final led = game.perks.led;
+        final tip = hy + size.height * (led ? 0.02 : 0.05);
         final beam = Path()
-          ..moveTo(size.width * 0.12, size.height)
-          ..lineTo(size.width * 0.42, hy + size.height * 0.05)
-          ..lineTo(size.width * 0.58, hy + size.height * 0.05)
-          ..lineTo(size.width * 0.88, size.height)
+          ..moveTo(size.width * (led ? 0.06 : 0.12), size.height)
+          ..lineTo(size.width * (led ? 0.4 : 0.42), tip)
+          ..lineTo(size.width * (led ? 0.6 : 0.58), tip)
+          ..lineTo(size.width * (led ? 0.94 : 0.88), size.height)
           ..close();
+        final light = led ? const Color(0xffE6F0FF) : const Color(0xffFFF1C8);
         canvas.drawPath(
           beam,
           Paint()
             ..blendMode = BlendMode.plus
-            ..shader = Gradient.linear(Offset(0, size.height), Offset(0, hy), [
-              const Color(0xffFFF1C8).withValues(alpha: 0.34 * dark),
-              const Color(0xffFFF1C8).withValues(alpha: 0.0),
-            ]),
+            ..shader = led
+                // Đèn LED: chùm sáng đều, vẫn rõ ở xa gần tới chân trời.
+                ? Gradient.linear(Offset(0, size.height), Offset(0, tip), [
+                    light.withValues(alpha: 0.5 * dark),
+                    light.withValues(alpha: 0.24 * dark),
+                    light.withValues(alpha: 0.05 * dark),
+                  ], const [0, 0.72, 1])
+                : Gradient.linear(Offset(0, size.height), Offset(0, tip), [
+                    light.withValues(alpha: 0.34 * dark),
+                    light.withValues(alpha: 0.0),
+                  ]),
         );
       }
     }

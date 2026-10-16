@@ -19,6 +19,7 @@ import '../../service/audio_service.dart';
 import 'daily_result_banner.dart';
 import 'family_widgets.dart';
 import 'game_controller.dart';
+import 'mission_panels.dart';
 import 'road_icons.dart';
 
 /// Công an tới (va chạm, vượt đèn đỏ, quá tốc độ, quay đầu sai): biên bản
@@ -401,6 +402,7 @@ class PauseOverlay extends StatelessWidget {
               ],
             ),
           ),
+          PauseMissions(controller: controller),
         ],
       ),
     );
@@ -642,6 +644,7 @@ class ResultOverlay extends StatelessWidget {
           }),
           // Chở cả nhà: bé tới nơi còn vui không, được / mất bao nhiêu điểm.
           if (result.won && controller.setup.family) ...[SizedBox(height: 8.h), FamilyResultLine(score: result.familyScore)],
+          if (result.won) ResultMissions(result: result, compact: summary != null),
           if (summary != null) ...[
             SizedBox(height: 10.h),
             Container(
@@ -651,9 +654,8 @@ class ResultOverlay extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12.h),
               ),
               child: AppText.manrope(
-                summary.newRecord
-                    ? 'Kỷ lục mới cho tuyến này: ${summary.record.score} điểm!'
-                    : 'Cả chuyến: ${summary.record.score} điểm · kỷ lục ${summary.previousBest} điểm',
+                '${summary.newRecord ? 'Kỷ lục mới cho tuyến này: ${summary.record.score} điểm!' : 'Cả chuyến: ${summary.record.score} điểm · kỷ lục ${summary.previousBest} điểm'}'
+                '${summary.giftBonus > 0 ? '\nGồm +${summary.giftBonus} điểm quà Tết biếu cả nhà' : ''}',
                 fontSize: 14.h,
                 fontWeight: FontWeight.w800,
                 textAlign: TextAlign.center,

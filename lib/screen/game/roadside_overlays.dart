@@ -460,7 +460,7 @@ class StallSheet extends StatelessWidget {
     final tank = controller.game.fuel;
     final full = tank.fullPrice;
     return [
-      _PumpDisplay(pump: controller.pump.value, level: tank.level, tankLiters: _tankLiters(controller.setup.vehicle)),
+      _PumpDisplay(pump: controller.pump.value, level: tank.level, tankLiters: _tankLiters(controller.setup.vehicle) * controller.game.perks.fuelCapacity),
       SizedBox(height: 6.h),
       _OfferRow(
         art: Img.imgItemNozzle,
@@ -489,7 +489,7 @@ class StallSheet extends StatelessWidget {
   List<Widget> _bottleOffers(HudData? hud, int lixi) {
     final tank = controller.game.fuel;
     return [
-      _PumpDisplay(pump: controller.pump.value, level: tank.level, tankLiters: _tankLiters(controller.setup.vehicle), bottles: true),
+      _PumpDisplay(pump: controller.pump.value, level: tank.level, tankLiters: _tankLiters(controller.setup.vehicle) * controller.game.perks.fuelCapacity, bottles: true),
       SizedBox(height: 6.h),
       _OfferRow(
         art: Img.imgItemBottle,

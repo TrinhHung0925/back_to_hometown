@@ -218,6 +218,7 @@ class _GameViewState extends State<GameView> {
                           onHeadlight: controller.toggleHeadlights,
                           headlightOn: hud?.headlightsOn ?? false,
                           hornTick: controller.hornTick.value,
+                          hornCooldown: controller.game.hornCooldownSeconds,
                           gasFraction: hud == null ? 0 : hud.cruiseKmh / controller.maxSpeedKmh,
                           danger: hud?.danger ?? false,
                         );
@@ -256,6 +257,7 @@ class _GameViewState extends State<GameView> {
                     result: result,
                     vehicle: controller.setup.vehicle,
                     family: controller.setup.family,
+                    gifts: controller.setup.gifts,
                     onDone: () => controller.homecoming.value = false,
                   ),
                 );

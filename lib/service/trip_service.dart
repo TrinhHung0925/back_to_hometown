@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import '../game/game_config.dart';
+import '../game/logic/missions.dart';
 import '../game/logic/trip_clock.dart';
 import '../game/logic/vehicle_condition.dart';
 import '../game/stage.dart';
@@ -8,6 +9,7 @@ import '../game/vehicle_spec.dart';
 import '../model/difficulty.dart';
 import '../model/map_theme.dart';
 import '../model/place.dart';
+import '../model/shop.dart';
 import '../model/trip.dart';
 import 'local_service.dart';
 import 'route_service.dart';
@@ -98,6 +100,22 @@ class TripService {
       sky: LocalService.shared.getSkyMode(),
       difficulty: progress.difficulty,
       family: progress.family,
+      upgrades: {...progress.upgrades},
+      missions: missionsFor(progress),
+      gifts: [...progress.gifts],
+    );
+  }
+
+  /// Nhiệm vụ phụ của chặng sắp chơi (cố định theo chặng và loại xe).
+  static List<Mission> missionsFor(TripProgress progress) {
+    if (progress.finished) return const [];
+    final stage = progress.plan.stages[progress.stageIndex];
+    return Missions.forStage(
+      vehicle: progress.plan.vehicle,
+      sections: stage.sections,
+      seed: Missions.seedFor(stage.fromName, stage.toName, progress.stageIndex + 1, progress.plan.vehicle),
+      startPeach: progress.peach,
+      family: progress.family,
     );
   }
 
@@ -125,7 +143,7 @@ class TripService {
   /// Đổ đầy bình ở trạm dừng nghỉ (giá như cây xăng, mất vài phút). Trả về
   /// false nếu bình đã đầy hoặc không đủ lì xì.
   bool refuelAtRestStop(TripProgress progress) {
-    final tank = FuelTank(progress.plan.vehicle, level: progress.fuel);
+    final tank = FuelTank(progress.plan.vehicle, level: progress.fuel, capacity: Perks.of(progress.upgrades).fuelCapacity);
     final price = tank.fullPrice;
     if (price <= 0 || progress.lixi < price) return false;
     progress
@@ -155,12 +173,14 @@ class TripService {
     }
     clear();
     final plan = progress.plan;
+    final giftBonus = Gift.bonusOf(progress.gifts);
     final record = TripRecord(
       fromName: plan.stages.first.fromName,
       toName: plan.stages.last.toName,
       vehicle: plan.vehicle,
-      // Điểm cuối chuyến: tổng các chặng + thưởng lì xì, quà còn mang về.
-      score: progress.score + progress.lixi * 50 + progress.cargo * 200,
+      // Điểm cuối chuyến: tổng các chặng + thưởng lì xì, quà còn mang về,
+      // quà Tết mua biếu cả nhà.
+      score: progress.score + progress.lixi * 50 + progress.cargo * 200 + giftBonus,
       km: plan.km,
       arrivedMinutes: result.clockMinutes,
     );
@@ -173,7 +193,7 @@ class TripService {
         ..add(record);
       LocalService.shared.saveRecords([for (final r in records) r.toJson()]);
     }
-    return TripSummary(record: record, newRecord: better, previousBest: old?.score);
+    return TripSummary(record: record, newRecord: better, previousBest: old?.score, giftBonus: giftBonus);
   }
 
   /// Các kỷ lục đã lưu, điểm cao trước.
@@ -187,6 +207,9 @@ class TripService {
     _current = null;
     LocalService.shared.clearTrip();
   }
+
+  /// Lưu lại sau khi đổi tiến độ ở ngoài (mua đồ ở cửa hàng trạm dừng nghỉ).
+  void save(TripProgress progress) => _save(progress);
 
   void _save(TripProgress progress) {
     _current = progress;

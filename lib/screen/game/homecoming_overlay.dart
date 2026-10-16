@@ -8,16 +8,18 @@ import '../../common/app_button.dart';
 import '../../game/logic/trip_clock.dart';
 import '../../game/stage.dart';
 import '../../game/vehicle_spec.dart';
+import '../../model/shop.dart';
 import '../../resource/app_colors.dart';
 import '../../resource/app_resource.dart';
 import '../../resource/app_text.dart';
 import '../../service/audio_service.dart';
 import 'homecoming_family.dart';
+import 'gift_reactions.dart';
 
 /// Về tới nhà (xong chặng cuối): xe chạy vào ngõ dừng trước cổng, cả nhà ra
 /// đón; rồi đếm ngược đón giao thừa, pháo hoa nổ rộn trời.
 class HomecomingOverlay extends StatefulWidget {
-  const HomecomingOverlay({super.key, required this.result, required this.vehicle, required this.onDone, this.family = false});
+  const HomecomingOverlay({super.key, required this.result, required this.vehicle, required this.onDone, this.family = false, this.gifts = const []});
 
   final StageResult result;
   final VehicleKind vehicle;
@@ -25,6 +27,9 @@ class HomecomingOverlay extends StatefulWidget {
   /// Chở cả nhà về: vợ và bé xuống xe cùng vào chào ông bà.
   final bool family;
   final VoidCallback onDone;
+
+  /// Quà Tết mang về: người nhận nói một câu khi ra đón.
+  final List<Gift> gifts;
 
   @override
   State<HomecomingOverlay> createState() => _HomecomingOverlayState();
@@ -214,6 +219,8 @@ class _HomecomingOverlayState extends State<HomecomingOverlay> with TickerProvid
                 ),
               ),
               if (!_night) Positioned.fill(child: IgnorePointer(child: CustomPaint(painter: _PetalsPainter(t)))),
+              if (_step == _Step.home && _homeAt != null)
+                Positioned.fill(child: GiftReactions(gifts: widget.gifts, seconds: t - _homeAt!, heads: _heads(t, at, scale))),
               if (_step == _Step.newYear)
                 Positioned.fill(
                   child: IgnorePointer(
@@ -258,6 +265,12 @@ class _HomecomingOverlayState extends State<HomecomingOverlay> with TickerProvid
     ));
     return out..sort((a, b) => a.$4.compareTo(b.$4));
   }
+
+  /// Đỉnh ảnh, chiều cao ảnh từng người nhà trên màn hình (bong bóng lời khi nhận quà).
+  Map<String, (Offset, double)> _heads(double t, Offset Function(double, double) at, double scale) => {
+        for (final (art, h, x, y, _) in _people(t))
+          art.substring(0, art.lastIndexOf('_')): (at(x, y) - Offset(0, h * _Scene.scaleAt(y) * scale), h * _Scene.scaleAt(y) * scale),
+      };
 
   Widget _figure(Offset Function(double, double) at, double scale, String art, double heightM, double x, double y, double appear,
       {bool flip = false}) {
