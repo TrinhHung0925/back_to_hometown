@@ -115,13 +115,18 @@ class AudioService {
     });
   }
 
-  /// Hạ nhỏ nhạc một lúc (đài đọc bản tin) rồi trả lại như cũ.
+  /// Hạ nhỏ nhạc một lúc (đài đọc bản tin) rồi to dần trở lại như cũ.
   void duckMusic(Duration hold, {double factor = 0.4}) {
     if (!enabled || !_ready || _music == null || !FlameAudio.bgm.isPlaying) return;
     FlameAudio.bgm.audioPlayer.setVolume(_musicVolume * factor);
     _duckTimer?.cancel();
     _duckTimer = Timer(hold, () {
-      if (FlameAudio.bgm.isPlaying) FlameAudio.bgm.audioPlayer.setVolume(_musicVolume);
+      var k = factor;
+      _duckTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
+        k = (k + 0.08).clamp(0.0, 1.0);
+        if (FlameAudio.bgm.isPlaying) FlameAudio.bgm.audioPlayer.setVolume(_musicVolume * k);
+        if (k >= 1) timer.cancel();
+      });
     });
   }
 
