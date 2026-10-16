@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
+import '../../game/stage.dart';
 import '../../resource/app_colors.dart';
 import '../../resource/app_text.dart';
 
@@ -255,7 +256,10 @@ class _GaugePainter extends CustomPainter {
 /// Chỉ cách dùng ga giữ mức (hiện một lần, lần đầu vào chơi): thẻ nhỏ cạnh
 /// cụm nút ga/phanh.
 class CruiseTip extends StatelessWidget {
-  const CruiseTip({super.key});
+  const CruiseTip({super.key, required this.assist});
+
+  /// Đang bật hỗ trợ lái (thêm dòng chỉ cách thả cần lái).
+  final bool assist;
 
   @override
   Widget build(BuildContext context) {
@@ -265,7 +269,7 @@ class CruiseTip extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 46.h,
+                width: 70.h,
                 padding: EdgeInsets.symmetric(vertical: 2.h),
                 alignment: Alignment.center,
                 decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(6.h)),
@@ -288,10 +292,49 @@ class CruiseTip extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AppText.manrope('Tay ga giữ mức', fontSize: 13.h, fontWeight: FontWeight.w800, color: AppColors.ffFFB020),
-          row('GIỮ GA', AppColors.ff4ADE80, 'vặn thêm ga — xe tăng tốc'),
-          row('BUÔNG', AppColors.ffE3E5E9, 'xe giữ nguyên tốc độ đang chạy'),
-          row('PHANH', AppColors.ffFF5A4E, 'giảm tốc, buông ra giữ tốc độ mới'),
+          AppText.manrope('Cách lái', fontSize: 13.h, fontWeight: FontWeight.w800, color: AppColors.ffFFB020),
+          row('CHẠM GA', AppColors.ff4ADE80, '+5 km/h · giữ Ga: tăng tốc dần'),
+          row('BUÔNG GA', AppColors.ffE3E5E9, 'xe tự giữ tốc độ đã đặt'),
+          row('CHẠM PHANH', AppColors.ffFFB020, '−5 km/h · giữ Phanh: phanh mạnh dần'),
+          if (assist) row('THẢ CẦN LÁI', AppColors.ff7FB2E5, 'xe tự về giữa làn, tự chậm khi vào cua'),
+        ],
+      ),
+    );
+  }
+}
+
+/// Mức ga đang đặt ("Giữ 50 km/h") ngay trên đồng hồ; hỗ trợ lái đang tự
+/// giảm tốc thì ghi thêm vì sao.
+class CruiseChip extends StatelessWidget {
+  const CruiseChip({super.key, required this.cruiseKmh, required this.assist});
+
+  final int cruiseKmh;
+  final AssistState assist;
+
+  @override
+  Widget build(BuildContext context) {
+    final note = switch (assist) {
+      AssistState.none => null,
+      AssistState.following => 'bám xe trước',
+      AssistState.curve => 'chậm vào cua',
+    };
+    return Container(
+      padding: EdgeInsets.fromLTRB(9.h, 3.h, 9.h, 3.h),
+      decoration: BoxDecoration(
+        color: AppColors.ff1B1D22.withValues(alpha: 0.72),
+        borderRadius: BorderRadius.circular(10.h),
+        border: Border.all(color: AppColors.ffFFB020.withValues(alpha: 0.7), width: 1.h),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AppText.manrope('Giữ ', fontSize: 10.5.h, fontWeight: FontWeight.w700, color: AppColors.ffB8BCC4),
+          AppText.manrope('$cruiseKmh', fontSize: 13.h, fontWeight: FontWeight.w800, color: AppColors.ffFFB020),
+          AppText.manrope(' km/h', fontSize: 10.5.h, fontWeight: FontWeight.w700, color: AppColors.ffB8BCC4),
+          if (note != null) ...[
+            Container(width: 1.h, height: 12.h, margin: EdgeInsets.symmetric(horizontal: 6.h), color: AppColors.ffFFFFFF.withValues(alpha: 0.25)),
+            AppText.manrope(note, fontSize: 10.5.h, fontWeight: FontWeight.w800, color: AppColors.ff7FB2E5),
+          ],
         ],
       ),
     );

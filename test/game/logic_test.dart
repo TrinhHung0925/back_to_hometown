@@ -76,7 +76,8 @@ void main() {
   });
 
   group('PlayerPhysics', () {
-    test('ga giữ mức: giữ Ga tăng tốc, buông tay giữ tốc độ, Phanh hạ mức rồi giữ', () {
+    test('ga giữ mức: chạm Ga +5 km/h, giữ Ga tăng tốc, buông tay giữ tốc độ theo nấc, chạm Phanh −5 km/h', () {
+      const step = PlayerPhysics.cruiseStep;
       final p = PlayerPhysics(spec: VehicleSpec.motorbike);
       void run(int frames) {
         for (var i = 0; i < frames; i++) {
@@ -84,14 +85,33 @@ void main() {
         }
       }
 
+      // Giữ Ga nửa giây rồi buông: mức ga làm tròn lên nấc 5 km/h, xe giữ đúng mức đó.
       p.throttle = true;
       run(30);
       final mid = p.speed;
       expect(mid, greaterThan(0));
       p.throttle = false;
       run(120);
-      expect(p.speed, closeTo(mid, 1e-6));
+      expect(p.cruise % step, closeTo(0, 1e-6));
+      expect(p.cruise, greaterThanOrEqualTo(mid));
+      expect(p.speed, closeTo(p.cruise, 1e-6));
 
+      // Chạm Ga thêm một nấc, chạm Phanh bớt một nấc.
+      final held = p.cruise;
+      p.throttle = true;
+      run(4);
+      p.throttle = false;
+      run(60);
+      expect(p.cruise, closeTo(held + step, 1e-6));
+      expect(p.speed, closeTo(held + step, 1e-6));
+      p.brake = true;
+      run(4);
+      p.brake = false;
+      run(90);
+      expect(p.cruise, closeTo(held, 1e-6));
+      expect(p.speed, closeTo(held, 1e-6));
+
+      // Giữ Ga lâu: lên tới tốc độ tối đa và giữ ở đó.
       p.throttle = true;
       run(600);
       expect(p.speed, VehicleSpec.motorbike.maxSpeed);
@@ -99,19 +119,70 @@ void main() {
       run(60);
       expect(p.speed, VehicleSpec.motorbike.maxSpeed);
 
+      // Phanh ăn dần: chạm nhẹ chỉ bớt chút ít, giữ lâu thì dừng hẳn.
       p.brake = true;
-      run(20);
-      p.brake = false;
-      final slowed = p.speed;
-      expect(slowed, lessThan(VehicleSpec.motorbike.maxSpeed - 100));
-      run(120);
-      expect(p.speed, closeTo(slowed, 1e-6));
-
-      p.brake = true;
+      run(6);
+      expect(p.speed, greaterThan(VehicleSpec.motorbike.maxSpeed - 40));
       run(120);
       p.brake = false;
       run(60);
       expect(p.speed, 0);
+      expect(p.cruise, 0);
+    });
+
+    test('hỗ trợ lái: tự giảm tốc theo giới hạn, qua rồi chạy lại mức ga cũ', () {
+      final p = PlayerPhysics(spec: VehicleSpec.car, speed: 480)..cruise = 480;
+      p.assistCap = 300;
+      var braked = false;
+      for (var i = 0; i < 90; i++) {
+        p.update(1 / 60);
+        braked |= p.assistBraking;
+      }
+      expect(braked, isTrue);
+      expect(p.speed, closeTo(300, 1e-6));
+      expect(p.cruise, 480);
+      p.assistCap = null;
+      for (var i = 0; i < 120; i++) {
+        p.update(1 / 60);
+      }
+      expect(p.speed, 480);
+    });
+
+    test('giữ làn: thả cần lái thì về giữa làn gần nhất; gạt sang rồi thả thì vào làn bên', () {
+      final lanes = [for (var lane = 0; lane < 4; lane++) Lanes.center(lane)];
+      final p = PlayerPhysics(spec: VehicleSpec.car, d: Lanes.center(1) - 12, speed: 400)
+        ..cruise = 400
+        ..laneKeep = true
+        ..laneTargets = lanes;
+      void run(int frames) {
+        for (var i = 0; i < frames; i++) {
+          p.update(1 / 60);
+        }
+      }
+
+      run(120);
+      expect(p.d, closeTo(Lanes.center(1), 1.5));
+      // Gạt cần lên chừng nửa giây rồi thả: xe sang hẳn làn trong.
+      p.steer = -0.6;
+      run(26);
+      p.steer = 0;
+      run(150);
+      expect(p.d, closeTo(Lanes.center(0), 1.5));
+    });
+
+    test('giữ làn qua cua vừa tốc độ mà không cần bẻ lái', () {
+      const curve = RoadCurve(startS: 0, length: 1.5 * 1.2 * GameConfig.minCurveRadiusHighway, turn: 1.2);
+      final p = PlayerPhysics(spec: VehicleSpec.car, d: Lanes.center(1))
+        ..curvature = 1 / curve.radius
+        ..laneKeep = true
+        ..laneTargets = [for (var lane = 0; lane < 4; lane++) Lanes.center(lane)];
+      for (var i = 0; i < 180; i++) {
+        p.speed = curve.adviseSpeed * 1.1;
+        p.cruise = p.speed;
+        p.update(1 / 60);
+      }
+      expect(p.d, closeTo(Lanes.center(1), 8));
+      expect(p.scraping, isFalse);
     });
 
     test('ổ gà làm khựng xe rồi xe tự lấy lại tốc độ đang giữ', () {

@@ -29,6 +29,9 @@ class GameController extends GetxController {
   /// Trời đang chọn (đổi được ngay giữa chặng ở menu tạm dừng).
   final sky = SkyMode.clock.obs;
 
+  /// Hỗ trợ lái đang bật (giữ làn, bám xe trước, tự chậm trước khúc cua).
+  final driveAssist = LocalService.shared.getDriveAssist().obs;
+
   /// Tăng mỗi lần chơi lại để dựng GameWidget mới.
   final gameKey = 0.obs;
 
@@ -221,6 +224,7 @@ class GameController extends GetxController {
       onSound: _onGameSound,
       onNotice: _showNotice,
     );
+    game.driveAssist = driveAssist.value;
     gameKey.value++;
     driverView.value = LocalService.shared.getDriverView();
     if (driverView.value) {
@@ -512,6 +516,13 @@ class GameController extends GetxController {
     game.resumeEngine();
     isPaused.value = false;
     _audio.resumeLoops();
+  }
+
+  /// Bật / tắt hỗ trợ lái (lưu cho các lần chơi sau).
+  void setDriveAssist(bool on) {
+    LocalService.shared.saveDriveAssist(on);
+    driveAssist.value = on;
+    game.driveAssist = on;
   }
 
   /// Đổi trời ngay (theo giờ / luôn ngày / luôn đêm), lưu cho các chặng sau.

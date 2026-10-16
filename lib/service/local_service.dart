@@ -11,6 +11,8 @@ enum LocalKey {
   driverView,
   mapTheme,
   skyMode,
+  driveAssist,
+  controlTip,
 }
 
 class LocalService {
@@ -38,11 +40,19 @@ class LocalService {
     return storage.read(LocalKey.soundOn.name) ?? true;
   }
 
-  /// Đã chỉ cách dùng ga giữ mức chưa (chỉ một lần).
-  bool getCruiseTipShown() => storage.read(LocalKey.cruiseTip.name) ?? false;
+  /// Đã chỉ cách dùng ga, phanh, cần lái (kiểu nấc + hỗ trợ lái) chưa —
+  /// chỉ một lần.
+  bool getCruiseTipShown() => storage.read(LocalKey.controlTip.name) ?? false;
 
   void saveCruiseTipShown() {
-    storage.write(LocalKey.cruiseTip.name, true);
+    storage.write(LocalKey.controlTip.name, true);
+  }
+
+  /// Hỗ trợ lái: giữ làn, bám xe trước, tự giảm tốc trước khúc cua (mặc định bật).
+  bool getDriveAssist() => storage.read(LocalKey.driveAssist.name) ?? true;
+
+  void saveDriveAssist(bool on) {
+    storage.write(LocalKey.driveAssist.name, on);
   }
 
   /// Người chơi chọn góc nhìn ghế lái (giữ cho các chặng sau).

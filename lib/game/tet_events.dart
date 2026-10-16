@@ -642,10 +642,21 @@ class _TetEvents {
   void _spawnTruck() {
     final s = g._camLeftS - 160;
     final speed = max(g.player.speed, GameConfig.normalSpeed) + GameConfig.runawayExtraSpeed * GameConfig.normalSpeed;
-    // Xe làn trong tránh sang làn ngoài cho xe tải lao qua.
+    // Xe làn trong tránh sang làn ngoài cho xe tải lao qua — chỉ khi làn
+    // ngoài trống (không tạt vào xe mình, xe khác); xe khuất phía trước mà
+    // không có chỗ tránh thì cho rẽ đi đường khác.
+    final p = g.player;
+    final gone = <TrafficVehicle>[];
     for (final v in g.traffic.vehicles) {
       if (v.oncoming || v.lane != 0 || v.targetLane != null) continue;
-      if (v.s > g._camRightS + 200) {
+      final free = !g.traffic.vehicles.any((o) => !identical(o, v) && o.occupies(1) && (o.s - v.s).abs() < (o.type.length + v.type.length) / 2 + 40) &&
+          !((p.d - Lanes.center(1)).abs() < (g.spec.width + v.type.width) / 2 + 4 && (p.s - v.s).abs() < (g.spec.length + v.type.length) / 2 + 120);
+      final offscreen = v.s > g._camRightS + 200;
+      if (!free) {
+        if (offscreen) gone.add(v);
+        continue;
+      }
+      if (offscreen) {
         v
           ..lane = 1
           ..d = Lanes.center(1);
@@ -656,6 +667,7 @@ class _TetEvents {
           ..blinkTimer = 0.3;
       }
     }
+    gone.forEach(g.traffic.remove);
     truck = g.traffic.addVehicle(TrafficType.truck, 0, s, speed)..runaway = true;
     _hornIn = 0;
   }

@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
@@ -11,7 +12,6 @@ import '../../dialog/map_picker_dialog.dart';
 import '../../game/game_config.dart';
 import '../../game/logic/trip_clock.dart';
 import '../../game/stage.dart';
-import '../../model/map_theme.dart';
 import '../../resource/app_colors.dart';
 import '../../resource/app_resource.dart';
 import '../../resource/app_text.dart';
@@ -405,38 +405,95 @@ class PauseOverlay extends StatelessWidget {
   }
 }
 
-/// Trời ngày / đêm đổi ngay; dòng bản đồ mở hộp chọn bản đồ.
+/// Trời ngày / đêm đổi ngay; dòng bản đồ mở hộp chọn bản đồ; công tắc
+/// hỗ trợ lái.
 class _ViewSettings extends StatelessWidget {
   const _ViewSettings({required this.controller});
 
   final GameController controller;
 
+  Widget _label(String text) =>
+      AppText.manrope(text, fontSize: 11.h, fontWeight: FontWeight.w800, letterSpacing: 1.2.h, color: AppColors.ff9A9385);
+
   @override
   Widget build(BuildContext context) {
     return Obx(() {
-      final sky = controller.sky.value;
+      final assist = controller.driveAssist.value;
       return Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          AppText.manrope('TRỜI', fontSize: 11.h, fontWeight: FontWeight.w800, letterSpacing: 1.2.h, color: AppColors.ff9A9385),
+          _label('TRỜI'),
           SizedBox(height: 6.h),
-          for (final s in SkyMode.values) ...[
-            SkyChip(
-              sky: s,
-              selected: s == sky,
-              onTap: () {
-                AudioService.shared.click();
-                controller.setSky(s);
-              },
-            ),
-            SizedBox(height: 6.h),
-          ],
-          SizedBox(height: 4.h),
+          SkySwitch(value: controller.sky.value, onChanged: controller.setSky),
+          SizedBox(height: 8.h),
           MapRow(summary: controller.setup.theme.title, onPressed: controller.pickMap),
+          SizedBox(height: 12.h),
+          _label('LÁI XE'),
+          SizedBox(height: 6.h),
+          CupertinoButton(
+            padding: EdgeInsets.zero,
+            minimumSize: Size.zero,
+            onPressed: () {
+              AudioService.shared.click();
+              controller.setDriveAssist(!assist);
+            },
+            child: Container(
+              padding: EdgeInsets.fromLTRB(10.h, 7.h, 8.h, 7.h),
+              decoration: BoxDecoration(color: AppColors.ffF2F3F5, borderRadius: BorderRadius.circular(10.h)),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        AppText.manrope('Hỗ trợ lái', fontSize: 13.h, fontWeight: FontWeight.w800, color: AppColors.ff1B1D22),
+                        AppText.manrope(
+                          'Thả cần lái xe tự giữ làn, tự chậm sau xe trước và trước khúc cua',
+                          fontSize: 9.5.h,
+                          fontWeight: FontWeight.w600,
+                          maxLines: 2,
+                          color: AppColors.ff6B7280,
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(width: 8.h),
+                  _Toggle(on: assist),
+                ],
+              ),
+            ),
+          ),
         ],
       );
     });
+  }
+}
+
+/// Công tắc bật / tắt (đỏ khi bật).
+class _Toggle extends StatelessWidget {
+  const _Toggle({required this.on});
+
+  final bool on;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 160),
+      width: 44.h,
+      height: 26.h,
+      padding: EdgeInsets.all(3.h),
+      alignment: on ? Alignment.centerRight : Alignment.centerLeft,
+      decoration: BoxDecoration(
+        color: on ? AppColors.ffD62828 : AppColors.ffC9CDD3,
+        borderRadius: BorderRadius.circular(13.h),
+      ),
+      child: Container(
+        width: 20.h,
+        height: 20.h,
+        decoration: const BoxDecoration(color: AppColors.ffFFFFFF, shape: BoxShape.circle),
+      ),
+    );
   }
 }
 

@@ -329,13 +329,34 @@ Chia hai tay giống game MOBA: **tay trái đặt liên tục trên cần lái*
 
 | Nút | Vị trí | Cách dùng | Tác dụng |
 |---|---|---|---|
-| **Ga** | Nút to nhất, sát góc dưới bên phải | Giữ | **Tay ga giữ mức:** giữ nút thì vặn thêm ga, xe tăng tốc; **buông tay thì xe giữ nguyên tốc độ đang chạy**. Vòng sáng quanh nút là mức ga đang giữ, chuyển đỏ khi đang ở tốc độ mà đâm vào là thành tai nạn |
-| **Phanh** | Vòng cung, bên trái-dưới nút ga | Giữ | Giảm tốc mạnh, có thể dừng hẳn (cần cho đèn đỏ và trạm thu phí). Buông ra thì xe giữ tốc độ vừa giảm tới |
+| **Ga** | Nút to nhất, sát góc dưới bên phải | Chạm / giữ | **Tay ga giữ mức theo nấc 5 km/h:** chạm một cái thêm 5 km/h; giữ thì tăng tốc, lúc đầu êm rồi mạnh dần; **buông tay thì xe giữ tốc độ đã đặt** (làm tròn lên nấc 5). Vòng sáng quanh nút là mức ga đang giữ, chuyển đỏ khi đang ở tốc độ mà đâm vào là thành tai nạn |
+| **Phanh** | Vòng cung, bên trái-dưới nút ga | Chạm / giữ | Chạm một cái là **giảm ga** 5 km/h (xe trôi chậm lại êm). Giữ thì phanh ăn dần, giữ lâu thì phanh gấp, dừng hẳn được (đèn đỏ, trạm thu phí). Buông ra thì xe giữ tốc độ mới (làm tròn xuống nấc 5) |
 | **Còi** | Vòng cung, phía trên-trái nút ga | Bấm | Xin đường. Có hiệu ứng hồi chiêu quét tròn như skill MOBA |
 | **Đèn** | Vòng cung, phía trên nút ga | Bấm để bật/tắt | Nhìn rõ đường khi trời tối. Nút sáng lên khi đang bật |
 
 - Ga giữ mức nên ngón cái rảnh để bấm còi, đèn, nút tình huống mà xe vẫn chạy đều. Sập ổ gà, lội vũng nước thì xe khựng rồi tự lấy lại tốc độ đang giữ; quệt lề thì như giật mình nhả bớt ga. Hết xăng / máy khục khặc thì xe trôi chậm dần.
-- Ga và phanh cùng giữ thì phanh được ưu tiên. Lần đầu vào chơi có thẻ nhỏ chỉ cách dùng.
+- Ga và phanh cùng giữ thì phanh được ưu tiên. Lần đầu vào chơi có thẻ nhỏ "Cách lái" chỉ cách dùng.
+- **Vì sao đổi sang nấc 5 km/h:** người chơi thử thấy ga, phanh rất khó chỉnh. Phanh cũ ăn hết cỡ ngay, chạm nhẹ 0,2 giây đã tụt khoảng 17 km/h; muốn giữ đúng 50 km/h qua chốt CSGT thì gần như không làm được.
+- Vào chặng xe đang lăn 30 km/h và giữ sẵn mức đó.
+- **Chip "Giữ … km/h"** nằm ngay trên đồng hồ tốc độ, cho biết mức ga đang đặt. Khi hỗ trợ lái đang tự giảm tốc thì chip ghi thêm "bám xe trước" hoặc "chậm vào cua".
+- **Hỗ trợ lái** (mặc định bật; tắt ở menu Tạm dừng → Lái xe):
+  - **Giữ làn:** thả cần lái thì xe tự về giữa làn gần nhất và bám theo cua.
+    - Gạt cần chừng nửa giây rồi thả thì xe vào hẳn làn bên, vì xe nhắm chỗ sẽ tới sau 0,35 giây chứ không nhắm chỗ đang đứng.
+    - Sát lề cũng là một chỗ giữ, để tấp lề quay đầu, thay lốp, dừng cho CSGT vẫn được.
+    - Không giữ làn ở trạm thu phí.
+    - Gió giật, lốp xẹp vẫn làm xe dạt, vì hỗ trợ chỉ kéo về chứ không đỡ trước.
+  - **Bám xe trước:** xe cùng chiều phía trước, nằm trên làn mình đang hoặc sắp đi, mà chậm hơn thì xe tự giảm tốc.
+    - Chừa khoảng 28 đơn vị + 0,6 giây × tốc độ xe trước. Lúc cần thì phanh tới 90% sức (sáng đèn phanh).
+    - Xe trước đi rồi thì tự chạy lại mức ga cũ.
+    - Không tự dừng đèn đỏ, không tự giảm theo biển hạn chế tốc độ: đó vẫn là việc của người chơi.
+  - **Chậm vào cua:** khúc cua trong 1.400 đơn vị phía trước thì xe hãm êm (240 u/s²) để vào cua vừa tốc độ khuyên dùng (đường ướt thấp hơn), qua cua lại tăng lên.
+  - **Đo bằng xe tự chạy 90 giây, không đụng cần lái:**
+    - Năm cấu hình: đèo, đồng bằng, ven biển, sông nước; ô tô, xe máy, xe khách; 60–90 km/h.
+    - Bật hỗ trợ: 0 va chạm, 0 lần quệt lề.
+    - Tắt hỗ trợ: 2–9 va chạm và tới 7 lần quệt lề mỗi lượt.
+  - Lúc đo phát hiện lỗi cũ: xe tải mất phanh xuất hiện thì xe làn trong bị ép tạt sang làn ngoài, kể cả khi xe mình đang ở đó.
+    - Giờ chỉ tránh khi làn ngoài trống.
+    - Xe AI đang đổi làn mà thấy xe mình ở chỗ định tạt vào thì dừng lại chờ.
 - **Đồng hồ tốc độ** kiểu công-tơ-mét xe máy nằm sát bên trái nút Phanh: kim đỏ, số km/h ở giữa, vạch hổ phách ngoài vành là mức ga đang giữ; có chốt CSGT phía trước thì phần quá tốc độ cho phép tô đỏ.
 
 **Góc trên bên phải:** nút **Chat** và nút **Tạm dừng**.

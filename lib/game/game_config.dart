@@ -167,6 +167,39 @@ abstract class GameConfig {
   /// về 0 mất khoảng 4 giây.
   static const double coastDecel = 75;
 
+  // ------------------------------------------------------ Ga, phanh, hỗ trợ lái
+  /// Một nấc ga: chạm Ga / Phanh đổi mức giữ chừng này; buông tay thì mức ga
+  /// làm tròn theo nấc.
+  static const double cruiseStepKmh = 5;
+
+  /// Ga / phanh ăn dần: lúc mới chạm chỉ bằng phần [gasStartFactor] /
+  /// [brakeStartFactor] sức, giữ đủ [gasRampSeconds] / [brakeRampSeconds]
+  /// mới hết cỡ.
+  static const double gasStartFactor = 0.35;
+  static const double gasRampSeconds = 0.5;
+  static const double brakeStartFactor = 0.3;
+  static const double brakeRampSeconds = 0.45;
+
+  /// Giữ làn: cần lái lệch quá [laneKeepRelease] mới tính là đang lái tay;
+  /// thả ra thì nhắm vị trí sau [laneKeepLookahead] giây, kéo về với hệ số
+  /// [laneKeepGain] (1/s).
+  static const double laneKeepRelease = 0.04;
+  static const double laneKeepLookahead = 0.35;
+  static const double laneKeepGain = 3.2;
+
+  /// Bám xe trước: tính quãng phanh với gia tốc [assistFollowFactor] × sức
+  /// phanh, chừa khoảng [assistGap] + [assistHeadway] giây × tốc độ xe trước.
+  /// Lúc cần, xe tự phanh tới [assistBrakeFactor] × sức phanh.
+  static const double assistFollowFactor = 0.5;
+  static const double assistGap = 28;
+  static const double assistHeadway = 0.6;
+  static const double assistBrakeFactor = 0.9;
+
+  /// Tự giảm tốc trước khúc cua: hãm êm với gia tốc này (u/s²), nhìn trước
+  /// [assistCurveLook].
+  static const double assistCurveDecel = 240;
+  static const double assistCurveLook = 1400;
+
   /// Quy đổi tốc độ hiển thị: [normalSpeed] ↔ 50 km/h.
   static const double displayKmhPerUnitSpeed = 50 / normalSpeed;
 

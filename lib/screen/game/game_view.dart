@@ -126,11 +126,20 @@ class _GameViewState extends State<GameView> {
                       child: Obx(() {
                         final hud = controller.hud.value;
                         if (hud == null || controller.phase.value == GamePhase.resting) return const SizedBox.shrink();
-                        return Speedometer(
-                          speedKmh: hud.speedKmh,
-                          cruiseKmh: hud.cruiseKmh,
-                          maxKmh: controller.maxSpeedKmh,
-                          limitKmh: hud.speedLimit?.limit,
+                        return Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (hud.cruiseKmh > 0 && controller.phase.value == GamePhase.driving) ...[
+                              CruiseChip(cruiseKmh: hud.cruiseKmh, assist: hud.assist),
+                              SizedBox(height: 4.h),
+                            ],
+                            Speedometer(
+                              speedKmh: hud.speedKmh,
+                              cruiseKmh: hud.cruiseKmh,
+                              maxKmh: controller.maxSpeedKmh,
+                              limitKmh: hud.speedLimit?.limit,
+                            ),
+                          ],
                         );
                       }),
                     ),
@@ -144,7 +153,7 @@ class _GameViewState extends State<GameView> {
                         return const SizedBox.shrink();
                       }
                       // Góc trên bên trái (phía làn ngược chiều) để không che xe mình.
-                      return Positioned(left: 12.h, top: 58.h, child: const CruiseTip());
+                      return Positioned(left: 12.h, top: 58.h, child: CruiseTip(assist: controller.driveAssist.value));
                     }),
                     Obx(() {
                       final job = controller.job.value;

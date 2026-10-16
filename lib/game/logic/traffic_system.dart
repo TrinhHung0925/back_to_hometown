@@ -272,6 +272,12 @@ class TrafficSystem {
           continue;
         }
         final goal = Lanes.center(target);
+        // Người chơi đang ở ngay chỗ định tạt vào: dừng lại chờ, không ép.
+        if ((player.s - v.s).abs() < (v.type.length + player.length) / 2 + 30 &&
+            (player.d - goal).abs() < (v.type.width + player.width) / 2 + 4 &&
+            (player.d - v.d).abs() < (v.type.width + player.width) / 2 + 14) {
+          continue;
+        }
         final step = _laneChangeSpeed * dt;
         if ((goal - v.d).abs() <= step) {
           v.d = goal;

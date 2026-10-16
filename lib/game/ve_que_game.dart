@@ -87,6 +87,16 @@ class VeQueGame extends FlameGame {
   /// Có tính buồn ngủ, xăng, mưa, sự cố không (nền màn menu thì tắt).
   final bool fatigue;
 
+  /// Hỗ trợ lái (người chơi bật / tắt ở menu tạm dừng): giữ làn, bám xe
+  /// trước, tự giảm tốc trước khúc cua.
+  bool driveAssist = true;
+
+  /// Số lần va chạm trong chặng (đo độ khó).
+  int collisions = 0;
+
+  /// Hỗ trợ lái đang làm gì (hiện trên HUD).
+  AssistState _assistState = AssistState.none;
+
   static const double _startS = 400;
 
   late final VehicleSpec spec = VehicleSpec.of(setup.vehicle);
@@ -111,7 +121,10 @@ class VeQueGame extends FlameGame {
     s: _startS,
     d: Lanes.center(1),
     speed: 0.6 * GameConfig.normalSpeed,
-  )..cargo = setup.startCargo;
+  )
+    ..cargo = setup.startCargo
+    // Vào chặng xe đang lăn bánh: giữ sẵn mức ga đó, khỏi tự trôi chậm lại.
+    ..cruise = 0.6 * GameConfig.normalSpeed;
   late final TrafficSystem traffic = TrafficSystem(Random(setup.seed * 31 + 7));
   late final CrossTraffic cross = CrossTraffic(Random(setup.seed * 17 + 9));
   late final AnimalSystem animals = AnimalSystem(Random(setup.seed * 7 + 3));
@@ -574,6 +587,7 @@ class VeQueGame extends FlameGame {
       _stepCondition(dt);
       _events.preMove(dt);
       _stepApproach(dt);
+      _stepAssist();
       player.update(dt);
     }
     _afterMove((player.s - prevS).abs());
@@ -623,6 +637,54 @@ class VeQueGame extends FlameGame {
       _end(StageEndReason.timeUp, delay: 0.4);
     }
     road.trimBefore(min(_camLeftS, _keepFromS) - 2400);
+  }
+
+  /// Hỗ trợ lái lúc mình tự lái: các vị trí giữ làn (tâm làn, sát hai lề),
+  /// tốc độ tối đa để kịp phanh sau xe phía trước cùng làn và để vào khúc
+  /// cua sắp tới vừa tốc độ khuyên dùng.
+  void _stepAssist() {
+    final manual = driveAssist && _approach == null && _events.pull == null && !_events.holding && !pushing;
+    player.laneKeep = manual && layout.tollAt(player.s) == null;
+    _assistState = AssistState.none;
+    if (!manual) {
+      player.assistCap = null;
+      return;
+    }
+    final lo = player.minD ?? -player.maxOffset, hi = player.maxD ?? player.maxOffset;
+    player.laneTargets = [
+      for (var lane = 0; lane < 4; lane++)
+        if (Lanes.center(lane) > lo + 1 && Lanes.center(lane) < hi - 1) Lanes.center(lane),
+      lo,
+      hi,
+    ];
+    final s = player.s;
+    var cap = double.infinity;
+    // Xe phía trước cùng chiều, nằm trên đường mình đang / sắp đi.
+    final follow = GameConfig.assistFollowFactor * spec.brakeDecel * player.grip;
+    final heading = player.d + dir * player.lateralVelocity * GameConfig.laneKeepLookahead;
+    for (final v in traffic.vehicles) {
+      if ((v.oncoming ? -1 : 1) != dir) continue;
+      final gap = (v.s - s) * dir - (v.type.length + spec.length) / 2;
+      if (gap < -4 || gap > 1200) continue;
+      final reach = (v.type.width + spec.width) / 2 + 2;
+      if ((v.d - player.d).abs() > reach && (v.d - heading).abs() > reach) continue;
+      final keep = GameConfig.assistGap + GameConfig.assistHeadway * v.speed;
+      final safe = sqrt(v.speed * v.speed + 2 * follow * max(0.0, gap - keep));
+      if (safe < cap) cap = safe;
+    }
+    if (cap < player.cruise - 1) _assistState = AssistState.following;
+    // Khúc cua phía trước: hãm êm để vào cua vừa tốc độ khuyên dùng.
+    final look = GameConfig.assistCurveLook;
+    for (final c in road.curvesBetween(min(s, s + dir * look), max(s, s + dir * look))) {
+      final ahead = max(0.0, dir > 0 ? c.startS - s : s - c.endS);
+      final advise = c.adviseSpeed * sqrt(player.grip);
+      final safe = sqrt(advise * advise + 2 * GameConfig.assistCurveDecel * ahead);
+      if (safe < cap) {
+        cap = safe;
+        if (cap < player.cruise - 1) _assistState = AssistState.curve;
+      }
+    }
+    player.assistCap = cap.isFinite ? cap : null;
   }
 
   /// Dòng xe dọc đường và đường ngang vẫn chạy (cả lúc mình ngồi quán).
@@ -1885,6 +1947,7 @@ class VeQueGame extends FlameGame {
 
   void _collide(double relative,
       {required void Function() onMinor, required void Function() stopOther, bool backOff = false, bool headOn = false}) {
+    collisions++;
     final severity = classifyCollision(relative, headOn: headOn);
     _impactFx(relative);
     _events.damagePeach(severity == CollisionSeverity.crash || severity == CollisionSeverity.fatal ? 70 : 30, 'Va quẹt mạnh quá, cành đào sau xe gãy mất mấy nhánh!');
@@ -2875,7 +2938,7 @@ class VeQueGame extends FlameGame {
     final wobble = (!tires.ok && moving ? sin(_time * 15) * 0.035 : 0.0) + (_tiltT > 0 ? sin(_tiltT * 22) * 0.12 : 0.0);
     final resting = phase == GamePhase.resting;
     _playerSprite
-      ..braking = player.brake && player.speed > 1
+      ..braking = (player.brake || player.assistBraking) && player.speed > 1
       ..lightsOn = headlightsOn
       ..hazard = spec.kind.fourWheels && (_job != null || (fuel.empty && !moving) || (_wavedBy != null))
       ..walker = pushing || (_job?.kind == RoadsideJobKind.fuelDelivery && spec.kind == VehicleKind.motorbike) ? _walkerSprite : null
@@ -3176,6 +3239,7 @@ class VeQueGame extends FlameGame {
       kmTotal: setup.lengthKm.round(),
       speedKmh: (player.speed * GameConfig.displayKmhPerUnitSpeed).round(),
       cruiseKmh: (player.cruise * GameConfig.displayKmhPerUnitSpeed).round(),
+      assist: _assistState,
       spareMinutes: spareMinutes.round(),
       clockLabel: clock.label,
       minutesLeft: max(0, clock.minutesLeft).floor(),

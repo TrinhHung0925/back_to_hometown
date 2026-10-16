@@ -15,6 +15,8 @@ abstract class AppColors {
   static const Color ffFFB3C7 = Color(0xffFFB3C7);
   static const Color ffCFC8B8 = Color(0xffCFC8B8);
   static const Color ff9A9385 = Color(0xff9A9385);
+  static const Color ffC9CDD3 = Color(0xffC9CDD3);
+  static const Color ff7FB2E5 = Color(0xff7FB2E5);
 
   /// Vạch vàng phân cách hai chiều.
   static const Color ffF2C12E = Color(0xffF2C12E);

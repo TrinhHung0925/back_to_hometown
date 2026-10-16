@@ -308,6 +308,9 @@ enum GameSound {
 /// Loại thông báo; [rank] cao hơn thì được chen lên trước, không bị thông
 /// báo thấp hơn đè mất ([danger]: nguy hiểm ngay trước mặt — xe tải mất
 /// phanh, đuôi đoạn tắc đường…).
+/// Hỗ trợ lái đang tự giảm tốc vì gì (HUD ghi chú cạnh mức ga).
+enum AssistState { none, following, curve }
+
 enum NoticeKind {
   info(0),
   money(1),
@@ -388,6 +391,7 @@ class HudData {
     required this.kmTotal,
     required this.speedKmh,
     this.cruiseKmh = 0,
+    this.assist = AssistState.none,
     this.spareMinutes = 0,
     required this.clockLabel,
     required this.minutesLeft,
@@ -437,6 +441,9 @@ class HudData {
 
   /// Mức ga đang giữ (km/h): xe tự giữ tốc độ này khi buông tay.
   final int cruiseKmh;
+
+  /// Hỗ trợ lái đang tự giảm tốc vì xe trước / khúc cua.
+  final AssistState assist;
 
   /// Chạy tiếp ở tốc độ thường thì về tới nhà dư (dương) / trễ (âm) bao
   /// nhiêu phút so với giao thừa.
@@ -542,6 +549,7 @@ class HudData {
       other.kmTotal == kmTotal &&
       other.speedKmh == speedKmh &&
       other.cruiseKmh == cruiseKmh &&
+      other.assist == assist &&
       other.spareMinutes == spareMinutes &&
       other.clockLabel == clockLabel &&
       other.minutesLeft == minutesLeft &&
@@ -586,7 +594,7 @@ class HudData {
 
   @override
   int get hashCode => Object.hashAll([
-        kmDone, kmTotal, speedKmh, cruiseKmh, spareMinutes, clockLabel, minutesLeft, lixi, cargo, danger, light, curve, jam, headlightsOn, night, //
+        kmDone, kmTotal, speedKmh, cruiseKmh, assist, spareMinutes, clockLabel, minutesLeft, lixi, cargo, danger, light, curve, jam, headlightsOn, night, //
         alert, drowse, canUTurn, stallPrompt, stallKind, stallMeters, driverSeat, hitchPrompt, hitchMeters, rider, riderMeters, peach, fog, day, reversed, fuel, fuelKm, tire, spare, rain, rainKind, raincoat,
         soaked, speedLimit, pullOver, outOfFuel, pushing, fuelAhead, repairAhead, Object.hashAll(actions),
       ]);
