@@ -6,23 +6,31 @@ import '../vehicle_spec.dart';
 /// Bình xăng (0..1). Tốn theo quãng đường: chạy nhanh và chở nặng thì tốn
 /// hơn, đứng yên nổ máy tốn rất ít.
 class FuelTank {
-  FuelTank(this.kind, {required double level}) : level = level.clamp(0.0, 1.0);
+  FuelTank(this.kind, {required double level, this.capacity = 1}) : level = level.clamp(0.0, 1.0);
 
   final VehicleKind kind;
   double level;
 
-  double get rangeKm => switch (kind) {
+  /// Dung tích so với bình zin (có bình xăng phụ thì lớn hơn 1): chạy xa
+  /// hơn, đổ đầy cũng tốn hơn.
+  final double capacity;
+
+  double get rangeKm =>
+      capacity *
+      switch (kind) {
         VehicleKind.motorbike => GameConfig.fuelRangeKmMotorbike,
         VehicleKind.car => GameConfig.fuelRangeKmCar,
         VehicleKind.bus => GameConfig.fuelRangeKmBus,
       };
 
   /// Một lì xì đổ được bao nhiêu phần bình ở cây xăng.
-  double get perLixi => switch (kind) {
+  double get perLixi =>
+      switch (kind) {
         VehicleKind.motorbike => GameConfig.fuelPerLixiMotorbike,
         VehicleKind.car => GameConfig.fuelPerLixiCar,
         VehicleKind.bus => GameConfig.fuelPerLixiBus,
-      };
+      } /
+      capacity;
 
   bool get empty => level <= 0;
   bool get low => level < GameConfig.fuelLow;

@@ -1,11 +1,14 @@
 import 'package:get/get.dart';
 
 import '../../dialog/map_picker_dialog.dart';
+import '../../dialog/shop_dialog.dart';
 import '../../game/game_config.dart';
+import '../../game/logic/missions.dart';
 import '../../game/logic/vehicle_condition.dart';
 import '../../resource/app_resource.dart';
 import '../../service/audio_service.dart';
 import '../../model/map_theme.dart';
+import '../../model/shop.dart';
 import '../../model/trip.dart';
 import '../../route.dart';
 import '../../service/local_service.dart';
@@ -49,13 +52,13 @@ class RestStopController extends GetxController {
   int get fullPrice {
     final p = progress;
     if (p == null) return 0;
-    return FuelTank(p.plan.vehicle, level: fuel.value).fullPrice;
+    return FuelTank(p.plan.vehicle, level: fuel.value, capacity: Perks.of(p.upgrades).fuelCapacity).fullPrice;
   }
 
   double get rangeKm {
     final p = progress;
     if (p == null) return 0;
-    return FuelTank(p.plan.vehicle, level: fuel.value).kmLeft;
+    return FuelTank(p.plan.vehicle, level: fuel.value, capacity: Perks.of(p.upgrades).fuelCapacity).kmLeft;
   }
 
   void refuel() {
@@ -65,6 +68,27 @@ class RestStopController extends GetxController {
       AudioService.shared.play(AppAudio.sfxFuelPump, volume: 0.7);
       _sync();
     }
+  }
+
+  /// Đồ đã mua ở cửa hàng (đổi sau mỗi lần mua — vẽ lại hàng đồ trong thẻ chuyến).
+  final shopTick = 0.obs;
+
+  /// Mở cửa hàng: nâng cấp xe, quà Tết cho cả nhà.
+  Future<void> openShop() async {
+    final p = progress;
+    if (p == null) return;
+    await ShopDialog.open(p, onChanged: () {
+      _sync();
+      shopTick.value++;
+    });
+    _sync();
+    shopTick.value++;
+  }
+
+  /// Nhiệm vụ phụ của chặng sắp đi.
+  List<Mission> get missions {
+    final p = progress;
+    return p == null ? const [] : TripService.missionsFor(p);
   }
 
   /// Chặng vừa xong (null nếu đang ở đầu chuyến).

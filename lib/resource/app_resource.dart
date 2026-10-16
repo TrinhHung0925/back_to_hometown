@@ -321,6 +321,10 @@ abstract class Img {
           item(art),
       ];
 
+  /// images — nâng cấp xe, quà Tết ở cửa hàng trạm dừng nghỉ (mô hình 3D
+  /// dò tia: tool/asset_pipeline/build_shop_items.py)
+  static String shopItem(String art) => '$assetsImgPath/img_shop_$art.png';
+
   static List<String> get tripEvents => [
         imgScooterPlayerRaincoat,
         ...scootersRaincoat,

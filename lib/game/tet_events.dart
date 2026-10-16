@@ -162,19 +162,31 @@ class _TetEvents {
   /// Người đứng vẫy xin đi nhờ ven quốc lộ (xe máy, ô tô).
   List<_Hitch> _planHitches() {
     if (!g.fatigue || g.spec.kind == VehicleKind.bus) return const [];
+    // Có nhiệm vụ "cho khách đi nhờ" thì chắc chắn có người vẫy xe.
+    final wanted = g.setup.missions.any((m) => m.kind == MissionKind.hitchhiker);
     final out = <_Hitch>[];
     for (final z in _highways()) {
       var s = z.startS + _between(1500, 4000);
       while (s < z.endS - 800) {
         final clear = !g.layout.nearFeature(s, margin: 500) && g.layout.stallsBetween(s - 350, s + 350).isEmpty && !inRiver(s, margin: 2500);
         final drop = s + _between(5, 11) * GameConfig.unitsPerKm;
-        if (clear && drop < g.finishS - 600 && _r.nextDouble() < 0.7) {
+        if (clear && drop < g.finishS - 600 && (_r.nextDouble() < 0.7 || (wanted && out.isEmpty))) {
           final (name, who, art) = _hitchPeople[_r.nextInt(_hitchPeople.length)];
           out.add(_Hitch(s: s, dropS: drop, name: name, who: who, art: art, tip: 2 + _r.nextInt(3)));
           s = drop + _between(6, 12) * GameConfig.unitsPerKm;
         } else {
           s += _between(3, 6) * GameConfig.unitsPerKm;
         }
+      }
+    }
+    // Có nhiệm vụ mà chưa ai đứng vẫy: dò kỹ từng đoạn tìm một chỗ trống.
+    for (final z in wanted && out.isEmpty ? _highways() : const <RoadZone>[]) {
+      for (var s = z.startS + 1200; s < z.endS - 800 && out.isEmpty; s += 250) {
+        final drop = s + 4.5 * GameConfig.unitsPerKm;
+        final clear = !g.layout.nearFeature(s, margin: 400) && g.layout.stallsBetween(s - 300, s + 300).isEmpty && !inRiver(s, margin: 2500);
+        if (!clear || drop >= g.finishS - 600) continue;
+        final (name, who, art) = _hitchPeople[_r.nextInt(_hitchPeople.length)];
+        out.add(_Hitch(s: s, dropS: drop, name: name, who: who, art: art, tip: 2 + _r.nextInt(3)));
       }
     }
     return out;
@@ -308,6 +320,7 @@ class _TetEvents {
         ..state = _HitchState.done
         ..standS = g.player.s;
       riding = null;
+      g.missionStats.riders++;
       g.player.cargo = max(0, g.player.cargo - 1);
       final tip = max(1, h.tip - (h.overshot ? 1 : 0));
       g.lixi += tip;

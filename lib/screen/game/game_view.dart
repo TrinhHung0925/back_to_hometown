@@ -195,6 +195,7 @@ class _GameViewState extends State<GameView> {
                           onHeadlight: controller.toggleHeadlights,
                           headlightOn: hud?.headlightsOn ?? false,
                           hornTick: controller.hornTick.value,
+                          hornCooldown: controller.game.hornCooldownSeconds,
                           gasFraction: hud == null ? 0 : hud.cruiseKmh / controller.maxSpeedKmh,
                           danger: hud?.danger ?? false,
                         );
@@ -221,7 +222,12 @@ class _GameViewState extends State<GameView> {
               if (result == null) return const SizedBox.shrink();
               if (controller.homecoming.value) {
                 return Positioned.fill(
-                  child: HomecomingOverlay(result: result, vehicle: controller.setup.vehicle, onDone: () => controller.homecoming.value = false),
+                  child: HomecomingOverlay(
+                    result: result,
+                    vehicle: controller.setup.vehicle,
+                    gifts: controller.setup.gifts,
+                    onDone: () => controller.homecoming.value = false,
+                  ),
                 );
               }
               return Positioned.fill(

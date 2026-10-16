@@ -6,6 +6,7 @@ import 'package:flame/components.dart';
 import 'package:flame/game.dart';
 
 import '../model/map_theme.dart';
+import '../model/shop.dart';
 import '../model/trip.dart';
 import '../resource/app_resource.dart';
 import 'components/animal_layer.dart';
@@ -32,6 +33,7 @@ import 'logic/chase.dart';
 import 'logic/collision.dart';
 import 'logic/cross_traffic.dart';
 import 'logic/gas_chat.dart';
+import 'logic/missions.dart';
 import 'logic/player_physics.dart';
 import 'logic/road_layout.dart';
 import 'logic/road_path.dart';
@@ -101,6 +103,19 @@ class VeQueGame extends FlameGame {
   /// Số lần va chạm trong chặng (đo độ khó).
   int collisions = 0;
 
+  /// Nâng cấp xe đã mua ở cửa hàng (lốp, bình xăng phụ, đèn LED, còi hơi, đệm ghế).
+  late final Perks perks = setup.perks;
+
+  /// Số liệu chấm nhiệm vụ phụ (bị phạt, va chạm, ghé quán, khách đi nhờ…).
+  final MissionStats missionStats = MissionStats();
+
+  /// Nhiệm vụ phụ đang tới đâu.
+  List<MissionCheck> get missionChecks =>
+      Missions.checkAll(setup.missions, missionStats, elapsed: clock.minutes - setup.startClockMinutes, peach: _events.peach);
+
+  /// Thời gian hồi còi (còi hơi hồi nhanh hơn).
+  double get hornCooldownSeconds => GameConfig.hornCooldown * perks.hornCooldown;
+
   /// Hỗ trợ lái đang làm gì (hiện trên HUD).
   AssistState _assistState = AssistState.none;
 
@@ -141,7 +156,7 @@ class VeQueGame extends FlameGame {
   late final TripClock clock = TripClock(minutes: setup.startClockMinutes);
   late int lixi = setup.startLixi;
 
-  late final FuelTank fuel = FuelTank(spec.kind, level: fatigue ? setup.startFuel : 1);
+  late final FuelTank fuel = FuelTank(spec.kind, level: fatigue ? setup.startFuel : 1, capacity: perks.fuelCapacity);
   late final Tires tires = Tires(spec.kind);
   late final Weather weather = fatigue
       ? Weather.forStage(
@@ -480,10 +495,10 @@ class VeQueGame extends FlameGame {
   /// Bóp còi xin đường. Trả về false nếu còi đang hồi.
   bool honk() {
     if (_hornCooldown > 0 || phase == GamePhase.finished) return false;
-    _hornCooldown = GameConfig.hornCooldown;
+    _hornCooldown = hornCooldownSeconds;
     onSound(GameSound.horn);
     if (phase != GamePhase.driving && phase != GamePhase.chase) return true;
-    final scared = animals.scare(player.s, dir, GameConfig.hornReach + 200);
+    final scared = animals.scare(player.s, dir, GameConfig.hornReach * perks.hornReach + 200);
     if (scared != null) {
       _notice('scare${scared.s.round()}', switch (scared.kind) {
         AnimalKind.duck => 'Bóp còi — đàn vịt nháo nhác vỗ cánh chạy!',
@@ -491,7 +506,8 @@ class VeQueGame extends FlameGame {
         AnimalKind.dog => 'Bóp còi — con chó cụp đuôi chạy mất!',
       }, NoticeKind.info);
     }
-    switch (traffic.requestYield(_snapshot)) {
+    switch (traffic.requestYield(_snapshot,
+        reach: GameConfig.hornReach * perks.hornReach, ignoreChance: GameConfig.heavyIgnoreHornChance * perks.heavyIgnoreHorn)) {
       case YieldResult.honkedBack:
         _honkBackTimer = 0.45;
         onNotice(const GameNotice('Xe to không nhường — bóp còi lại!', kind: NoticeKind.warning));
@@ -779,7 +795,7 @@ class VeQueGame extends FlameGame {
       // Ướt sũng, lạnh run thì mau mệt.
       final cold = 1 + (GameConfig.soakAlertFactor - 1) * soaked;
       final before = alert;
-      alert = max(0, alert - GameConfig.alertDecayPerSecond * night * cold * setup.difficulty.drowsiness * dt);
+      alert = max(0, alert - GameConfig.alertDecayPerSecond * night * cold * setup.difficulty.drowsiness * perks.drowsiness * dt);
       if (before >= GameConfig.alertDrowsy && alert < GameConfig.alertDrowsy) {
         onNotice(const GameNotice('Bắt đầu buồn ngủ rồi… Ghé quán ven đường uống cốc trà đá đi!', kind: NoticeKind.warning));
       }
@@ -817,7 +833,7 @@ class VeQueGame extends FlameGame {
   /// Tình trạng xe trước khi tính chuyển động: đường ướt bám kém, hết xăng /
   /// khục khặc thì mất ga, lốp xẹp chạy chậm và kéo lệch, trượt nước.
   void _stepCondition(double dt) {
-    player.grip = 1 - (1 - GameConfig.wetGrip) * _wet;
+    player.grip = 1 - (1 - GameConfig.wetGrip) * _wet * perks.wetGripLoss;
     if (fuel.empty) {
       player.engineOff = !pushing;
       // Máy tắt: xe trôi tới đâu thì mức ga về tới đó (dắt bộ phải bấm Ga lại).
@@ -897,7 +913,7 @@ class VeQueGame extends FlameGame {
       final patch = RoadBox(s: n.s, d: Lanes.center(n.lane), length: NailPatch.length, width: NailPatch.width);
       if (!patch.overlaps(box, shrink: 0.9) || player.speed < 5) continue;
       if (!_nailsChecked.add('${n.seed}/$dir')) continue;
-      if (tires.ok && _random.nextDouble() < tires.flatChanceOnNails) {
+      if (tires.ok && _random.nextDouble() < tires.flatChanceOnNails * perks.puncture) {
         _puncture('Cán phải đinh tặc — xì lốp rồi!', nails: true);
       } else if (tires.ok) {
         onNotice(const GameNotice('Lạo xạo… cán qua bãi đinh. May quá, lốp chưa sao!', kind: NoticeKind.warning));
@@ -1187,6 +1203,7 @@ class VeQueGame extends FlameGame {
     if (_coldFineIn >= 0) return;
     final fine = min(lixi, GameConfig.coldFineLixi);
     lixi -= fine;
+    missionStats.incidents++;
     onSound(GameSound.toll);
     onNotice(GameNotice('Camera phạt nguội: quay đầu nơi có biển cấm — trừ $fine lì xì', kind: NoticeKind.warning));
   }
@@ -1457,6 +1474,7 @@ class VeQueGame extends FlameGame {
       return;
     }
     lixi -= item.price;
+    if (_restStall?.kind.food ?? false) missionStats.meals++;
     alert = min(100, alert + item.alert);
     clock.addPenalty(item.minutes);
     onSound(item.price > 0 ? GameSound.toll : GameSound.gift);
@@ -1961,6 +1979,7 @@ class VeQueGame extends FlameGame {
   void _collide(double relative,
       {required void Function() onMinor, required void Function() stopOther, bool backOff = false, bool headOn = false}) {
     collisions++;
+    missionStats.bumps++;
     final severity = classifyCollision(relative, headOn: headOn);
     onHaptic?.call(severity == CollisionSeverity.crash || severity == CollisionSeverity.fatal ? GameHaptic.heavy : GameHaptic.medium);
     _impactFx(relative);
@@ -2062,6 +2081,7 @@ class VeQueGame extends FlameGame {
           _boardTimer = 0;
           final fare = stop.passengers * GameConfig.fareLixi;
           player.cargo += stop.passengers;
+          missionStats.passengers += stop.passengers;
           lixi += fare;
           _popAt(player.s, player.d, '+$fare', const Color(0xffFFD166));
           onSound(GameSound.toll);
@@ -2103,6 +2123,7 @@ class VeQueGame extends FlameGame {
 
   // ------------------------------------------------------- Công an
   void _startIncident() {
+    missionStats.incidents++;
     phase = GamePhase.incident;
     _policeVisible = true;
     _policeS = _behindEdgeS - dir * 120;
@@ -2218,6 +2239,7 @@ class VeQueGame extends FlameGame {
       switch (pickup.kind) {
         case PickupKind.lixi:
           lixi++;
+          missionStats.lixiPicked++;
           onSound(GameSound.lixi);
           _popAt(pickup.s, pickup.d, '+1', const Color(0xffFFD166));
         case PickupKind.gift:
@@ -2252,7 +2274,7 @@ class VeQueGame extends FlameGame {
           }
         case PickupKind.pothole:
           _events.damagePeach(6, null);
-          if (fatigue && player.speed > GameConfig.potholeFlatSpeed && tires.ok && _random.nextDouble() < GameConfig.potholeFlatChance) {
+          if (fatigue && player.speed > GameConfig.potholeFlatSpeed && tires.ok && _random.nextDouble() < GameConfig.potholeFlatChance * perks.puncture) {
             _puncture('Sập ổ gà mạnh quá — xì lốp rồi!');
           }
           player.bump();
@@ -2570,6 +2592,7 @@ class VeQueGame extends FlameGame {
   /// Tông phải con vật: lông bay, xe khựng lại; gà vịt nhà người ta thì phải
   /// dừng đền (mỗi đàn đền một lần).
   void _hitAnimal(Animal a) {
+    missionStats.bumps++;
     final (x, y) = road.worldAt(a.s, a.d);
     final dog = a.kind == AnimalKind.dog;
     _airFx.dust(_random, x, y, count: dog ? 3 : 7, size: dog ? 14 : 9, color: switch (a.kind) {
@@ -2783,9 +2806,15 @@ class VeQueGame extends FlameGame {
     _endDelay -= dt;
     if (_endDelay > 0) return;
     _endReported = true;
+    // Tới nơi thì chấm nhiệm vụ phụ, cộng lì xì thưởng.
+    final missions = _endReason == StageEndReason.arrived
+        ? Missions.checkAll(setup.missions, missionStats, elapsed: clock.minutes - setup.startClockMinutes, peach: _events.peach, arrived: true)
+        : const <MissionCheck>[];
     onFinished(StageResult(
       reason: _endReason!,
-      lixi: lixi,
+      lixi: lixi + Missions.rewardSum(missions),
+      missions: missions,
+      giftValue: setup.gifts.fold(0, (sum, g) => sum + g.price),
       cargo: player.cargo,
       clockMinutes: clock.minutes,
       minutesLeft: max(0, clock.minutesLeft),
@@ -3136,7 +3165,9 @@ class VeQueGame extends FlameGame {
     _night.lights.add(NightLight.round(pos, GameConfig.noHeadlightRadius, 0.9));
     if (headlightsOn && !_riderOff) {
       final front = pos + Offset(cos(dir), sin(dir)) * spec.length * 0.45;
-      _night.lights.add(NightLight.cone(front, dir, GameConfig.headlightReach, 0.32, 0.95));
+      _night.lights.add(perks.led
+          ? NightLight.cone(front, dir, GameConfig.headlightReach * perks.headlightReach, 0.36, 1)
+          : NightLight.cone(front, dir, GameConfig.headlightReach, 0.32, 0.95));
     } else {
       _notice('headlights${(clock.minutes / 120).floor()}', 'Trời tối rồi — bấm nút Đèn để nhìn xa hơn!', NoticeKind.warning);
     }

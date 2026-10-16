@@ -2,7 +2,9 @@ import 'package:flutter/foundation.dart';
 
 import '../model/difficulty.dart';
 import '../model/map_theme.dart';
+import '../model/shop.dart';
 import '../model/trip.dart';
+import 'logic/missions.dart';
 import 'logic/road_layout.dart';
 import 'logic/roadside.dart';
 import 'logic/vehicle_condition.dart';
@@ -32,6 +34,9 @@ class StageSetup {
     this.startPeach = -1,
     this.difficulty = Difficulty.normal,
     this.tutorial = false,
+    this.upgrades = const {},
+    this.missions = const [],
+    this.gifts = const [],
   });
 
   final VehicleKind vehicle;
@@ -78,6 +83,17 @@ class StageSetup {
   /// Chặng tập lái (không thuộc chuyến đi nào, không có sự cố).
   final bool tutorial;
 
+  /// Nâng cấp xe đã mua (lốp, bình xăng phụ, đèn LED, còi hơi, đệm ghế).
+  final Set<Upgrade> upgrades;
+
+  /// Nhiệm vụ phụ của chặng (chọn sẵn ở trạm dừng nghỉ).
+  final List<Mission> missions;
+
+  /// Quà Tết chở theo xe về biếu cả nhà.
+  final List<Gift> gifts;
+
+  Perks get perks => Perks.of(upgrades);
+
   double get lengthKm => sections.fold(0, (sum, s) => sum + s.km);
   double get lengthUnits => lengthKm * GameConfig.unitsPerKm;
 
@@ -103,6 +119,9 @@ class StageSetup {
         startPeach: startPeach,
         difficulty: difficulty,
         tutorial: tutorial,
+        upgrades: upgrades,
+        missions: missions,
+        gifts: gifts,
       );
 }
 
@@ -128,6 +147,8 @@ class StageResult {
     required this.minutesLeft,
     this.fuel = 0.6,
     this.peach = -1,
+    this.missions = const [],
+    this.giftValue = 0,
   });
 
   final StageEndReason reason;
@@ -142,6 +163,16 @@ class StageResult {
   final double clockMinutes;
   final double minutesLeft;
 
+  /// Nhiệm vụ phụ chấm lúc kết thúc chặng ([lixi] đã gồm lì xì thưởng).
+  final List<MissionCheck> missions;
+
+  /// Lì xì thưởng từ nhiệm vụ phụ.
+  int get missionLixi => Missions.rewardSum(missions);
+
+  /// Quà Tết mua ở cửa hàng đang chở theo xe (tính theo lì xì đã bỏ ra): vẫn
+  /// là của mang về nên tính điểm như lì xì còn giữ.
+  final int giftValue;
+
   bool get won => reason == StageEndReason.arrived;
 
   /// 1 sao khi về kịp; thêm sao khi còn dư nhiều thời gian.
@@ -152,7 +183,7 @@ class StageResult {
     return 1;
   }
 
-  int get score => won ? lixi * 100 + cargo * 300 + (minutesLeft * 10).round() + (peach > 0 ? (peach * 3).round() : 0) : 0;
+  int get score => won ? (lixi + giftValue) * 100 + cargo * 300 + (minutesLeft * 10).round() + (peach > 0 ? (peach * 3).round() : 0) : 0;
 }
 
 enum GamePhase {

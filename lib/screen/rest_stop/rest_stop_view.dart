@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 
 import '../../common/app_button.dart';
 import '../../common/lixi_icon.dart';
+import '../../common/mission_row.dart';
 import '../../common/screen_header.dart';
 import '../../dialog/map_picker_dialog.dart';
 import '../../game/logic/trip_clock.dart';
@@ -15,6 +16,7 @@ import '../../service/route_service.dart';
 import '../../service/trip_service.dart';
 import '../game/road_icons.dart';
 import 'rest_stop_controller.dart';
+import 'rest_stop_shop.dart';
 
 class RestStopView extends StatefulWidget {
   RestStopView({super.key}) {
@@ -90,6 +92,8 @@ class _RestStopViewState extends State<RestStopView> {
                               onPressed: controller.restLater,
                             ),
                           ),
+                          SizedBox(width: 16.h),
+                          Expanded(child: ShopButton(onPressed: controller.openShop)),
                           SizedBox(width: 16.h),
                           Expanded(
                             child: AppButton(
@@ -167,6 +171,11 @@ class _TripCard extends StatelessWidget {
             fontSize: 12.h,
             color: AppColors.ff5B6169,
           ),
+          const Spacer(),
+          Obx(() {
+            controller.shopTick.value;
+            return CarriedItems(progress: progress, onOpen: controller.openShop);
+          }),
           const Spacer(),
           Row(
             crossAxisAlignment: CrossAxisAlignment.end,
@@ -267,28 +276,49 @@ class _NextStageCard extends StatelessWidget {
         RoadKind.expressway => AppColors.ff27AE60,
       };
 
+  /// Nhãn ngắn cho dòng chú thích màu (vừa một hàng kể cả đủ ba loại đường).
+  static String shortLabel(RoadKind kind) => switch (kind) {
+        RoadKind.city => 'Phố',
+        RoadKind.highway => 'Quốc lộ',
+        RoadKind.expressway => 'Cao tốc',
+      };
+
   @override
   Widget build(BuildContext context) {
     final minutes = (RouteService.stagePlaySeconds(stage) / 60).ceil();
+    final missions = controller.missions;
     return _Card(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          AppText.manrope('Chặng $number / $total', fontSize: 12.h, fontWeight: FontWeight.w700, color: AppColors.ff5B6169),
-          SizedBox(height: 2.h),
-          AppText.manrope(
-            '${stage.fromName} → ${stage.toName}',
-            fontSize: 17.h,
-            fontWeight: FontWeight.w800,
-            maxLines: 2,
-            color: AppColors.ff1B1D22,
+          Row(
+            children: [
+              AppText.manrope('Chặng $number / $total', fontSize: 12.h, fontWeight: FontWeight.w700, color: AppColors.ff5B6169),
+              const Spacer(),
+              AppText.manrope(
+                '${stage.km.round()} km · ~$minutes phút chơi · ${stage.tollBooths} trạm thu phí',
+                fontSize: 11.h,
+                fontWeight: FontWeight.w600,
+                color: AppColors.ff5B6169,
+              ),
+            ],
           ),
-          SizedBox(height: 10.h),
+          SizedBox(height: 2.h),
+          if (missions.isEmpty)
+            AppText.manrope('${stage.fromName} → ${stage.toName}', fontSize: 17.h, fontWeight: FontWeight.w800, maxLines: 2, color: AppColors.ff1B1D22)
+          else
+            // Có nhiệm vụ thì tên chặng một dòng (tên dài thì thu nhỏ chữ).
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: AppText.manrope('${stage.fromName} → ${stage.toName}', fontSize: 17.h, fontWeight: FontWeight.w800, maxLines: 1, color: AppColors.ff1B1D22),
+            ),
+          SizedBox(height: 8.h),
           // Dải màu tỉ lệ theo km từng loại đường.
           ClipRRect(
             borderRadius: BorderRadius.circular(5.h),
             child: SizedBox(
-              height: 12.h,
+              height: 10.h,
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -298,33 +328,38 @@ class _NextStageCard extends StatelessWidget {
               ),
             ),
           ),
-          SizedBox(height: 10.h),
-          for (final kind in RoadKind.values)
-            if (stage.sections.any((s) => s.kind == kind))
-              Padding(
-                padding: EdgeInsets.only(bottom: 4.h),
-                child: Row(
-                  children: [
-                    Container(width: 12.h, height: 12.h, color: kindColor(kind)),
-                    SizedBox(width: 8.h),
-                    Expanded(child: AppText.manrope(kindLabel(kind), fontSize: 13.h, color: AppColors.ff1B1D22)),
-                    AppText.manrope(
-                      '${stage.sections.where((s) => s.kind == kind).fold<double>(0, (a, s) => a + s.km).round()} km',
-                      fontSize: 13.h,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.ff1B1D22,
-                    ),
-                  ],
-                ),
-              ),
-          const Spacer(),
-          AppText.manrope(
-            '${stage.km.round()} km · ~$minutes phút chơi · ${stage.tollBooths} trạm thu phí',
-            fontSize: 12.h,
-            maxLines: 2,
-            color: AppColors.ff5B6169,
+          SizedBox(height: 5.h),
+          Row(
+            children: [
+              for (final kind in RoadKind.values)
+                if (stage.sections.any((s) => s.kind == kind)) ...[
+                  Container(
+                    width: 9.h,
+                    height: 9.h,
+                    decoration: BoxDecoration(color: kindColor(kind), borderRadius: BorderRadius.circular(2.h)),
+                  ),
+                  SizedBox(width: 4.h),
+                  AppText.manrope(missions.isEmpty ? kindLabel(kind) : shortLabel(kind), fontSize: 11.5.h, color: AppColors.ff1B1D22),
+                  SizedBox(width: 4.h),
+                  AppText.manrope(
+                    '${stage.sections.where((s) => s.kind == kind).fold<double>(0, (a, s) => a + s.km).round()} km',
+                    fontSize: 11.5.h,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.ff1B1D22,
+                  ),
+                  SizedBox(width: 12.h),
+                ],
+            ],
           ),
-          SizedBox(height: 8.h),
+          const Spacer(),
+          if (missions.isNotEmpty) ...[
+            SectionLabel('NHIỆM VỤ PHỤ', trailing: AppText.manrope('Tới nơi mới nhận thưởng', fontSize: 10.h, fontWeight: FontWeight.w600, color: AppColors.ff9A9385)),
+            for (final m in missions) ...[
+              SizedBox(height: 4.h),
+              MissionRow(mission: m, showDetail: false),
+            ],
+            const Spacer(),
+          ],
           Obx(() => MapSkyRow(theme: controller.mapTheme.value, sky: controller.sky.value, onPickMap: controller.pickMap, onSky: controller.setSky)),
         ],
       ),
