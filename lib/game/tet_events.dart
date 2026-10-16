@@ -161,7 +161,8 @@ class _TetEvents {
 
   /// Người đứng vẫy xin đi nhờ ven quốc lộ (xe máy, ô tô).
   List<_Hitch> _planHitches() {
-    if (!g.fatigue || g.spec.kind == VehicleKind.bus) return const [];
+    // Xe máy chở cả nhà (vợ sau, con trước) thì hết chỗ cho người đi nhờ.
+    if (!g.fatigue || g.spec.kind == VehicleKind.bus || (g.setup.family && g.spec.kind == VehicleKind.motorbike)) return const [];
     final out = <_Hitch>[];
     for (final z in _highways()) {
       var s = z.startS + _between(1500, 4000);

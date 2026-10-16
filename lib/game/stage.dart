@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../model/difficulty.dart';
 import '../model/map_theme.dart';
 import '../model/trip.dart';
+import 'logic/family.dart';
 import 'logic/road_layout.dart';
 import 'logic/roadside.dart';
 import 'logic/vehicle_condition.dart';
@@ -33,6 +34,7 @@ class StageSetup {
     this.difficulty = Difficulty.normal,
     this.tutorial = false,
     this.daily = false,
+    this.family = false,
   });
 
   final VehicleKind vehicle;
@@ -82,6 +84,8 @@ class StageSetup {
   /// Thử thách hôm nay: một chặng lẻ, không thuộc chuyến đi nào (chơi lại
   /// giữ nguyên chặng, lưu kỷ lục trong ngày).
   final bool daily;
+  /// Chở cả nhà về quê: vợ ngồi sau, con nhỏ đi cùng (bé có mức kiên nhẫn).
+  final bool family;
 
   double get lengthKm => sections.fold(0, (sum, s) => sum + s.km);
   double get lengthUnits => lengthKm * GameConfig.unitsPerKm;
@@ -109,6 +113,7 @@ class StageSetup {
         difficulty: difficulty,
         tutorial: tutorial,
         daily: daily,
+        family: family,
       );
 }
 
@@ -134,6 +139,7 @@ class StageResult {
     required this.minutesLeft,
     this.fuel = 0.6,
     this.peach = -1,
+    this.familyScore = 0,
   });
 
   final StageEndReason reason;
@@ -145,6 +151,10 @@ class StageResult {
 
   /// Cành đào còn đẹp bao nhiêu (0..100); âm = không chở.
   final double peach;
+
+  /// Chở cả nhà: điểm cộng (bé còn vui lúc tới nơi) trừ điểm phạt (tè dầm,
+  /// khóc nhè).
+  final int familyScore;
   final double clockMinutes;
   final double minutesLeft;
 
@@ -158,7 +168,7 @@ class StageResult {
     return 1;
   }
 
-  int get score => won ? lixi * 100 + cargo * 300 + (minutesLeft * 10).round() + (peach > 0 ? (peach * 3).round() : 0) : 0;
+  int get score => won ? lixi * 100 + cargo * 300 + (minutesLeft * 10).round() + (peach > 0 ? (peach * 3).round() : 0) + familyScore : 0;
 }
 
 enum GamePhase {
@@ -452,6 +462,7 @@ class HudData {
     this.fuelAhead,
     this.repairAhead,
     this.actions = const [],
+    this.family,
   });
 
   final int kmDone;
@@ -561,6 +572,10 @@ class HudData {
   /// Nút theo tình huống đang hiện.
   final List<RoadAction> actions;
 
+  /// Chở cả nhà: bé còn kiên nhẫn bao nhiêu, đang vui / quấy / khóc / ngủ
+  /// (null khi đi một mình).
+  final FamilyHud? family;
+
   @override
   bool operator ==(Object other) =>
       other is HudData &&
@@ -609,13 +624,14 @@ class HudData {
       other.pushing == pushing &&
       other.fuelAhead == fuelAhead &&
       other.repairAhead == repairAhead &&
+      other.family == family &&
       listEquals(other.actions, actions);
 
   @override
   int get hashCode => Object.hashAll([
         kmDone, kmTotal, speedKmh, cruiseKmh, assist, spareMinutes, clockLabel, minutesLeft, lixi, cargo, danger, light, curve, jam, headlightsOn, night, //
         alert, drowse, canUTurn, stallPrompt, stallKind, stallMeters, driverSeat, hitchPrompt, hitchMeters, rider, riderMeters, peach, fog, day, reversed, fuel, fuelKm, tire, spare, rain, rainKind, raincoat,
-        soaked, speedLimit, pullOver, outOfFuel, pushing, fuelAhead, repairAhead, Object.hashAll(actions),
+        soaked, speedLimit, pullOver, outOfFuel, pushing, fuelAhead, repairAhead, Object.hashAll(actions), family,
       ]);
 }
 

@@ -21,6 +21,9 @@ class PlanTripController extends GetxController {
   final activeField = TripField.from.obs;
   final plan = Rxn<TripPlan>();
 
+  /// Chở cả nhà về quê (vợ ngồi sau, con nhỏ đi cùng); xe khách thì không.
+  final family = false.obs;
+
   /// Bản đồ và trời đang chọn (hàng "Bản đồ ›" + Theo giờ / Ngày / Đêm).
   final mapTheme = LocalService.shared.getMapTheme().obs;
   final sky = LocalService.shared.getSkyMode().obs;
@@ -86,6 +89,11 @@ class PlanTripController extends GetxController {
     _replan();
   }
 
+  void setFamily(bool value) {
+    if (coachMode) return;
+    family.value = value;
+  }
+
   void swap() {
     final from = fromId.value;
     fromId.value = toId.value;
@@ -108,7 +116,7 @@ class PlanTripController extends GetxController {
   void start() {
     final p = plan.value;
     if (p == null) return;
-    final progress = TripService.shared.start(p);
+    final progress = TripService.shared.start(p, family: family.value && !coachMode);
     Get.offNamed(AppPage.game.routeName, arguments: TripService.shared.stageSetup(progress));
   }
 

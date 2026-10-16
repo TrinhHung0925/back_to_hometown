@@ -241,6 +241,26 @@ abstract class Img {
 
   /// Ảnh mẹ đang gọi điện (thẻ cuộc gọi).
   static const String imgPortraitMom = '$assetsImgPath/img_portrait_mom.png';
+
+  /// Chở cả nhà về quê (tool/asset_pipeline/build_family_art.py): xe số chở
+  /// vợ ngồi sau, bé ngồi ghế phụ phía trước (có bản trùm áo mưa), chân dung
+  /// vợ và bé theo tâm trạng (thẻ lời nói, ô kiên nhẫn trên HUD).
+  static const String imgScooterFamily = '$assetsImgPath/img_scooter_family.png';
+  static const String imgScooterFamilyRaincoat = '$assetsImgPath/img_scooter_family_raincoat.png';
+  static const String imgShadowScooterFamily = '$assetsImgPath/img_shadow_scooter_family.png';
+  static const String imgShadowScooterFamilyRaincoat = '$assetsImgPath/img_shadow_scooter_family_raincoat.png';
+  static const String imgPortraitWife = '$assetsImgPath/img_portrait_wife.png';
+  static const String imgPortraitKid = '$assetsImgPath/img_portrait_kid.png';
+  static const String imgPortraitKidHappy = '$assetsImgPath/img_portrait_kid_happy.png';
+  static const String imgPortraitKidCry = '$assetsImgPath/img_portrait_kid_cry.png';
+  static const String imgPortraitKidSleep = '$assetsImgPath/img_portrait_kid_sleep.png';
+  static const List<String> familyRide = [
+    imgScooterFamily,
+    imgScooterFamilyRaincoat,
+    imgShadowScooterFamily,
+    imgShadowScooterFamilyRaincoat,
+  ];
+  static const List<String> familyPortraits = [imgPortraitWife, imgPortraitKid, imgPortraitKidHappy, imgPortraitKidCry, imgPortraitKidSleep];
   static const String imgDriverCar = '$assetsImgPath/img_driver_car.png';
   static const List<String> stools = ['$assetsImgPath/img_stool_red.png', '$assetsImgPath/img_stool_blue.png'];
   static const List<String> tables = ['$assetsImgPath/img_table_1.png', '$assetsImgPath/img_table_2.png'];

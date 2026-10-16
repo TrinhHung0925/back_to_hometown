@@ -7,6 +7,7 @@ import 'package:get/get.dart';
 import '../../game/debug/autopilot.dart';
 import '../../game/debug/debug_launch.dart';
 import '../../game/game_config.dart';
+import '../../game/logic/family.dart';
 import '../../game/logic/gas_chat.dart';
 import '../../game/logic/roadside.dart';
 import '../../game/logic/vehicle_condition.dart';
@@ -91,6 +92,10 @@ class GameController extends GetxController {
   /// Điện thoại từ nhà đang reo / đang nói chuyện (null khi không có).
   final call = Rxn<PhoneCallState>();
 
+  /// Chở cả nhà: câu vợ / con / mình vừa nói (tự ẩn sau vài giây).
+  final familyLine = Rxn<FamilyLine>();
+  Timer? _familyTimer;
+
   /// Tán gẫu với nhân viên cây xăng (null khi không đứng ở cây xăng).
   final gasChat = Rxn<GasChatState>();
   final Set<int> _chatUsed = {};
@@ -169,6 +174,8 @@ class GameController extends GetxController {
     stallVisit.value = null;
     job.value = null;
     call.value = null;
+    familyLine.value = null;
+    _familyTimer?.cancel();
     pump.value = null;
     notice.value = null;
     _noticeQueue.clear();
@@ -243,6 +250,7 @@ class GameController extends GetxController {
       onHaptic: _haptic,
       // Tập lái: không buồn ngủ, không hết xăng, không mưa, không sự cố.
       fatigue: !setup.tutorial,
+      onFamilyLine: _showFamilyLine,
     );
     game.driveAssist = driveAssist.value;
     gameKey.value++;
@@ -358,6 +366,19 @@ class GameController extends GetxController {
     }
     _presentNotice(_noticeQueue.removeAt(0).$1);
   }
+
+  /// Câu nói trên xe hiện ở thẻ góc trái, giữ đủ lâu để đọc.
+  void _showFamilyLine(FamilyLine line) {
+    familyLine.value = line;
+    _familyTimer?.cancel();
+    _familyTimer = Timer(Duration(milliseconds: (line.seconds * 1000).round() + 900), () => familyLine.value = null);
+  }
+
+  /// Chuyến này chở cả nhà (vợ + bé) về quê.
+  bool get familyRide => game.familyRide;
+
+  /// Mua bim bim / hộp sữa cho bé ở quán.
+  void orderSnack(FamilySnack snack) => game.orderSnack(snack);
 
   // ------------------------------------------- Quán ven đường, quay đầu
   void stopAtStall() => game.stopAtStall();
@@ -508,6 +529,7 @@ class GameController extends GetxController {
     _noticeTimer?.cancel();
     _cruiseTipTimer?.cancel();
     _chatTimer?.cancel();
+    _familyTimer?.cancel();
     _autopilot?.stop();
     _audio.stopEngine();
     _audio.stopSiren();

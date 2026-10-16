@@ -16,6 +16,7 @@ import '../../resource/app_text.dart';
 import '../../service/audio_service.dart';
 import '../../service/local_service.dart';
 import '../../service/route_service.dart';
+import 'family_toggle.dart';
 import 'plan_trip_controller.dart';
 import 'trip_map.dart';
 
@@ -321,14 +322,25 @@ class _Panel extends StatelessWidget {
             Expanded(
               child: plan == null
                   ? _Steps(hasFrom: from != null, hasTo: to != null)
-                  : _PlanSummary(plan: plan, departure: controller.departureMinutes!),
+                  : _PlanSummary(plan: plan, departure: controller.departureMinutes!, family: controller.family.value),
             ),
             SizedBox(height: 8.h),
-            AppButton(
-              width: double.infinity,
-              label: plan == null ? 'Chọn điểm đi và điểm đến' : 'Xuất phát',
-              icon: plan == null ? null : Img.icPlay,
-              onPressed: plan == null ? null : controller.start,
+            Row(
+              children: [
+                // Chở cả nhà: chọn ngay cạnh nút Xuất phát (đã có lộ trình).
+                if (plan != null && !controller.coachMode) ...[
+                  FamilyToggle(value: controller.family.value, onChanged: controller.setFamily),
+                  SizedBox(width: 6.h),
+                ],
+                Expanded(
+                  child: AppButton(
+                    width: double.infinity,
+                    label: plan == null ? 'Chọn điểm đi và điểm đến' : 'Xuất phát',
+                    icon: plan == null ? null : Img.icPlay,
+                    onPressed: plan == null ? null : controller.start,
+                  ),
+                ),
+              ],
             ),
           ],
         );
@@ -586,10 +598,13 @@ class _Steps extends StatelessWidget {
 }
 
 class _PlanSummary extends StatelessWidget {
-  const _PlanSummary({required this.plan, required this.departure});
+  const _PlanSummary({required this.plan, required this.departure, this.family = false});
 
   final TripPlan plan;
   final double departure;
+
+  /// Chở cả nhà (vợ + bé) về quê.
+  final bool family;
 
   static String hours(double h) {
     final total = (h * 60).round();
@@ -639,6 +654,7 @@ class _PlanSummary extends StatelessWidget {
             runSpacing: 4.h,
             children: [
               fact('Độ khó', LocalService.shared.getDifficulty().title),
+              if (family) fact('Đi cùng', 'vợ + bé Bin'),
               fact('Lái thật', hours(plan.realHours)),
               fact('Xuất phát', '${TripClock(minutes: departure).label} · ${TripClock(minutes: departure).dayLabel}'),
               if (plan.expresswayKm > 0) fact('Cao tốc', '${plan.expresswayKm.round()} km'),
