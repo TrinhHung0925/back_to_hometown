@@ -31,6 +31,7 @@ import 'logic/animals.dart';
 import 'logic/chase.dart';
 import 'logic/collision.dart';
 import 'logic/cross_traffic.dart';
+import 'logic/family.dart';
 import 'logic/gas_chat.dart';
 import 'logic/player_physics.dart';
 import 'logic/road_layout.dart';
@@ -47,6 +48,7 @@ import 'vehicle_spec.dart';
 
 part 'driver/driver_view.dart';
 part 'event_layers.dart';
+part 'family.dart';
 part 'ferry.dart';
 part 'tet_events.dart';
 
@@ -65,6 +67,7 @@ class VeQueGame extends FlameGame {
     this.onJob,
     this.onCall,
     this.onHaptic,
+    this.onFamilyLine,
     this.fatigue = true,
   });
 
@@ -87,6 +90,9 @@ class VeQueGame extends FlameGame {
 
   /// Rung máy (va chạm, quệt lề, ổ gà).
   final void Function(GameHaptic haptic)? onHaptic;
+
+  /// Chở cả nhà: vợ / con / mình vừa nói một câu trên xe.
+  final void Function(FamilyLine line)? onFamilyLine;
 
   /// Có tính buồn ngủ, xăng, mưa, sự cố không (nền màn menu thì tắt).
   final bool fatigue;
@@ -259,6 +265,9 @@ class VeQueGame extends FlameGame {
   /// Chuyện dọc đường: sương mù, gió biển, tắc đường, xe tải mất phanh,
   /// điện thoại, khách đi nhờ, cành đào.
   late final _TetEvents _events = _TetEvents(this);
+
+  /// Chở cả nhà về quê (vợ + con nhỏ): bé có mức kiên nhẫn, hay hỏi han.
+  late final _Family _family = _Family(this);
   _RestStep _restStep = _RestStep.parking;
   double _restT = 0;
   List<String> _restChatter = const [];
@@ -351,7 +360,7 @@ class VeQueGame extends FlameGame {
   Future<void> onLoad() async {
     // Đường dẫn ảnh khai báo đầy đủ trong Img, không dùng tiền tố mặc định.
     images.prefix = '';
-    await images.loadAll([...Img.vehicles, ...Img.worldArt]);
+    await images.loadAll([...Img.vehicles, ...Img.worldArt, if (_family.sprite) ...Img.familyRide]);
     _paints = WorldPaints(images);
 
     camera.viewfinder.anchor = Anchor.center;
@@ -375,9 +384,11 @@ class VeQueGame extends FlameGame {
       ..skip = ((s) => _events.inRiver(s, margin: 80));
     _powerLines = PowerLines(road: road)..skip = ((s) => _events.inRiver(s, margin: 60));
     _trafficLayer = TrafficLayer(traffic: traffic, cross: cross, road: road);
-    _riderSprite = Sprite(images.fromCache(Img.player(spec.kind)));
+    _riderSprite = Sprite(images.fromCache(_family.sprite ? Img.imgScooterFamily : Img.player(spec.kind)));
     _parkedSprite = spec.kind == VehicleKind.motorbike ? Sprite(images.fromCache(Img.imgScooterParked)) : _riderSprite;
-    _raincoatSprite = spec.kind == VehicleKind.motorbike ? Sprite(images.fromCache(Img.imgScooterPlayerRaincoat)) : _riderSprite;
+    _raincoatSprite = spec.kind == VehicleKind.motorbike
+        ? Sprite(images.fromCache(_family.sprite ? Img.imgScooterFamilyRaincoat : Img.imgScooterPlayerRaincoat))
+        : _riderSprite;
     _walkerSprite = Sprite(images.fromCache(spec.kind == VehicleKind.motorbike ? Img.imgDriverMoto : Img.imgDriverCar));
     _stalls = StallLayer(road: road, layout: layout, paints: _paints, images: images)..guestSprite = _walkerSprite;
     _checkpoints = CheckpointLayer(road: road, layout: layout, paints: _paints, images: images);
@@ -387,9 +398,11 @@ class VeQueGame extends FlameGame {
     _rainStreaks = RainStreaks();
     _crew = CrewLayer(road: road, images: images);
     _animalLayer = AnimalLayer(road: road, animals: animals, images: images);
-    _riderShadow = Sprite(images.fromCache(Img.playerShadow(spec.kind)));
+    _riderShadow = Sprite(images.fromCache(_family.sprite ? Img.imgShadowScooterFamily : Img.playerShadow(spec.kind)));
     _parkedShadow = spec.kind == VehicleKind.motorbike ? Sprite(images.fromCache(Img.imgShadowScooterParked)) : _riderShadow;
-    _raincoatShadow = spec.kind == VehicleKind.motorbike ? Sprite(images.fromCache(Img.imgShadowScooterRaincoat)) : _riderShadow;
+    _raincoatShadow = spec.kind == VehicleKind.motorbike
+        ? Sprite(images.fromCache(_family.sprite ? Img.imgShadowScooterFamilyRaincoat : Img.imgShadowScooterRaincoat))
+        : _riderShadow;
     _playerSprite = VehicleSprite(
       sprite: _riderSprite,
       shadow: _riderShadow,
@@ -594,6 +607,7 @@ class VeQueGame extends FlameGame {
       _stepAlert(dt);
       _stepCondition(dt);
       _events.preMove(dt);
+      _family.preMove();
       _stepApproach(dt);
       _stepAssist();
       player.update(dt);
@@ -609,6 +623,7 @@ class VeQueGame extends FlameGame {
     _stepOvertakes(dt);
     _stepPickups(dt);
     _events.step(dt);
+    _family.step(dt);
     _stepAnimals(dt);
     _stepNails();
     _stepStallNotices();
@@ -779,7 +794,7 @@ class VeQueGame extends FlameGame {
       // Ướt sũng, lạnh run thì mau mệt.
       final cold = 1 + (GameConfig.soakAlertFactor - 1) * soaked;
       final before = alert;
-      alert = max(0, alert - GameConfig.alertDecayPerSecond * night * cold * setup.difficulty.drowsiness * dt);
+      alert = max(0, alert - GameConfig.alertDecayPerSecond * night * cold * setup.difficulty.drowsiness * _family.alertFactor * dt);
       if (before >= GameConfig.alertDrowsy && alert < GameConfig.alertDrowsy) {
         onNotice(const GameNotice('Bắt đầu buồn ngủ rồi… Ghé quán ven đường uống cốc trà đá đi!', kind: NoticeKind.warning));
       }
@@ -1441,6 +1456,7 @@ class VeQueGame extends FlameGame {
       _parkTo = (ahead > 40 ? stall.s - dir * 10 : player.s + dir * 30, stall.side * (GameConfig.roadHalfWidth + spec.width / 2 - 4));
     }
     _restChatter = _chatter(stall);
+    _family.stopAt();
     clock.addPenalty(GameConfig.stallBaseMinutes);
     onPhaseChanged(phase);
     onRest?.call(StallVisit(stall: stall, chatter: _restChatter, seated: false));
@@ -1650,6 +1666,7 @@ class VeQueGame extends FlameGame {
     final stall = _restStall!;
     final plan = _stalls.planOf(stall);
     _restT += dt;
+    if (_restStep != _RestStep.parking && _restStep != _RestStep.pullingOut) _family.resting(dt);
     _repairT = max(0, _repairT - dt);
     if (_repairT > 0 && stall.kind.fixesTires) {
       final (s, d) = _wheelSpot;
@@ -2256,6 +2273,7 @@ class VeQueGame extends FlameGame {
             _puncture('Sập ổ gà mạnh quá — xì lốp rồi!');
           }
           player.bump();
+          _family.bump();
           onSound(GameSound.pothole);
           onHaptic?.call(GameHaptic.light);
           _shake = max(_shake, 0.18);
@@ -2791,6 +2809,7 @@ class VeQueGame extends FlameGame {
       minutesLeft: max(0, clock.minutesLeft),
       fuel: fuel.level,
       peach: _events.peach,
+      familyScore: _family.score(arrived: _endReason == StageEndReason.arrived),
     ));
   }
 
@@ -2943,7 +2962,8 @@ class VeQueGame extends FlameGame {
       ..sync();
     _syncRain();
     _syncCrew();
-    if (_cargoShown != player.cargo && spec.kind != VehicleKind.bus) {
+    // Xe máy chở cả nhà: vợ ngồi yên sau ôm quà trong lòng, không chất lên yên.
+    if (_cargoShown != player.cargo && spec.kind != VehicleKind.bus && !_family.sprite) {
       _cargoShown = player.cargo;
       _playerSprite.cargo = [
         for (var i = 0; i < min(player.cargo, 3); i++) Sprite(images.fromCache(Img.cargo[i % Img.cargo.length])),
@@ -3299,6 +3319,7 @@ class VeQueGame extends FlameGame {
       fuelAhead: fuel.low ? _serviceLabel((t) => t.kind == StallKind.xang || (t.kind == StallKind.xangLe && spec.kind == VehicleKind.motorbike)) : null,
       repairAhead: tires.ok ? null : _serviceLabel((t) => t.kind.fixesTires),
       actions: _actions(),
+      family: _family.hud,
     );
     if (hud == _lastHud) return;
     _lastHud = hud;

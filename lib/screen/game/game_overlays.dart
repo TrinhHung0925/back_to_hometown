@@ -16,6 +16,7 @@ import '../../resource/app_colors.dart';
 import '../../resource/app_resource.dart';
 import '../../resource/app_text.dart';
 import '../../service/audio_service.dart';
+import 'family_widgets.dart';
 import 'game_controller.dart';
 import 'road_icons.dart';
 
@@ -589,6 +590,8 @@ class ResultOverlay extends StatelessWidget {
               ],
             ],
           ),
+          // Chở cả nhà: bé tới nơi còn vui không, được / mất bao nhiêu điểm.
+          if (result.won && controller.setup.family) ...[SizedBox(height: 8.h), FamilyResultLine(score: result.familyScore)],
           if (summary != null) ...[
             SizedBox(height: 10.h),
             Container(

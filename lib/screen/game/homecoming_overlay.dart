@@ -12,14 +12,18 @@ import '../../resource/app_colors.dart';
 import '../../resource/app_resource.dart';
 import '../../resource/app_text.dart';
 import '../../service/audio_service.dart';
+import 'homecoming_family.dart';
 
 /// Về tới nhà (xong chặng cuối): xe chạy vào ngõ dừng trước cổng, cả nhà ra
 /// đón; rồi đếm ngược đón giao thừa, pháo hoa nổ rộn trời.
 class HomecomingOverlay extends StatefulWidget {
-  const HomecomingOverlay({super.key, required this.result, required this.vehicle, required this.onDone});
+  const HomecomingOverlay({super.key, required this.result, required this.vehicle, required this.onDone, this.family = false});
 
   final StageResult result;
   final VehicleKind vehicle;
+
+  /// Chở cả nhà về: vợ và bé xuống xe cùng vào chào ông bà.
+  final bool family;
   final VoidCallback onDone;
 
   @override
@@ -170,6 +174,8 @@ class _HomecomingOverlayState extends State<HomecomingOverlay> with TickerProvid
           final vehicleW = vehicleH * aspect;
           final vehicleX = -500 + (_Scene.vehicleStopX + 500) * k;
           final bounce = _drive.value < 1 ? sin(t * 26) * 1.2 * scale : 0.0;
+          // Chở cả nhà: xe máy còn chở vợ con tới lúc mọi người xuống xe.
+          final vehicleArt = (widget.family ? HomecomingFamily.vehicleArt(widget.vehicle, _homeAt == null ? null : t - _homeAt!) : null) ?? _vehicleArt;
           return Stack(
             children: [
               Positioned.fill(child: Container(color: AppColors.ff1B1D22)),
@@ -198,7 +204,14 @@ class _HomecomingOverlayState extends State<HomecomingOverlay> with TickerProvid
                 top: at(0, _Scene.vehicleY).dy - vehicleH + bounce,
                 width: vehicleW,
                 height: vehicleH,
-                child: Transform.flip(flipX: true, child: Image.asset(Img.driverArt(_vehicleArt), fit: BoxFit.fill)),
+                child: Transform.flip(
+                  flipX: true,
+                  child: Image.asset(
+                    Img.driverArt(vehicleArt),
+                    fit: BoxFit.fill,
+                    gaplessPlayback: true,
+                  ),
+                ),
               ),
               if (!_night) Positioned.fill(child: IgnorePointer(child: CustomPaint(painter: _PetalsPainter(t)))),
               if (_step == _Step.newYear)
@@ -233,6 +246,7 @@ class _HomecomingOverlayState extends State<HomecomingOverlay> with TickerProvid
       final y = g.y + (g.outY - g.y) * w - (walking ? sin(t * 10 + g.phase * 3).abs() * 5 : 0);
       out.add(('${g.art}_${(t * 2.2 + g.phase).floor().isEven ? 1 : 2}', g.heightM, x, y, false));
     }
+    if (widget.family) out.addAll(HomecomingFamily.people(widget.vehicle, _homeAt == null ? null : since, t));
     // Con chó quẩn ở cổng, xe tới thì chạy ra ngõ mừng rỡ.
     final run = Curves.easeOut.transform((since / 0.9).clamp(0.0, 1.0));
     out.add((
@@ -291,7 +305,13 @@ class _HomecomingOverlayState extends State<HomecomingOverlay> with TickerProvid
             ),
             if (!newYear) ...[
               SizedBox(height: 4.h),
-              AppText.manrope('Bố mẹ, bà và em ra tận cổng đón.', fontSize: 12.h, fontWeight: FontWeight.w600, color: AppColors.ffFFFFFF.withValues(alpha: 0.8)),
+              AppText.manrope(
+                widget.family ? 'Bố mẹ, bà và em ra tận cổng đón — bé Bin chạy ùa vào lòng bà.' : 'Bố mẹ, bà và em ra tận cổng đón.',
+                fontSize: 12.h,
+                fontWeight: FontWeight.w600,
+                maxLines: 2,
+                color: AppColors.ffFFFFFF.withValues(alpha: 0.8),
+              ),
             ],
             if (peach != null && !newYear) ...[
               SizedBox(height: 4.h),

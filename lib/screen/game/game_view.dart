@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 
+import '../../game/logic/family.dart';
 import '../../game/stage.dart';
 import '../../resource/app_colors.dart';
 import '../../resource/app_resource.dart';
 import 'action_buttons.dart';
 import 'chat_overlay.dart';
+import 'family_widgets.dart';
 import 'game_controller.dart';
 import 'game_hud.dart';
 import 'game_overlays.dart';
@@ -47,6 +49,12 @@ class _GameViewState extends State<GameView> {
     for (final path in Img.items) {
       precacheImage(AssetImage(path), context);
     }
+    // Chở cả nhà: ảnh vợ, bé (thẻ lời nói, nhãn kiên nhẫn) và món cho bé.
+    if (controller.setup.family) {
+      for (final path in [...Img.familyPortraits, Img.item(FamilySnack.bimBim.art), Img.item(FamilySnack.hopSua.art)]) {
+        precacheImage(AssetImage(path), context);
+      }
+    }
   }
 
   @override
@@ -77,7 +85,8 @@ class _GameViewState extends State<GameView> {
                 child: Stack(
                   children: [
                     Positioned(top: 0, left: 0, right: 0, child: GameHud(controller: controller)),
-                    Positioned(top: 112.h, left: 12.h, child: ReversedChip(controller: controller)),
+                    // Chở cả nhà: chừa chỗ cho thẻ lời nói hai dòng phía trên.
+                    Positioned(top: controller.setup.family ? 126.h : 112.h, left: 12.h, child: ReversedChip(controller: controller)),
                     // Điện thoại từ nhà: góc trên bên trái, không che đường phía trước.
                     Positioned(top: 56.h, left: 12.h, child: PhoneCallCard(controller: controller)),
                     Positioned(top: 54.h, right: 12.h, child: RoadAheadColumn(controller: controller)),
@@ -86,7 +95,7 @@ class _GameViewState extends State<GameView> {
                     Obx(() {
                       final resting = controller.phase.value == GamePhase.resting && controller.stallVisit.value != null;
                       // Đang có điện thoại: thẻ cuộc gọi ở góc trái, thông báo dời sang phải.
-                      final calling = controller.call.value != null;
+                      final calling = controller.call.value != null || controller.familyLine.value != null;
                       return Positioned(
                         top: 56.h,
                         left: resting ? 444.h : (calling ? 312.h : 0),
@@ -182,6 +191,16 @@ class _GameViewState extends State<GameView> {
                             : StallChatter(key: ValueKey(visit.stall), chatter: visit.chatter),
                       );
                     }),
+                    // Chở cả nhà: vợ / con nói gì trên xe — góc trên bên trái (ẩn khi
+                    // có điện thoại); đang ghé quán thì nằm bên phải bảng quán.
+                    Obx(() {
+                      final resting = controller.phase.value == GamePhase.resting && controller.stallVisit.value != null;
+                      return Positioned(
+                        top: resting ? 104.h : 56.h,
+                        left: resting ? 444.h : 12.h,
+                        child: FamilyTalkCard(controller: controller),
+                      );
+                    }),
                     Positioned(
                       right: 14.h,
                       bottom: 18.h,
@@ -221,7 +240,12 @@ class _GameViewState extends State<GameView> {
               if (result == null) return const SizedBox.shrink();
               if (controller.homecoming.value) {
                 return Positioned.fill(
-                  child: HomecomingOverlay(result: result, vehicle: controller.setup.vehicle, onDone: () => controller.homecoming.value = false),
+                  child: HomecomingOverlay(
+                    result: result,
+                    vehicle: controller.setup.vehicle,
+                    family: controller.setup.family,
+                    onDone: () => controller.homecoming.value = false,
+                  ),
                 );
               }
               return Positioned.fill(

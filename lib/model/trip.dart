@@ -129,9 +129,13 @@ class TripProgress {
     this.budget = GameConfig.timeBudgetFactor,
     this.peach = -1,
     this.difficulty = Difficulty.normal,
+    this.family = false,
   });
 
   final TripPlan plan;
+
+  /// Chở cả nhà về quê: vợ ngồi sau, con nhỏ đi cùng (chọn lúc lên lộ trình).
+  final bool family;
 
   /// Độ khó chọn lúc lên đường (giữ nguyên cả chuyến).
   final Difficulty difficulty;
@@ -169,6 +173,7 @@ class TripProgress {
         'budget': budget,
         'peach': peach,
         'difficulty': difficulty.name,
+        'family': family,
       };
 
   factory TripProgress.fromJson(Map<String, dynamic> json) => TripProgress(
@@ -182,6 +187,7 @@ class TripProgress {
         budget: (json['budget'] as num?)?.toDouble() ?? 1.25,
         peach: (json['peach'] as num?)?.toDouble() ?? -1,
         difficulty: Difficulty.values.asNameMap()[json['difficulty']] ?? Difficulty.normal,
+        family: json['family'] == true,
       );
 }
 

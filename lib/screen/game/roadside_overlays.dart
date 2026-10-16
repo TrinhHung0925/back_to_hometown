@@ -17,6 +17,7 @@ import '../../game/vehicle_spec.dart';
 import '../../resource/app_colors.dart';
 import '../../resource/app_resource.dart';
 import '../../resource/app_text.dart';
+import 'family_widgets.dart';
 import 'game_controller.dart';
 import 'road_icons.dart';
 
@@ -219,6 +220,8 @@ class ReversedChip extends StatelessWidget {
       // Đang có điện thoại thì thẻ cuộc gọi nằm chỗ này.
       if (hud == null || controller.phase.value == GamePhase.resting || controller.call.value != null) return const SizedBox.shrink();
       final chips = <Widget>[
+        // Chở cả nhà: bé còn kiên nhẫn bao nhiêu (mặt bé theo tâm trạng).
+        if (hud.family != null) FamilyChip(family: hud.family!),
         if (hud.reversed) _chip(RoadGlyph.uTurn, 'Đang đi ngược về ${controller.setup.fromName}', AppColors.ffB4231E),
         if (hud.pushing) _chip(RoadGlyph.walker, 'Đang dắt bộ — giữ Ga để đẩy xe', AppColors.ff5B6169),
         if (hud.rider != null)
@@ -418,6 +421,8 @@ class StallSheet extends StatelessWidget {
                             ),
                         ],
                     },
+                    // Chở cả nhà: bim bim, hộp sữa cho bé (một hàng gọn).
+                    FamilySnackRow(controller: controller, kind: stall.kind, lixi: lixi),
                     if (raincoatOffer)
                       _OfferRow(
                         art: Img.imgItemRaincoat,

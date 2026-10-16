@@ -56,11 +56,13 @@ class TripService {
   static double departureFor(TripPlan plan, [Difficulty difficulty = Difficulty.normal]) =>
       TripClock.departureFor(TripClock.allowedMinutes(plan.stages.fold(0.0, (sum, s) => sum + s.km), plan.stages.length, difficulty));
 
-  TripProgress start(TripPlan plan) {
+  /// [family]: chở cả nhà (vợ + con nhỏ) về quê.
+  TripProgress start(TripPlan plan, {bool family = false}) {
     final difficulty = LocalService.shared.getDifficulty();
     final progress = TripProgress(
       plan: plan,
       difficulty: difficulty,
+      family: family && plan.vehicle != VehicleKind.bus,
       stageIndex: 0,
       clockMinutes: departureFor(plan, difficulty),
       lixi: 0,
@@ -95,6 +97,7 @@ class TripService {
       theme: themeFor(stage.fromName, stage.toName),
       sky: LocalService.shared.getSkyMode(),
       difficulty: progress.difficulty,
+      family: progress.family,
     );
   }
 

@@ -123,4 +123,7 @@ abstract class AppColors {
   static const Color ff121418 = Color(0xff121418);
   static const Color ffFFB020 = Color(0xffFFB020);
   static const Color ffFF8A80 = Color(0xffFF8A80);
+
+  /// Chở cả nhà: cam "bé bắt đầu quấy" trên thanh kiên nhẫn.
+  static const Color ffFF8A3D = Color(0xffFF8A3D);
 }
