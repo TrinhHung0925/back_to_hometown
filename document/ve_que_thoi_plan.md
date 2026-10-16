@@ -601,9 +601,27 @@ Chia hai tay giống game MOBA: **tay trái đặt liên tục trên cần lái*
 **Hiệu ứng cho sống động:** khói pô phụt dày khi vặn ga (xe tải, xe khách phụt khói đen); phanh gấp / trượt cua in vệt lốp xuống mặt đường, mờ dần; quệt lề toé tia lửa; đường ướt bánh xe tung bụi nước; va chạm văng mảnh vỡ kính, nhựa, bốc khói bụi; nhặt lì xì / trả phí hiện chữ nổi "+1", "−2"; chạy nhanh camera lùi ra một chút. Từ 22:30 đêm giao thừa trời bắt đầu có pháo hoa, càng sát nửa đêm càng dày; về tới nhà ở chặng cuối thì pháo hoa nổ rộ.
 
 **Làm tiếp sau**
-- Tắc đường ngày 28 Tết: xe đứng im cả km, len lỏi xe máy.
-- Sương mù sáng sớm ở đèo; trời rét làm xe khó nổ máy.
 - Đổ xăng nhầm / xăng pha, kẹt xe ở trạm thu phí giờ cao điểm.
+- Ô nhiệm vụ phụ ngay trên HUD lúc đang lái (hiện chỉ xem ở trạm dừng nghỉ và menu Tạm dừng).
+- Tiếng bé khóc; bé ngồi trước ở góc ghế lái xe máy (hiện không vẽ vì che hết đường).
+
+### Đợt 2026-10-16: tập lái, thử thách, chở cả nhà, âm thanh, lì xì, cổng chào, đêm 30 rét
+
+Sáu phần làm song song bởi sáu agent trên worktree riêng, gộp vào `develop` cùng ngày. Khi gộp phải nối tay các chỗ hai phần cùng chạm: xe máy chở cả nhà không nhận nhiệm vụ "cho khách đi nhờ"; thổi nồng độ cồn mà bị phạt thì hỏng "Không bị phạt"; bình xăng phụ không làm các mức đổ cố định (dựng nghiêng xe, chai xăng, xăng cứu hộ) tăng theo; chốt cồn tự tránh cổng chào vì `nearFeature` tính cả cổng.
+
+**Tập lái** (`lib/game/logic/tutorial.dart`, `tutorial_director.dart`, `screen/game/tutorial_coach.dart`): chặng riêng xe máy 16:50, phố → 24 km quốc lộ → phố lúc chạng vạng; `fatigue: false` tắt buồn ngủ, xăng, mưa, sự cố. 9 bước đọc từ trạng thái xe thật: chạm Ga tới 40, giữ Ga tới 60 rồi buông giữ 1,5 s, sang làn trong, về làn ngoài, chạm Phanh 2 lần, còi, bật đèn, dừng hẳn trước đèn đỏ (đèn ngã tư cuối được hẹn lại để đỏ đúng lúc xe tới), đi khi xanh. Vòng sáng vàng chỉ nút cần bấm; va quẹt, vượt đèn đỏ chỉ nhắc, không công an; không cho quay đầu. "Bỏ qua" bỏ bước đang tập, muốn thoát hẳn thì vào Tạm dừng.
+
+**Thử thách hôm nay** (`service/daily_service.dart`, `screen/home/home_play_cards.dart`): 19 chặng lẻ 50–90 km chọn theo ngày dương lịch bằng công thức cố định, mọi máy cùng ngày cùng chặng; chơi lại và đổi bản đồ giữ nguyên hạt giống; không đụng chuyến đang dở; lưu kỷ lục trong ngày và chuỗi ngày.
+
+**Chở cả nhà** (`lib/game/logic/family.dart`, `family.dart`, `screen/game/family_widgets.dart`): bật ở màn lên lộ trình (xe máy, ô tô; không cho xe khách), lưu theo chuyến (`TripProgress.family`). Thanh kiên nhẫn 0–100 của bé Bin: tụt khi tắc, mưa, đêm, ổ gà, phanh gấp, va chạm, say xe lúc cua; lên khi ghé quán, mua bim bim (+34) / hộp sữa (+28). Xin đi vệ sinh chỉ khi có quán trong 14 km, quá hạn −25 kiên nhẫn và −150 điểm. Dưới 12 thì khóc: lái phân tâm, buồn ngủ nhanh ×1,5, −50 điểm mỗi lần; 22 s sau ngủ thiếp. Về nhà bé vui +200 (hoặc +80). Vợ nhắc chạy nhanh, buồn ngủ, mưa, đèn, xăng, điện thoại. Xe máy chở cả nhà thì không có người đi nhờ, hộp quà nằm trong lòng vợ.
+
+**Âm thanh** (`service/ambient_audio.dart`, `lib/game/logic/soundscape.dart`, `radio.dart`, `radio_bulletin.dart`): 9 vòng lặp môi trường tổng hợp bằng numpy (`build_ambient_audio.py`) theo bản đồ × vùng đường × đêm, Tết eve 45 phút cuối, lặp không mối nối, âm lượng 0,3 dưới tiếng máy, crossfade 2,5 s. Radio giao thông (bật/tắt ở Tạm dừng, `LocalKey.radioOn`): mỗi 35–60 s một bản tin từ chặng thật (tắc, sương mù, đường lánh nạn, phà, mưa, giờ tới giao thừa) xen tin chào, thời tiết vùng, lời nhắn, mẹo an toàn; `NoticeKind.radio` khung xanh đêm. Hai bản nhạc xuân ngũ cung tự soạn (`radio_spring_1/2.m4a`). **Chưa ai nghe thật** — chỉ đo mức, đỉnh, mối nối; việc đầu tiên trên máy thật là nghe.
+
+**Lì xì** (`model/shop.dart`, `lib/game/logic/missions.dart`, `dialog/shop_dialog`): nút "Cửa hàng" ở trạm dừng nghỉ. Nâng cấp (giá xe máy / ô tô / xe khách): lốp tốt 8/12/16 (ướt mất nửa độ bám, xịt ×0,35), bình xăng phụ 5/8/10 (×1,4 dung tích, đổ đầy đắt hơn 40%), đèn LED 6/9/9 (chùm 620→930, trắng hơn), còi hơi 4/6/6 (vang ×1,6, hồi 1,2 s, xe tải lờ ×0,4), đệm ghế 4/5/5 (buồn ngủ ×0,7). Quà cho Bà/Bố/Mẹ/Em 3–6 lì xì, mỗi người một món, về nhà từng người nói lời cảm ơn trong bong bóng; điểm = giá × 250, ×1,6 nếu đúng món thích, đủ 4 người +1000. Quà đang chở tính như lì xì trong điểm chặng (`StageResult.giftValue`). Nhiệm vụ phụ 2/chặng (1 nếu < 40 km) chọn theo băm tên chặng + số chặng + xe, không đổi khi chơi lại: không bị phạt 4, không va chạm 4, ghé quán 2, khách đi nhờ 3 (bảo đảm có người vẫy), tới nơi trong X giờ Y phút 5, giữ cành đào ≥ N% 4, đón ≥ N khách 4, nhặt N lì xì 3.
+
+**Cổng chào, đặc sản, nhà 3D** (`lib/game/logic/provinces.dart`, `border_gate.dart`, `border_events.dart`, `driver/driver_culture.dart`): mỗi lần đổi tỉnh có cổng ở khoảng giữa đoạn quốc lộ đó, tránh phố, trạm thu phí, 2 km đầu/cuối; đường giữ thẳng 1300 trước – 350 sau. Góc ghế lái: cột đá câu đối, xà sơn đỏ ghi tên tỉnh vẽ lúc chạy, mái ngói rồng chầu, đèn lồng, cờ, đào/mai; đêm sáng biển. 63 tỉnh có 1–3 món (nem chua Thanh Hoá, cu đơ, bánh đa cua, mì Quảng, bánh pía…) bán ở đúng loại quán, dòng cam "Đặc sản …", tỉnh táo nhỉnh hơn món thường; 72 icon mới. Nhà làng ở ghế lái dựng 3D (mái dốc, hiên, sân gạch, cổng sắt, bàn thờ ngoài trời); nhà phố có tường hồi, bảng quảng cáo vẽ tay, mái che; lô đất top-down đổi theo (bố cục theo seed khác bản cũ). Thêm ~0,5–1 ms CPU/khung trong debug, phố đêm ~7 ms; chưa đo máy thật.
+
+**Đêm 30 và rét** (`lib/game/night_cold.dart`, `logic/cold_weather.dart`, `logic/alcohol.dart`, `screen/game/breath_test_overlay.dart`): chốt nồng độ cồn tối đa 1/chặng trên quốc lộ, ngày 30 sau ~18:00, 75% chặng có; chỉ bật nếu tới nơi lúc tối. Giữ nút "THỔI" ~2 s; âm tính mất 3 phút; dương tính mức 1/2/3 (ngưỡng 0,25 và 0,4 mg/L) phạt 3/5/7 lì xì + chờ tỉnh 15/25/35 phút. Quán ăn 29/30 mời "Chén rượu mừng xuân" miễn phí, +6 tỉnh táo, mỗi chén 0,12 mg/L tan trong ~2 giờ game. Rét tính theo vĩ độ (Huế, Đà Nẵng vẫn ấm), giờ, địa hình, mưa phùn: sương muối trên ruộng, hơi thở người lái xe máy, kính mờ ô tô; dừng ≥ 5 phút trong rét thì xe máy phải đạp 2–3 lần mới nổ, ô tô kêu đề; tay cóng lái −15% (mua găng tay len 1 lì xì); buồn ngủ ×1,15, ướt lạnh ×1,55.
 
 ### Vật phẩm, thắng thua
 - **Vật phẩm:** lì xì để cộng điểm, trả phí cầu đường và nộp phạt. Quà Tết (bánh chưng, giỏ quà, cành đào) thì được chất lên xe. Lì xì và quà được mang theo qua các chặng.
@@ -763,11 +781,11 @@ lib/
 ### P5 — Sau MVP (chọn dần theo phản hồi)
 - **Chế độ đi xe khách** (chưa thiết kế luật chơi).
 - Đoạn đèo (cua gắt, chạy nhanh là văng) và đường làng (đường nhỏ, vịt, chó).
-- Các tình huống còn lại trong bảng ở mục 4; chốt kiểm tra nồng độ cồn.
+- Các tình huống còn lại trong bảng ở mục 4. (Chốt nồng độ cồn đã làm — xem "Đợt 2026-10-16".)
 - Đèn pha/cốt: pha nhìn xa hơn nhưng làm chói xe ngược chiều.
 - "Phạt nguội" (tuỳ chọn): chạy thoát nhưng cuối chuyến có thể nhận giấy phạt nguội. Hiện plan vẫn giữ đúng ý "chạy thoát thì không sao cả".
 - Chat cho người khác cùng thấy (cần máy chủ và lọc từ ngữ).
-- Nâng cấp xe ở trạm dừng nghỉ, mở khoá thêm xe, thêm điểm trên bản đồ.
+- Mở khoá thêm xe, thêm điểm trên bản đồ. (Nâng cấp xe ở trạm dừng nghỉ đã làm.)
 - Quảng cáo có thưởng. (Mẹ gọi điện và cảnh đoàn tụ khi về tới nhà đã làm — xem mục 4.)
 
 ---
