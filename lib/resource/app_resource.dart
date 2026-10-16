@@ -445,6 +445,25 @@ abstract class AppAudio {
   static const String jingleWin = 'jingle_win.m4a';
   static const String jingleLose = 'jingle_lose.m4a';
 
+  /// Tiếng nền theo cảnh hai bên đường, lặp liền mạch (tổng hợp bằng
+  /// tool/asset_pipeline/build_ambient_audio.py).
+  static const String ambDeltaDay = 'amb_delta_day.wav';
+  static const String ambDeltaNight = 'amb_delta_night.wav';
+  static const String ambCoastDay = 'amb_coast_day.wav';
+  static const String ambCoastNight = 'amb_coast_night.wav';
+  static const String ambMountainDay = 'amb_mountain_day.wav';
+  static const String ambMountainNight = 'amb_mountain_night.wav';
+  static const String ambMekongDay = 'amb_mekong_day.wav';
+  static const String ambCity = 'amb_city.wav';
+  static const String ambTetEve = 'amb_tet_eve.wav';
+
+  /// Radio trên xe: nhạc hiệu trước bản tin, hai bài nhạc xuân phát lần lượt
+  /// (tổng hợp bằng tool/asset_pipeline/build_radio_audio.py).
+  static const String sfxRadioJingle = 'sfx_radio_jingle.wav';
+  static const String radioSpring1 = 'radio_spring_1.m4a';
+  static const String radioSpring2 = 'radio_spring_2.m4a';
+  static const List<String> radioMusic = [radioSpring1, radioSpring2];
+
   /// Nạp sẵn để lần phát đầu không bị trễ.
   static const List<String> preload = [
     sfxPhoneRing,
@@ -471,5 +490,6 @@ abstract class AppAudio {
     sfxRain,
     jingleWin,
     jingleLose,
+    sfxRadioJingle,
   ];
 }

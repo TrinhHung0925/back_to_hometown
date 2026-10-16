@@ -9,6 +9,7 @@ import '../../game/debug/debug_launch.dart';
 import '../../game/game_config.dart';
 import '../../game/logic/gas_chat.dart';
 import '../../game/logic/roadside.dart';
+import '../../game/logic/soundscape.dart';
 import '../../game/logic/vehicle_condition.dart';
 import '../../game/stage.dart';
 import '../../game/ve_que_game.dart';
@@ -35,6 +36,9 @@ class GameController extends GetxController {
 
   /// Rung máy khi va chạm, quệt lề, có nguy hiểm.
   final haptics = LocalService.shared.getHaptics().obs;
+
+  /// Radio trên xe: bản tin giao thông, nhạc xuân (lưu cho lần chơi sau).
+  final radio = LocalService.shared.getRadio().obs;
 
   /// Tăng mỗi lần chơi lại để dựng GameWidget mới.
   final gameKey = 0.obs;
@@ -69,6 +73,9 @@ class GameController extends GetxController {
   /// Hiện ít nhất chừng này mới để thông báo cùng mức thay; chờ quá
   /// [_noticeStale] thì bỏ (chuyện đã qua rồi).
   static const _noticeMin = Duration(milliseconds: 2200);
+
+  /// Bản tin radio dài hai dòng: giữ lâu hơn mới nhường thông báo cùng mức.
+  static const _radioMin = Duration(milliseconds: 4200);
   static const _noticeStale = Duration(seconds: 7);
 
   /// Đang ghé quán (null khi đang lái).
@@ -174,7 +181,10 @@ class GameController extends GetxController {
       onHud: (data) {
         hud.value = data;
         _audio.setEngineLevel(data.speedKmh / maxSpeedKmh);
-        if (!isPaused.value && !chatOpen.value) _audio.setRain(data.rain);
+        if (!isPaused.value && !chatOpen.value) {
+          _audio.setRain(data.rain);
+          _updateAmbient(data);
+        }
       },
       onRest: (visit) {
         stallVisit.value = visit;
@@ -230,6 +240,7 @@ class GameController extends GetxController {
       onHaptic: _haptic,
     );
     game.driveAssist = driveAssist.value;
+    game.radioOn = radio.value;
     gameKey.value++;
     driverView.value = LocalService.shared.getDriverView();
     if (driverView.value) {
@@ -240,7 +251,7 @@ class GameController extends GetxController {
     }
     _audio.startEngine(setup.vehicle.fourWheels ? AppAudio.sfxEngineCar : AppAudio.sfxEngineMoto);
     _audio.stopSiren();
-    _audio.playMusic(AppAudio.musicMain);
+    _playDriveMusic();
     _autopilot?.stop();
     if (Autopilot.enabled) _autopilot = Autopilot(game, mode: Autopilot.modeFromEnv)..start();
   }
@@ -301,12 +312,13 @@ class GameController extends GetxController {
       if (shown < _noticeMin) _queueNotice(current, _noticeAt, first: true);
       return _presentNotice(value);
     }
-    if (value.kind.rank == current.kind.rank && current.kind != NoticeKind.danger && shown >= _noticeMin) {
+    final readMin = current.kind == NoticeKind.radio ? _radioMin : _noticeMin;
+    if (value.kind.rank == current.kind.rank && current.kind != NoticeKind.danger && shown >= readMin) {
       return _presentNotice(value);
     }
     _queueNotice(value, now);
     // Có cái đang chờ: thông báo thường chỉ giữ đủ lâu để đọc rồi nhường.
-    final due = _noticeAt.add(_noticeMin);
+    final due = _noticeAt.add(readMin);
     if (current.kind != NoticeKind.danger && due.isBefore(_noticeEnd)) _scheduleNotice(due);
   }
 
@@ -320,9 +332,16 @@ class GameController extends GetxController {
   void _presentNotice(GameNotice value) {
     notice.value = value;
     _noticeAt = DateTime.now();
+    if (value.kind == NoticeKind.radio && radio.value) {
+      // Nhạc hiệu của đài, nhạc nhỏ xuống trong lúc đọc bản tin.
+      _audio.play(AppAudio.sfxRadioJingle, volume: 0.5);
+      _audio.duckMusic(const Duration(milliseconds: 5200));
+    }
     final hold = value.kind == NoticeKind.danger
         ? const Duration(milliseconds: 4500)
-        : _noticeQueue.isEmpty
+        : value.kind == NoticeKind.radio
+            ? const Duration(milliseconds: 5600)
+            : _noticeQueue.isEmpty
             ? const Duration(milliseconds: 3200)
             : _noticeMin;
     _scheduleNotice(_noticeAt.add(hold));
@@ -477,15 +496,50 @@ class GameController extends GetxController {
         _audio.playMusic(AppAudio.musicChase);
       case GamePhase.driving:
         _audio.stopSiren();
-        _audio.playMusic(AppAudio.musicMain);
+        _playDriveMusic();
       case GamePhase.resting:
         break;
       case GamePhase.finished:
         _audio.stopEngine();
         _audio.stopSiren();
         _audio.setRain(0);
+        _audio.stopAmbient();
         _audio.stopMusic();
     }
+  }
+
+  /// Nhạc khi lái: bật radio thì nghe nhạc xuân của đài (hai bài lần lượt),
+  /// tắt thì nhạc nền của game.
+  Future<void> _playDriveMusic() {
+    if (radio.value) return _audio.playPlaylist(AppAudio.radioMusic, start: setup.stageNumber - 1);
+    return _audio.playMusic(AppAudio.musicMain);
+  }
+
+  /// Tiếng nền theo cảnh hai bên đường, đoạn đường (phố, quốc lộ, cao tốc),
+  /// ngày / đêm, mưa, giờ giao thừa.
+  void _updateAmbient(HudData data) {
+    if (phase.value == GamePhase.finished) return;
+    final pick = Soundscape.pick(
+      theme: setup.theme,
+      zone: game.layout.kindAt(game.player.s),
+      night: game.nightLevel > 0.5,
+      minutesLeft: data.minutesLeft.toDouble(),
+      rain: data.rain,
+      cabin: setup.vehicle.fourWheels,
+    );
+    _audio.setAmbient(pick.file, pick.volume);
+  }
+
+  /// Bật / tắt radio (lưu cho các lần chơi sau): đổi nhạc ngay, tắt thì thôi
+  /// đọc bản tin.
+  Future<void> setRadio(bool on) async {
+    LocalService.shared.saveRadio(on);
+    radio.value = on;
+    game.radioOn = on;
+    if (phase.value != GamePhase.driving && phase.value != GamePhase.resting) return;
+    await _playDriveMusic();
+    // Đang ở menu tạm dừng thì nhạc mới cũng chờ tới lúc đi tiếp.
+    if (isPaused.value) _audio.pauseLoops();
   }
 
   @override
@@ -497,6 +551,7 @@ class GameController extends GetxController {
     _audio.stopEngine();
     _audio.stopSiren();
     _audio.setRain(0);
+    _audio.stopAmbient();
     _audio.playMusic(AppAudio.musicMain);
     super.onClose();
   }

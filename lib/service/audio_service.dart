@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:flame_audio/flame_audio.dart';
+import 'package:flutter/foundation.dart';
 
 import '../resource/app_resource.dart';
+import 'ambient_audio.dart';
 import 'local_service.dart';
 
 /// Âm thanh toàn app: nhạc nền, tiếng máy lặp (cao độ theo tốc độ), còi hú
@@ -22,6 +26,16 @@ class AudioService {
   double _rainVolume = 0;
   AudioPool? _lixiPool;
 
+  /// Tiếng nền hai bên đường (chim, dế, sóng, phố…), trộn dần khi đổi cảnh.
+  final AmbientLayer _ambient = AmbientLayer();
+
+  /// Nhạc radio: các bài phát lần lượt (rỗng khi đang phát một bài lặp).
+  List<String> _playlist = const [];
+  int _track = 0;
+  StreamSubscription<void>? _trackEnd;
+  double _musicVolume = 0.35;
+  Timer? _duckTimer;
+
   bool get enabled => LocalService.shared.getSoundOn();
 
   Future<void> init() async {
@@ -37,7 +51,11 @@ class AudioService {
     if (on) {
       final music = _music;
       _music = null;
-      if (music != null) playMusic(music);
+      if (_playlist.isNotEmpty) {
+        _playTrack();
+      } else if (music != null) {
+        playMusic(music);
+      }
     } else {
       final music = _music;
       stopAll();
@@ -61,6 +79,8 @@ class AudioService {
 
   // ---------------------------------------------------------- Nhạc
   Future<void> playMusic(String file, {double volume = 0.35}) async {
+    _playlist = const [];
+    _musicVolume = volume;
     if (!enabled) {
       _music = file;
       return;
@@ -70,10 +90,59 @@ class AudioService {
     await FlameAudio.bgm.play(file, volume: volume);
   }
 
+  /// Nhạc radio: phát lần lượt các bài [tracks] (hết bài này sang bài kia,
+  /// bắt đầu từ bài thứ [start]); đang phát đúng danh sách này thì để yên.
+  Future<void> playPlaylist(List<String> tracks, {double volume = 0.3, int start = 0}) async {
+    if (tracks.isEmpty) return;
+    if (listEquals(tracks, _playlist) && (!enabled || FlameAudio.bgm.isPlaying)) return;
+    _playlist = List.unmodifiable(tracks);
+    _track = start % tracks.length;
+    _musicVolume = volume;
+    await _playTrack();
+  }
+
+  Future<void> _playTrack() async {
+    final file = _playlist[_track % _playlist.length];
+    _music = file;
+    if (!enabled) return;
+    await FlameAudio.bgm.play(file, volume: _musicVolume);
+    // Hết bài thì dừng (không lặp) để chuyển sang bài kế.
+    await FlameAudio.bgm.audioPlayer.setReleaseMode(ReleaseMode.stop);
+    _trackEnd ??= FlameAudio.bgm.audioPlayer.onPlayerComplete.listen((_) {
+      if (_playlist.isEmpty || !enabled) return;
+      _track++;
+      _playTrack();
+    });
+  }
+
+  /// Hạ nhỏ nhạc một lúc (đài đọc bản tin) rồi trả lại như cũ.
+  void duckMusic(Duration hold, {double factor = 0.4}) {
+    if (!enabled || !_ready || _music == null || !FlameAudio.bgm.isPlaying) return;
+    FlameAudio.bgm.audioPlayer.setVolume(_musicVolume * factor);
+    _duckTimer?.cancel();
+    _duckTimer = Timer(hold, () {
+      if (FlameAudio.bgm.isPlaying) FlameAudio.bgm.audioPlayer.setVolume(_musicVolume);
+    });
+  }
+
   void stopMusic() {
     _music = null;
-    FlameAudio.bgm.stop();
+    _playlist = const [];
+    _duckTimer?.cancel();
+    // Chưa nạp xong âm thanh (hay đang chạy thử không có plugin) thì chưa có
+    // nhạc nào để dừng.
+    if (_ready) FlameAudio.bgm.stop();
   }
+
+  // ------------------------------------------------------- Tiếng nền
+  /// Tiếng nền theo cảnh đường [file] ở độ to [volume]; đổi cảnh thì trộn dần.
+  void setAmbient(String file, double volume) {
+    if (!enabled || !_ready) return;
+    _ambient.play(file, volume);
+  }
+
+  /// Nhỏ dần rồi tắt tiếng nền ([fade] = false thì tắt ngay).
+  void stopAmbient({bool fade = true}) => fade ? _ambient.fadeOut() : _ambient.stop();
 
   // ------------------------------------------------------- Tiếng máy
   Future<void> startEngine(String file) async {
@@ -143,7 +212,8 @@ class AudioService {
     _engine?.pause();
     _siren?.pause();
     _rain?.pause();
-    FlameAudio.bgm.pause();
+    _ambient.pause();
+    if (_ready) FlameAudio.bgm.pause();
   }
 
   void resumeLoops() {
@@ -151,13 +221,18 @@ class AudioService {
     _engine?.resume();
     _siren?.resume();
     _rain?.resume();
-    if (_music != null) FlameAudio.bgm.resume();
+    _ambient.resume();
+    if (_music != null && _ready) FlameAudio.bgm.resume();
   }
 
   void stopAll() {
     stopEngine();
     stopSiren();
     setRain(0);
+    _ambient.stop();
+    final playlist = _playlist;
     stopMusic();
+    // Nhớ danh sách nhạc radio để bật lại âm thanh thì phát tiếp.
+    _playlist = playlist;
   }
 }

@@ -484,9 +484,52 @@ class _ViewSettings extends StatelessWidget {
               ),
             ),
           ),
+          SizedBox(height: 6.h),
+          _RadioRow(controller: controller, on: controller.radio.value),
         ],
       );
     });
+  }
+}
+
+/// Bật / tắt radio trên xe: bản tin giao thông và nhạc xuân khi lái.
+class _RadioRow extends StatelessWidget {
+  const _RadioRow({required this.controller, required this.on});
+
+  final GameController controller;
+  final bool on;
+
+  @override
+  Widget build(BuildContext context) {
+    return CupertinoButton(
+      padding: EdgeInsets.zero,
+      minimumSize: Size.zero,
+      onPressed: () {
+        AudioService.shared.click();
+        controller.setRadio(!on);
+      },
+      child: Container(
+        height: 36.h,
+        padding: EdgeInsets.fromLTRB(8.h, 0, 8.h, 0),
+        decoration: BoxDecoration(color: AppColors.ffF2F3F5, borderRadius: BorderRadius.circular(10.h)),
+        child: Row(
+          children: [
+            Container(
+              width: 24.h,
+              height: 24.h,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(color: on ? AppColors.ff16213E : AppColors.ffC9CDD3, borderRadius: BorderRadius.circular(7.h)),
+              child: RoadIcon(RoadGlyph.radio, size: 17.h, color: on ? AppColors.ffFFD166 : AppColors.ffFFFFFF, accent: on ? AppColors.ff16213E : AppColors.ffC9CDD3),
+            ),
+            SizedBox(width: 8.h),
+            Expanded(
+              child: AppText.manrope('Radio giao thông · nhạc xuân', fontSize: 12.h, fontWeight: FontWeight.w800, color: AppColors.ff1B1D22),
+            ),
+            _Toggle(on: on),
+          ],
+        ),
+      ),
+    );
   }
 }
 
