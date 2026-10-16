@@ -344,14 +344,20 @@ class _DriverView extends Component {
 
   /// Ảnh đứng trên mặt đất tại (wx, wy): rộng [w], cao [h] (đơn vị bản đồ).
   Rect? _board(List<_Drawn> items, double wx, double wy, double w, double h, Image? img,
-      {bool mirror = false, Color fallback = const Color(0xff5E7444), double lift = 0, double bias = 0, void Function(Canvas c, Rect rect, double fade)? after}) {
+      {bool mirror = false,
+      Color fallback = const Color(0xff5E7444),
+      double lift = 0,
+      double bias = 0,
+      double anchorY = 1,
+      void Function(Canvas c, Rect rect, double fade)? after}) {
     final p = cam.toCam(wx, wy, lift);
     if (p.z < DriverCamera.near * 2 || p.z > cam.far) return null;
     final k = cam.focal / p.z;
     final base = cam.project(p);
     final rw = w * k, rh = h * k;
-    if (base.dx + rw / 2 < -cam.width * 0.3 || base.dx - rw / 2 > cam.width * 1.3 || base.dy - rh > cam.height * 1.2) return null;
-    final rect = Rect.fromLTWH(base.dx - rw / 2, base.dy - rh, rw, rh);
+    final top = base.dy - rh * anchorY;
+    if (base.dx + rw / 2 < -cam.width * 0.3 || base.dx - rw / 2 > cam.width * 1.3 || top > cam.height * 1.2) return null;
+    final rect = Rect.fromLTWH(base.dx - rw / 2, top, rw, rh);
     final fade = _fade(p.z);
     items.add(_Drawn(p.z + bias, (c) {
       if (img == null) {
@@ -866,31 +872,74 @@ class _DriverView extends Component {
     }
   }
 
-  // Xe cộ: xe cùng chiều thấy đuôi, xe ngược chiều thấy đầu, xe đường ngang
-  // thấy hông.
+  /// Góc chụp sẵn của ảnh xe: góc so với ngay sau đuôi (dương = mắt mình lệch
+  /// sang hông trái xe), tên ảnh, có lật ngang không.
+  static const List<(double, String, bool)> _vehicleAngles = [
+    (0, 'rear', false), (25, 'l25', false), (-25, 'r25', false), (50, 'l50', false), (-50, 'r50', false), //
+    (75, 'l75', false), (-75, 'r75', false), (90, 'side', false), (-90, 'side', true), (115, 'l115', false), //
+    (-115, 'r115', false), (145, 'l145', false), (-145, 'r145', false), (180, 'front', false), (-180, 'front', false),
+  ];
+
+  /// Góc nhìn ảnh xe: thấy đuôi khi nhìn theo hướng xe chạy, ở làn bên hay
+  /// trên khúc cua thì thấy chéo cả hông (ảnh chụp sẵn quanh mô hình 3D).
+  (Image, String, bool)? _vehicleView(DriverArt a, String path, double yaw) {
+    (Image, String, bool)? best;
+    var bestGap = double.infinity;
+    for (final (angle, view, mirror) in _vehicleAngles) {
+      final gap = (angle - yaw).abs();
+      if (gap >= bestGap) continue;
+      final img = a.vehicle(path, view);
+      if (img == null) continue;
+      best = (img, view, mirror);
+      bestGap = gap;
+    }
+    return best;
+  }
+
+  // Xe cộ dọc đường: chọn ảnh theo góc giữa hướng xe chạy và hướng từ xe tới
+  // mắt mình; xe đường ngang thấy hông.
   void _traffic(List<_Drawn> items, DriverArt a) {
     final raining = game._trafficLayer.raining;
     final dark = game.darkness;
     for (final v in game.traffic.vehicles) {
       final path = TrafficLayer.dressedPath(v.type, v.variant, raining: raining);
-      final same = (v.oncoming ? -1 : 1) == game.dir;
-      final view = same ? 'rear' : 'front';
-      final img = a.vehicle(path, view);
-      // Mặt đuôi xe trước mặt / mặt đầu xe ngược chiều nằm ở đầu gần mình.
-      final o = _at(v.s - game.dir * v.type.length / 2, v.d);
+      final heading = game.road.at(v.s).heading + (v.oncoming ? pi : 0);
+      final hx = cos(heading), hy = sin(heading);
+      final center = _at(v.s, v.d);
+      final dx = cam.x - center.dx, dy = cam.y - center.dy;
+      final dist = max(1e-6, sqrt(dx * dx + dy * dy));
+      final yaw = atan2(dx * hy - dy * hx, -(dx * hx + dy * hy)) * 180 / pi;
+      final pick = _vehicleView(a, path, yaw);
+      final img = pick?.$1;
+      final mirror = pick?.$3 ?? false;
+      final key = '${DriverArt.baseOf(path)}_${pick?.$2 ?? 'rear'}';
+      // Điểm trên mép thân xe gần mắt mình nhất (cùng tia nhìn với tâm xe):
+      // đặt ảnh ở đó cho đúng độ to; mặt đất dưới tâm xe trong ảnh lùi lên
+      // tương ứng.
+      final ux = dx / dist, uy = dy / dist;
+      final along = (ux * hx + uy * hy).abs(), across = (ux * hy - uy * hx).abs();
+      final r = min(along > 1e-3 ? v.type.length / 2 / along : double.infinity, across > 1e-3 ? v.type.width / 2 / across : double.infinity);
+      final near = center + Offset(ux, uy) * min(r, dist * 0.5);
+      final ground = a.vehicleGround[key];
+      final anchorY = img == null || ground == null
+          ? 1.0
+          : ((ground.dy + r / _u * _sinBillboardElev * DriverArt.vehiclePixelsPerMeter) / img.height).clamp(0.0, 1.0);
       final w = img == null ? v.type.width : img.width / DriverArt.vehiclePixelsPerMeter * _u;
       final h = img == null ? v.type.width * 0.8 : img.height / DriverArt.vehiclePixelsPerMeter * _u;
-      final lamps = a.lamps[DriverArt.baseOf(path)]?[view] ?? const <Offset>[];
-      _board(items, o.dx, o.dy, w, h, img, fallback: const Color(0xff4B5563), after: (c, rect, fade) {
+      final lamps = a.lamps[DriverArt.baseOf(path)]?[pick?.$2 ?? 'rear'] ?? const <Offset>[];
+      final tail = yaw.abs() < 90;
+      final braking = v.braking && (v.oncoming ? -1 : 1) == game.dir;
+      _board(items, near.dx, near.dy, w, h, img, mirror: mirror, anchorY: anchorY, fallback: const Color(0xff4B5563), after: (c, rect, fade) {
         if (img == null) return;
-        if ((v.blinker != 0 || v.hazard) && (game._time * 2.6).floor().isEven) _blink(c, v, o, img, rect, lamps, fade);
-        final glowOn = same ? (v.braking || dark > 0.25) : dark > 0.25;
+        if ((v.blinker != 0 || v.hazard) && (game._time * 2.6).floor().isEven) _blink(c, v, center, img, rect, lamps, fade);
+        final glowOn = tail ? (braking || dark > 0.25) : dark > 0.25;
         if (!glowOn) return;
         for (final l in lamps) {
-          final p = Offset(rect.left + l.dx / img.width * rect.width, rect.top + l.dy / img.height * rect.height);
-          final r = rect.width * (same ? (v.braking ? 0.16 : 0.09) : 0.22);
-          _glows.add((p, r, same ? const Color(0xffFF2A1F) : const Color(0xffFFF3D6)));
-          if (same && v.braking) c.drawCircle(p, rect.width * 0.035, Paint()..color = const Color(0xffFF5A4E).withValues(alpha: fade));
+          final lx = mirror ? img.width - l.dx : l.dx;
+          final p = Offset(rect.left + lx / img.width * rect.width, rect.top + l.dy / img.height * rect.height);
+          final r = rect.width * (tail ? (braking ? 0.16 : 0.09) : 0.22);
+          _glows.add((p, r, tail ? const Color(0xffFF2A1F) : const Color(0xffFFF3D6)));
+          if (tail && braking) c.drawCircle(p, rect.width * 0.035, Paint()..color = const Color(0xffFF5A4E).withValues(alpha: fade));
         }
       });
     }
@@ -1125,6 +1174,9 @@ class _DriverView extends Component {
 
   /// Khung xe mình phía trước mắt: ghi-đông xe máy, táp-lô và vô-lăng ô tô,
   /// xe khách. Vô-lăng xoay theo tay lái.
+  /// Góc chúc xuống của máy ảnh chụp ảnh xe (BB_ELEV = 7°).
+  static final double _sinBillboardElev = sin(7 * pi / 180);
+
   /// Ghi-đông xe máy chiếm bao nhiêu bề ngang màn hình.
   static const double _motoCockpitScale = 0.84;
 

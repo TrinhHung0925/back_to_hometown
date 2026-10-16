@@ -94,6 +94,14 @@ class OrthoCam:
             return OrthoCam((c, 0, -s), (0, 1, 0), ppm)
         raise ValueError(kind)
 
+    @staticmethod
+    def orbit(yaw, elev=BB_ELEV, ppm=BB_PPM):
+        """Đứng vòng quanh xe: [yaw] độ tính từ ngay sau đuôi (0 = 'rear'),
+        dương lệch sang hông trái của xe (90 = 'side', 180 = 'front')."""
+        c, s = math.cos(math.radians(elev)), math.sin(math.radians(elev))
+        t = math.radians(yaw)
+        return OrthoCam((math.sin(t) * c, -math.cos(t) * c, -s), (math.cos(t), math.sin(t), 0), ppm)
+
     def project(self, p):
         """Điểm 3D → (px, py) liên tục trong khung ảnh."""
         p = np.asarray(p, np.float64)
@@ -998,6 +1006,65 @@ def shoot(model, kind):
     gx, gy = cam.project((0.0, yc, 0.0))
     info['center_ground'] = [round(gx - cut, 1), round(gy - top, 1)]
     return img, info
+
+
+# Góc chéo cho góc nhìn ghế lái: xe ở làn bên, trên khúc cua thấy cả đuôi /
+# đầu lẫn hông. Tên ảnh {base}_l25 (máy ảnh lệch 25° sang hông trái xe),
+# {base}_r25 (sang hông phải)…; 0 / 90 / 180 là rear / side / front sẵn có.
+YAW_VIEWS = (25, 50, 75, 115, 145)
+
+
+def shoot_yaw(model, yaw):
+    cam = frame_for(OrthoCam.orbit(yaw), model)
+    with sun_from(key_light(cam)):
+        if model.layers is not None:
+            rgb, alpha, depth, lamp = model.layers(cam)
+        else:
+            rgb, alpha, depth, lamp = render_cam(model.scene, cam, ss=SS)
+    img = finish_v(rgb, alpha, *cam.size, SS)
+    W0 = cam.size[0]
+    img, cut, top = crop_bb(img)
+    info = {'w': img.size[0], 'h': img.size[1]}
+    pts = lamp_points(lamp, alpha, SS, LAMP_TAIL if abs(yaw) < 90 else LAMP_HEAD, W0 / 2, model.kind == 'moto')
+    lamps = [[round(px - cut, 1), round(py - top, 1)] for px, py in pts]
+    yc = (model.y_span[0] + model.y_span[1]) / 2
+    gx, gy = cam.project((0.0, yc, 0.0))
+    info['center_ground'] = [round(gx - cut, 1), round(gy - top, 1)]
+    return img, info, lamps
+
+
+def build_yaws(out, names):
+    """Dựng các góc chéo ([YAW_VIEWS], hai phía) cho xe AI có tên trong
+    [names] (rỗng = mọi xe)."""
+    jobs = [j for j in billboard_jobs() if not names or j[0] in names]
+    if not jobs:
+        return
+    for base, _, make in jobs:
+        t0 = time.time()
+        model = make()
+        views = {}
+        for yaw in YAW_VIEWS:
+            for side, sign in (('l', 1), ('r', -1)):
+                img, info, pts = shoot_yaw(model, sign * yaw)
+                key = f'{side}{yaw}'
+                img.save(f'{out}/{base}_{key}.png', optimize=True)
+                views[key] = (info, pts)
+        # Ghi lại sau mỗi xe; khoá tệp để chạy song song nhiều tiến trình.
+        import fcntl
+        lock = open(f'{out}/.yaw.lock', 'w')
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        meta = load_json(f'{out}/billboards.json')
+        lamps = load_json(f'{out}/vehicle_lamps.json')
+        for key, (info, pts) in views.items():
+            meta.setdefault(base, {})[key] = info
+            lamps.setdefault(base, {})[key] = pts
+        with open(f'{out}/billboards.json', 'w') as f:
+            json.dump(meta, f, indent=1)
+        with open(f'{out}/vehicle_lamps.json', 'w') as f:
+            json.dump(dict(sorted(lamps.items())), f, indent=1)
+        fcntl.flock(lock, fcntl.LOCK_UN)
+        lock.close()
+        print(f'{base}: yaw {time.time() - t0:.1f}s', flush=True)
 
 
 def save_billboards(model, base, out, meta, lamps):
@@ -3305,6 +3372,10 @@ if __name__ == '__main__':
         out = args[i + 1]
         args = args[:i] + args[i + 2:]
     os.makedirs(out, exist_ok=True)
+    if args and args[0] == 'yaw':
+        # python build_driver_views.py yaw [tên xe…]
+        build_yaws(out, set(args[1:]))
+        sys.exit(0)
     sel = set(args or GROUPS)
     build_billboards(out, sel & set(GROUPS[:4]), sel)
     if sel & {'cockpit', 'cockpit_moto', 'cockpit_car', 'cockpit_bus'}:

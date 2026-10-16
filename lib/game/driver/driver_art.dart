@@ -43,6 +43,15 @@ class DriverArt {
   final Map<String, BillboardArt> props = {};
   final Map<String, Image> vehicles = {};
 
+  /// Các góc chụp ảnh xe: đuôi, đầu, hông và góc chéo (l = máy ảnh lệch sang
+  /// hông trái xe, r = hông phải; số là độ tính từ ngay sau đuôi).
+  static const List<String> vehicleViews = [
+    'rear', 'front', 'side', 'l25', 'r25', 'l50', 'r50', 'l75', 'r75', 'l115', 'r115', 'l145', 'r145', //
+  ];
+
+  /// Điểm ảnh của mặt đất ngay dưới tâm xe trong từng ảnh xe (billboards.json).
+  final Map<String, Offset> vehicleGround = {};
+
   /// Đèn hậu (ảnh đuôi) và đèn pha (ảnh đầu) theo điểm ảnh của từng xe.
   final Map<String, Map<String, List<Offset>>> lamps = {};
 
@@ -102,13 +111,21 @@ class DriverArt {
     }
     await Future.wait([
       for (final path in trafficSprites)
-        for (final view in const ['rear', 'front', 'side'])
+        for (final view in vehicleViews)
           () async {
             final key = '${baseOf(path)}_$view';
             final image = await _image(images, key);
             if (image != null) art.vehicles[key] = image;
           }(),
     ]);
+    final boards = await _json('billboards.json');
+    for (final e in boards.entries) {
+      if (e.value is! Map) continue;
+      for (final v in (e.value as Map).entries) {
+        final g = v.value is Map ? (v.value as Map)['center_ground'] : null;
+        if (g is List && g.length >= 2) art.vehicleGround['${e.key}_${v.key}'] = Offset((g[0] as num).toDouble(), (g[1] as num).toDouble());
+      }
+    }
     final lamps = await _json('vehicle_lamps.json');
     for (final e in lamps.entries) {
       final views = <String, List<Offset>>{};
