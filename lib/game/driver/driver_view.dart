@@ -403,8 +403,9 @@ class _DriverView extends Component {
     final base = cam.project(p);
     final rw = w * k, rh = h * k;
     final top = base.dy - rh * anchorY;
-    if (base.dx + rw / 2 < -cam.width * 0.3 || base.dx - rw / 2 > cam.width * 1.3 || top > cam.height * 1.2)
+    if (base.dx + rw / 2 < -cam.width * 0.3 || base.dx - rw / 2 > cam.width * 1.3 || top > cam.height * 1.2) {
       return null;
+    }
     final rect = Rect.fromLTWH(base.dx - rw / 2, top, rw, rh);
     final fade = _fade(p.z);
     items.add(
@@ -907,7 +908,7 @@ class _DriverView extends Component {
           booth?.image,
           fallback: const Color(0xffE4E7EA),
         );
-        if (d != 0)
+        if (d != 0) {
           _board(
             items,
             _at(t.s - dir * 10, d).dx,
@@ -917,6 +918,7 @@ class _DriverView extends Component {
             null,
             fallback: const Color(0xffD6D9DC),
           );
+        }
       }
     }
     for (final b in game.layout.busStops) {
@@ -997,8 +999,9 @@ class _DriverView extends Component {
         bias: -1,
         fallback: glow,
         after: (c, rect, fade) {
-          if (game.darkness > 0.2)
+          if (game.darkness > 0.2) {
             _glows.add((Offset(rect.center.dx, rect.top + rect.height * lampV), rect.width * 0.9, glow));
+          }
         },
       );
       return;
@@ -1033,8 +1036,9 @@ class _DriverView extends Component {
         } else {
           c.drawImageRect(head.image, src, box, _image);
         }
-        if (game.darkness > 0.2)
+        if (game.darkness > 0.2) {
           _glows.add((Offset(box.center.dx, box.top + box.height * lampV), box.width * 0.9, glow));
+        }
       },
     );
   }
@@ -1195,8 +1199,9 @@ class _DriverView extends Component {
         fallback: const Color(0xff4B5563),
         after: (c, rect, fade) {
           if (img == null) return;
-          if ((v.blinker != 0 || v.hazard) && (game._time * 2.6).floor().isEven)
+          if ((v.blinker != 0 || v.hazard) && (game._time * 2.6).floor().isEven) {
             _blink(c, v, center, img, rect, lamps, fade);
+          }
           final glowOn = tail ? (braking || dark > 0.25) : dark > 0.25;
           if (!glowOn) return;
           for (final l in lamps) {
@@ -1204,8 +1209,9 @@ class _DriverView extends Component {
             final p = Offset(rect.left + lx / img.width * rect.width, rect.top + l.dy / img.height * rect.height);
             final r = rect.width * (tail ? (braking ? 0.16 : 0.09) : 0.22);
             _glows.add((p, r, tail ? const Color(0xffFF2A1F) : const Color(0xffFFF3D6)));
-            if (tail && braking)
+            if (tail && braking) {
               c.drawCircle(p, rect.width * 0.035, Paint()..color = const Color(0xffFF5A4E).withValues(alpha: fade));
+            }
           }
         },
       );
@@ -1274,21 +1280,25 @@ class _DriverView extends Component {
       }
     }
     for (final r in ev.ramps) {
-      if (inView(r.s - 320))
+      if (inView(r.s - 320)) {
         _prop(items, a, 'sign_runaway_ramp', r.s - 320, _half + 28, fallbackH: 2.8, fallback: const Color(0xff2F6FB5));
+      }
     }
     final f = ev.ferry;
     if (f != null && dir > 0) {
-      if (inView(f.a - 900))
+      if (inView(f.a - 900)) {
         _prop(items, a, 'sign_ferry', f.a - 900, _half + 28, fallbackH: 2.8, fallback: const Color(0xff2F6FB5));
-      if (inView(f.a - 150))
+      }
+      if (inView(f.a - 150)) {
         _prop(items, a, 'ferry_booth', f.a - 150, _half + 52, fallbackH: 2.8, fallback: const Color(0xff2F6FB5));
+      }
     }
     if (f != null) _ferry(items, a, f);
     for (final b in ev.fogBanks) {
       final s = dir > 0 ? b.from - 300 : b.to + 300;
-      if (inView(s))
+      if (inView(s)) {
         _prop(items, a, 'sign_fog', s, dir * (_half + 26), fallbackH: 2.6, fallback: const Color(0xffF2C12E));
+      }
     }
   }
 
@@ -1806,11 +1816,12 @@ class _DriverView extends Component {
         }
       }
     }
-    if (dark > 0.02)
+    if (dark > 0.02) {
       canvas.drawRect(
         Rect.fromLTWH(0, 0, w, h),
         Paint()..color = const Color(0xff050A18).withValues(alpha: 0.62 * dark),
       );
+    }
     for (final (p, r, c) in lamps) {
       canvas.drawCircle(
         p,
@@ -1854,15 +1865,17 @@ class _DriverView extends Component {
         n(['h', 'height'], wheel.height.toDouble()),
       );
     }
-    if (wheel.width == frame.width && wheel.height == frame.height)
+    if (wheel.width == frame.width && wheel.height == frame.height) {
       return Rect.fromLTWH(0, 0, frame.width.toDouble(), frame.height.toDouble());
+    }
     return Rect.fromLTWH(0, 0, wheel.width.toDouble(), wheel.height.toDouble());
   }
 
   static Offset _pointOf(Object? v, Offset or) {
     if (v is List && v.length >= 2) return Offset((v[0] as num).toDouble(), (v[1] as num).toDouble());
-    if (v is Map && v['x'] is num && v['y'] is num)
+    if (v is Map && v['x'] is num && v['y'] is num) {
       return Offset((v['x'] as num).toDouble(), (v['y'] as num).toDouble());
+    }
     return or;
   }
 
