@@ -18,6 +18,7 @@ enum LocalKey {
   haptics,
   tutorialDone,
   daily,
+  radioOn,
 }
 
 class LocalService {
@@ -65,6 +66,13 @@ class LocalService {
 
   void saveHaptics(bool on) {
     storage.write(LocalKey.haptics.name, on);
+  }
+
+  /// Radio trên xe: bản tin giao thông, nhạc xuân khi lái (mặc định bật).
+  bool getRadio() => storage.read(LocalKey.radioOn.name) ?? true;
+
+  void saveRadio(bool on) {
+    storage.write(LocalKey.radioOn.name, on);
   }
 
   /// Đã chơi xong chặng tập lái chưa.

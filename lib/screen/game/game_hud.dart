@@ -12,6 +12,7 @@ import '../../resource/app_colors.dart';
 import '../../resource/app_resource.dart';
 import '../../resource/app_text.dart';
 import 'game_controller.dart';
+import 'radio_notice.dart';
 import 'road_icons.dart';
 
 /// Thanh trên cùng: tiến trình chặng, đồng hồ giao thừa, lì xì + hàng chở,
@@ -589,7 +590,9 @@ class NoticeBanner extends StatelessWidget {
         duration: const Duration(milliseconds: 220),
         child: notice == null
             ? const SizedBox.shrink()
-            : notice.kind == NoticeKind.danger
+            : notice.kind == NoticeKind.radio
+                ? RadioNoticeBanner(key: ValueKey(notice), notice: notice)
+                : notice.kind == NoticeKind.danger
                 ? _DangerNotice(key: ValueKey(notice), text: notice.text)
                 : Container(
                     key: ValueKey(notice),
@@ -599,7 +602,7 @@ class NoticeBanner extends StatelessWidget {
                       color: switch (notice.kind) {
                         NoticeKind.warning || NoticeKind.danger => const Color(0xE6B4231E),
                         NoticeKind.money => const Color(0xE6976A12),
-                        NoticeKind.info => AppColors.ff1B1D22.withValues(alpha: 0.8),
+                        NoticeKind.info || NoticeKind.radio => AppColors.ff1B1D22.withValues(alpha: 0.8),
                       },
                       borderRadius: BorderRadius.circular(18.h),
                     ),

@@ -36,6 +36,9 @@ enum RoadGlyph {
 
   /// Tắc đường: ba xe nối đuôi nhau (nhìn từ phía sau), đèn phanh đỏ.
   jam,
+
+  /// Đài radio bán dẫn: cần ăng-ten, loa tròn, mặt số dò đài, hai núm vặn.
+  radio,
 }
 
 class RoadIcon extends StatelessWidget {
@@ -271,6 +274,23 @@ class RoadIconPainter extends CustomPainter {
         }
         canvas.drawCircle(const Offset(5.5, 19.5), 1.7, soft);
         canvas.drawCircle(const Offset(18.5, 19.5), 1.7, soft);
+      case RoadGlyph.radio:
+        // Cần ăng-ten chĩa chéo, đầu tròn.
+        canvas.drawLine(const Offset(6.5, 8), const Offset(17.5, 2), stroke..strokeWidth = 1.6);
+        canvas.drawCircle(const Offset(17.8, 1.9), 1.4, fill);
+        final body = RRect.fromLTRBR(1.5, 7.5, 22.5, 21.5, const Radius.circular(3.2));
+        canvas.drawRRect(body, fill);
+        // Loa: vòng màng loa, lõi giữa.
+        canvas.drawCircle(const Offset(8, 14.5), 4.6, soft);
+        canvas.drawCircle(const Offset(8, 14.5), 2.6, fill);
+        canvas.drawCircle(const Offset(8, 14.5), 1.0, soft);
+        // Mặt số dò đài có kim chỉ, hai núm vặn bên dưới.
+        canvas.drawRRect(RRect.fromLTRBR(13.8, 10.2, 20.6, 13.8, const Radius.circular(1)), soft);
+        canvas.drawLine(const Offset(17.6, 10.6), const Offset(17.6, 13.4), stroke
+          ..strokeWidth = 1.1
+          ..strokeCap = StrokeCap.butt);
+        canvas.drawCircle(const Offset(15.4, 17.6), 1.5, soft);
+        canvas.drawCircle(const Offset(19.2, 17.6), 1.5, soft);
       case RoadGlyph.blossom:
         for (var i = 0; i < 5; i++) {
           final a = -pi / 2 + i * 2 * pi / 5;

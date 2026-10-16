@@ -344,7 +344,10 @@ enum NoticeKind {
   info(0),
   money(1),
   warning(2),
-  danger(3);
+  danger(3),
+
+  /// Bản tin "Radio Giao thông" trên xe (khung xanh đậm, kèm nhạc hiệu).
+  radio(0);
 
   const NoticeKind(this.rank);
 

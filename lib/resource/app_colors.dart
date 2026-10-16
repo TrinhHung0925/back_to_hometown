@@ -126,4 +126,11 @@ abstract class AppColors {
 
   /// Chở cả nhà: cam "bé bắt đầu quấy" trên thanh kiên nhẫn.
   static const Color ffFF8A3D = Color(0xffFF8A3D);
+  /// Khung bản tin "Radio Giao thông": xanh đêm đậm, xanh đêm sáng hơn, viền
+  /// xanh, chữ xanh nhạt, đèn đỏ "đang phát".
+  static const Color ff16213E = Color(0xff16213E);
+  static const Color ff243A6B = Color(0xff243A6B);
+  static const Color ff4A6BB0 = Color(0xff4A6BB0);
+  static const Color ffB7C6E8 = Color(0xffB7C6E8);
+  static const Color ffFF5A5F = Color(0xffFF5A5F);
 }

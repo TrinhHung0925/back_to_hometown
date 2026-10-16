@@ -34,6 +34,7 @@ import 'logic/cross_traffic.dart';
 import 'logic/family.dart';
 import 'logic/gas_chat.dart';
 import 'logic/player_physics.dart';
+import 'logic/radio_bulletin.dart';
 import 'logic/road_layout.dart';
 import 'logic/road_path.dart';
 import 'logic/roadside.dart';
@@ -50,6 +51,7 @@ part 'driver/driver_view.dart';
 part 'event_layers.dart';
 part 'family.dart';
 part 'ferry.dart';
+part 'radio.dart';
 part 'tet_events.dart';
 
 /// Một chặng lái xe. Flutter (GameController) điều khiển qua các hàm
@@ -103,6 +105,11 @@ class VeQueGame extends FlameGame {
   /// Hỗ trợ lái (người chơi bật / tắt ở menu tạm dừng): giữ làn, bám xe
   /// trước, tự giảm tốc trước khúc cua.
   bool driveAssist = true;
+
+  /// Radio trên xe đang bật (bản tin giao thông, nhạc xuân) — người chơi bật /
+  /// tắt ở menu tạm dừng.
+  bool radioOn = true;
+  late final _Radio _radio = _Radio(this);
 
   /// Số lần va chạm trong chặng (đo độ khó).
   int collisions = 0;
@@ -624,6 +631,7 @@ class VeQueGame extends FlameGame {
     _stepPickups(dt);
     _events.step(dt);
     _family.step(dt);
+    _radio.step(dt);
     _stepAnimals(dt);
     _stepNails();
     _stepStallNotices();
@@ -2386,6 +2394,10 @@ class VeQueGame extends FlameGame {
 
   /// Cho điện thoại reo ngay.
   void ringPhoneNow() => _events._ring();
+
+  /// Bản tin radio kế tiếp phát ngay (để thử) và những gì đài đang biết.
+  void radioNow() => _radio.now();
+  RadioFacts get radioFacts => _radio.facts();
 
   /// Cho phà đậu sẵn ở bến phía mình (để thử).
   void dockFerryNow() {
