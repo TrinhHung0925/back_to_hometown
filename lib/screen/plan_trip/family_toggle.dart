@@ -18,14 +18,17 @@ class FamilyToggle extends StatelessWidget {
   Widget build(BuildContext context) {
     final face = 26.h;
     Widget avatar(String path) => Container(
-          width: face,
-          height: face,
-          padding: EdgeInsets.all(1.5.h),
-          decoration: BoxDecoration(shape: BoxShape.circle, color: value ? AppColors.ffFFFFFF : AppColors.ffE3E5E9),
-          child: ClipOval(
-            child: Opacity(opacity: value ? 1 : 0.55, child: Image.asset(path, fit: BoxFit.cover)),
-          ),
-        );
+      width: face,
+      height: face,
+      padding: EdgeInsets.all(1.5.h),
+      decoration: BoxDecoration(shape: BoxShape.circle, color: value ? AppColors.ffFFFFFF : AppColors.ffE3E5E9),
+      child: ClipOval(
+        child: Opacity(
+          opacity: value ? 1 : 0.55,
+          child: Image.asset(path, fit: BoxFit.cover),
+        ),
+      ),
+    );
     return CupertinoButton(
       padding: EdgeInsets.zero,
       minimumSize: Size.zero,
@@ -46,7 +49,7 @@ class FamilyToggle extends StatelessWidget {
         child: Row(
           children: [
             SizedBox(
-              width: face * 1.62,
+              width: face * 1.60,
               height: face + 6.h,
               child: Stack(
                 clipBehavior: Clip.none,
@@ -78,7 +81,12 @@ class FamilyToggle extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                AppText.manrope('Cả nhà', fontSize: 13.h, fontWeight: FontWeight.w800, color: value ? AppColors.ff1B1D22 : AppColors.ff6B7280),
+                AppText.manrope(
+                  'Cả nhà',
+                  fontSize: 13.h,
+                  fontWeight: FontWeight.w800,
+                  color: value ? AppColors.ff1B1D22 : AppColors.ff6B7280,
+                ),
                 AppText.manrope(
                   value ? 'vợ + bé Bin' : 'chở vợ con',
                   fontSize: 9.5.h,
