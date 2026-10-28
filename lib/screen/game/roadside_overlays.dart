@@ -68,85 +68,84 @@ class _ActionSpec {
     final moto = vehicle == VehicleKind.motorbike;
     return switch (action) {
       RoadAction.visit => switch (hud.stallKind) {
-          StallKind.xang => _ActionSpec('Đổ xăng', 'Vào cây xăng', RoadGlyph.pump, AppColors.ffEE9B2F, highlighted: true),
-          StallKind.xangLe => _ActionSpec('Mua xăng', 'Xăng lẻ đóng chai', RoadGlyph.bottle, AppColors.ffEE9B2F, highlighted: true),
-          StallKind.vaXe => _ActionSpec('Vá xe', hud.stallPrompt, RoadGlyph.wrench, AppColors.ff3A78A8, highlighted: true),
-          _ => _ActionSpec('Ghé quán', hud.stallPrompt, RoadGlyph.cup, AppColors.ffD62828, highlighted: true),
-        },
+        StallKind.xang => _ActionSpec('Đổ xăng', 'Vào cây xăng', RoadGlyph.pump, AppColors.ffEE9B2F, highlighted: true),
+        StallKind.xangLe => _ActionSpec('Mua xăng', 'Xăng lẻ đóng chai', RoadGlyph.bottle, AppColors.ffEE9B2F, highlighted: true),
+        StallKind.vaXe => _ActionSpec('Vá xe', hud.stallPrompt, RoadGlyph.wrench, AppColors.ff3A78A8, highlighted: true),
+        _ => _ActionSpec('Ghé quán', hud.stallPrompt, RoadGlyph.cup, AppColors.ffD62828, highlighted: true),
+      },
       RoadAction.approach => _ActionSpec(
-          hud.stallKind?.enterLabel ?? 'Vào quán',
-          [if (hud.stallPrompt != null) hud.stallPrompt!, if (hud.stallMeters != null) _distance(hud.stallMeters!)].join(' · '),
-          switch (hud.stallKind) {
-            StallKind.xang => RoadGlyph.pump,
-            StallKind.xangLe => RoadGlyph.bottle,
-            StallKind.vaXe => RoadGlyph.wrench,
-            _ => RoadGlyph.cup,
-          },
-          hud.stallKind?.sellsFuel ?? false ? AppColors.ffEE9B2F : AppColors.ffD62828,
-          highlighted: true,
-        ),
+        hud.stallKind?.enterLabel ?? 'Vào quán',
+        [if (hud.stallPrompt != null) hud.stallPrompt!, if (hud.stallMeters != null) _distance(hud.stallMeters!)].join(' · '),
+        switch (hud.stallKind) {
+          StallKind.xang => RoadGlyph.pump,
+          StallKind.xangLe => RoadGlyph.bottle,
+          StallKind.vaXe => RoadGlyph.wrench,
+          _ => RoadGlyph.cup,
+        },
+        hud.stallKind?.sellsFuel ?? false ? AppColors.ffEE9B2F : AppColors.ffD62828,
+        highlighted: true,
+      ),
       RoadAction.cancelApproach => _ActionSpec(
-          'Thôi, không ghé',
-          hud.stallMeters != null
-              ? 'đang tấp vào · ${_distance(hud.stallMeters!)}'
-              : hud.hitchMeters != null
-                  ? 'đang tấp vào đón ${hud.hitchPrompt}'
-                  : 'tự lái tiếp',
-          RoadGlyph.steering,
-          AppColors.ff5B6169,
-        ),
+        'Thôi, không ghé',
+        hud.stallMeters != null
+            ? 'đang tấp vào · ${_distance(hud.stallMeters!)}'
+            : hud.hitchMeters != null
+            ? 'đang tấp vào đón ${hud.hitchPrompt}'
+            : 'tự lái tiếp',
+        RoadGlyph.steering,
+        AppColors.ff5B6169,
+      ),
       RoadAction.pickUp => _ActionSpec(
-          'Cho đi nhờ',
-          '${hud.hitchPrompt ?? 'Người vẫy xe'}${hud.hitchMeters == null ? '' : ' · ${_distance(hud.hitchMeters!)}'}',
-          RoadGlyph.walker,
-          AppColors.ff1E9C53,
-          highlighted: true,
-        ),
+        'Cho đi nhờ',
+        '${hud.hitchPrompt ?? 'Người vẫy xe'}${hud.hitchMeters == null ? '' : ' · ${_distance(hud.hitchMeters!)}'}',
+        RoadGlyph.walker,
+        AppColors.ff1E9C53,
+        highlighted: true,
+      ),
       RoadAction.dropOff => _ActionSpec(
-          'Thả khách',
-          hud.riderMeters == null ? '${hud.rider ?? 'Khách'} xuống đây' : '${hud.rider} · ${_distance(hud.riderMeters!)}',
-          RoadGlyph.walker,
-          AppColors.ff1E9C53,
-          highlighted: true,
-        ),
+        'Thả khách',
+        hud.riderMeters == null ? '${hud.rider ?? 'Khách'} xuống đây' : '${hud.rider} · ${_distance(hud.riderMeters!)}',
+        RoadGlyph.walker,
+        AppColors.ff1E9C53,
+        highlighted: true,
+      ),
       RoadAction.uTurn => _ActionSpec(
-          hud.reversed ? 'Quay đầu' : 'Quay đầu',
-          hud.reversed ? 'về quê' : 'đi ngược lại',
-          RoadGlyph.uTurn,
-          AppColors.ff5B6169,
-          highlighted: hud.reversed,
-        ),
+        hud.reversed ? 'Quay đầu' : 'Quay đầu',
+        hud.reversed ? 'về quê' : 'đi ngược lại',
+        RoadGlyph.uTurn,
+        AppColors.ff5B6169,
+        highlighted: hud.reversed,
+      ),
       RoadAction.tiltBike => const _ActionSpec('Nghiêng xe', 'dồn xăng sang bình', RoadGlyph.tilt, AppColors.ff1E9C53),
       RoadAction.push => _ActionSpec('Dắt bộ', hud.fuelAhead ?? 'tới chỗ bán xăng', RoadGlyph.walker, AppColors.ff5B6169),
       RoadAction.callFuel => _ActionSpec(
-          moto ? 'Gọi xăng' : 'Gọi cứu hộ',
-          '${switch (vehicle) {
-            VehicleKind.motorbike => GameConfig.fuelRescueLixiMotorbike,
-            VehicleKind.car => GameConfig.fuelRescueLixiCar,
-            VehicleKind.bus => GameConfig.fuelRescueLixiBus,
-          }} lì xì · ${(moto ? GameConfig.fuelRescueMinutesMotorbike : GameConfig.fuelRescueMinutesCar).round()} phút',
-          RoadGlyph.phone,
-          AppColors.ffD62828,
-        ),
+        moto ? 'Gọi xăng' : 'Gọi cứu hộ',
+        '${switch (vehicle) {
+          VehicleKind.motorbike => GameConfig.fuelRescueLixiMotorbike,
+          VehicleKind.car => GameConfig.fuelRescueLixiCar,
+          VehicleKind.bus => GameConfig.fuelRescueLixiBus,
+        }} lì xì · ${(moto ? GameConfig.fuelRescueMinutesMotorbike : GameConfig.fuelRescueMinutesCar).round()} phút',
+        RoadGlyph.phone,
+        AppColors.ffD62828,
+      ),
       RoadAction.spareTire => _ActionSpec(
-          'Thay lốp',
-          'dự phòng · ${(vehicle == VehicleKind.bus ? GameConfig.spareMinutesBus : GameConfig.spareMinutesCar).round()} phút',
-          RoadGlyph.tire,
-          AppColors.ff1E9C53,
-        ),
+        'Thay lốp',
+        'dự phòng · ${(vehicle == VehicleKind.bus ? GameConfig.spareMinutesBus : GameConfig.spareMinutesCar).round()} phút',
+        RoadGlyph.tire,
+        AppColors.ff1E9C53,
+      ),
       RoadAction.callMechanic => _ActionSpec(
-          'Gọi thợ vá',
-          '${GameConfig.mobileRepairLixi} lì xì · ${GameConfig.mobileRepairMinutes.round()} phút',
-          RoadGlyph.phone,
-          AppColors.ff3A78A8,
-        ),
+        'Gọi thợ vá',
+        '${GameConfig.mobileRepairLixi} lì xì · ${GameConfig.mobileRepairMinutes.round()} phút',
+        RoadGlyph.phone,
+        AppColors.ff3A78A8,
+      ),
     };
   }
 }
 
 /// 650 m, 1,2 km.
-String _distance(int meters) =>
-    meters < 1000 ? '$meters m' : '${(meters / 1000).toStringAsFixed(1).replaceAll('.', ',')} km';
+String _distance(int meters) => meters < 1000 ? '$meters m' : '${(meters / 1000).toStringAsFixed(1).replaceAll('.', ',')} km';
 
 class _ActionPill extends StatelessWidget {
   const _ActionPill({required this.spec, required this.onPressed});
@@ -167,10 +166,7 @@ class _ActionPill extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.ff1B1D22.withValues(alpha: 0.78),
           borderRadius: BorderRadius.circular(23.h),
-          border: Border.all(
-            color: spec.highlighted ? AppColors.ffFFD166 : AppColors.ffFFFFFF.withValues(alpha: 0.28),
-            width: 2.h,
-          ),
+          border: Border.all(color: spec.highlighted ? AppColors.ffFFD166 : AppColors.ffFFFFFF.withValues(alpha: 0.28), width: 2.h),
           boxShadow: [BoxShadow(color: AppColors.ff000000.withValues(alpha: 0.25), blurRadius: 8.h, offset: Offset(0, 2.h))],
         ),
         child: Row(
@@ -228,37 +224,47 @@ class ReversedChip extends StatelessWidget {
         if (hud.reversed) _chip(RoadGlyph.uTurn, 'Đi ngược về ${controller.setup.fromName}', AppColors.ffB4231E),
         if (hud.pushing) _chip(RoadGlyph.walker, 'Dắt bộ — giữ Ga để đẩy', AppColors.ff5B6169),
         if (hud.rider != null)
-          _chip(RoadGlyph.walker, hud.riderMeters == null ? 'Chở ${hud.rider} — tấp lề' : 'Chở ${hud.rider} · còn ${_distance(hud.riderMeters!)}',
-              AppColors.ff1E9C53),
+          _chip(
+            RoadGlyph.walker,
+            hud.riderMeters == null ? 'Chở ${hud.rider} — tấp lề' : 'Chở ${hud.rider} · còn ${_distance(hud.riderMeters!)}',
+            AppColors.ff1E9C53,
+          ),
         if (hud.peach != null)
-          _chip(RoadGlyph.blossom, hud.peach! > 0 ? 'Cành đào ${hud.peach}%' : 'Cành đào gãy mất rồi', hud.peach! >= 60 ? AppColors.ffD94F7A : AppColors.ff5B6169),
+          _chip(
+            RoadGlyph.blossom,
+            hud.peach! > 0 ? 'Cành đào ${hud.peach}%' : 'Cành đào gãy mất rồi',
+            hud.peach! >= 60 ? AppColors.ffD94F7A : AppColors.ff5B6169,
+          ),
         if (hud.fog) _chip(RoadGlyph.fog, 'Sương mù — bật đèn', AppColors.ff5B6169),
         ...NightColdChips.of(hud.cold),
       ];
       if (chips.isEmpty) return const SizedBox.shrink();
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [for (final c in chips) Padding(padding: EdgeInsets.only(bottom: 3.h), child: c)],
+        children: [
+          for (final c in chips)
+            Padding(
+              padding: EdgeInsets.only(bottom: 3.h),
+              child: c,
+            ),
+        ],
       );
     });
   }
 
   Widget _chip(RoadGlyph glyph, String text, Color color) => Container(
-        height: 22.h,
-        padding: EdgeInsets.symmetric(horizontal: 8.h),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.78),
-          borderRadius: BorderRadius.circular(11.h),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            RoadIcon(glyph, size: 13.h, color: AppColors.ffFFFFFF, accent: color),
-            SizedBox(width: 5.h),
-            AppText.manrope(text, fontSize: 10.5.h, fontWeight: FontWeight.w800, color: AppColors.ffFFFFFF),
-          ],
-        ),
-      );
+    height: 22.h,
+    padding: EdgeInsets.symmetric(horizontal: 8.h),
+    decoration: BoxDecoration(color: color.withValues(alpha: 0.78), borderRadius: BorderRadius.circular(11.h)),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        RoadIcon(glyph, size: 13.h, color: AppColors.ffFFFFFF, accent: color),
+        SizedBox(width: 5.h),
+        AppText.manrope(text, fontSize: 10.5.h, fontWeight: FontWeight.w800, color: AppColors.ffFFFFFF),
+      ],
+    ),
+  );
 }
 
 /// Buồn ngủ: mép màn hình tối dần; ngủ gật thì mí mắt khép lại.
@@ -293,7 +299,10 @@ class _EyelidPainter extends CustomPainter {
       Paint()
         ..shader = RadialGradient(
           radius: 0.85,
-          colors: [AppColors.ff000000.withValues(alpha: 0), AppColors.ff000000.withValues(alpha: 0.6 * vignette)],
+          colors: [
+            AppColors.ff000000.withValues(alpha: 0),
+            AppColors.ff000000.withValues(alpha: 0.6 * vignette),
+          ],
           stops: const [0.55, 1],
         ).createShader(rect),
     );
@@ -340,14 +349,14 @@ class StallSheet extends StatelessWidget {
   final StallVisit visit;
 
   static Color kindColor(StallKind kind) => switch (kind) {
-        StallKind.traDa => AppColors.ffD62828,
-        StallKind.nuocMia => AppColors.ff1E9C53,
-        StallKind.caPheVong => AppColors.ff5B3A29,
-        StallKind.banhMi => AppColors.ffEE9B2F,
-        StallKind.com => AppColors.ff2F6BFF,
-        StallKind.vaXe => AppColors.ff3A78A8,
-        StallKind.xang || StallKind.xangLe => AppColors.ffC1121F,
-      };
+    StallKind.traDa => AppColors.ffD62828,
+    StallKind.nuocMia => AppColors.ff1E9C53,
+    StallKind.caPheVong => AppColors.ff5B3A29,
+    StallKind.banhMi => AppColors.ffEE9B2F,
+    StallKind.com => AppColors.ff2F6BFF,
+    StallKind.vaXe => AppColors.ff3A78A8,
+    StallKind.xang || StallKind.xangLe => AppColors.ffC1121F,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -355,6 +364,8 @@ class StallSheet extends StatelessWidget {
     final color = kindColor(stall.kind);
     return Container(
       width: 420.h,
+      // Thực đơn dài thì cuộn trong bảng, không tràn khỏi màn hình (chừa HUD phía trên).
+      constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height - 64.h),
       decoration: BoxDecoration(
         color: AppColors.ffFFFBF2,
         borderRadius: BorderRadius.circular(20.h),
@@ -371,99 +382,121 @@ class StallSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            SizedBox(height: 14.h, child: CustomPaint(painter: _AwningPainter(color))),
-            Padding(
-              padding: EdgeInsets.fromLTRB(14.h, 4.h, 14.h, 10.h),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 8.h, vertical: 4.h),
-                        decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(6.h)),
-                        child: AppText.manrope(
-                          stall.gouging ? 'VÁ XE 24H' : stall.kind.sign,
-                          fontSize: 11.h,
-                          fontWeight: FontWeight.w800,
-                          color: AppColors.ffFFFFFF,
+            SizedBox(
+              height: 14.h,
+              child: CustomPaint(painter: _AwningPainter(color)),
+            ),
+            Flexible(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(14.h, 4.h, 14.h, 10.h),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.symmetric(horizontal: 8.h, vertical: 4.h),
+                          decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(6.h)),
+                          child: AppText.manrope(
+                            stall.gouging ? 'VÁ XE 24H' : stall.kind.sign,
+                            fontSize: 11.h,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.ffFFFFFF,
+                          ),
+                        ),
+                        SizedBox(width: 8.h),
+                        Expanded(
+                          child: AppText.manrope(stall.name, fontSize: 16.h, fontWeight: FontWeight.w800, color: AppColors.ff1B1D22),
+                        ),
+                        _LixiBadge(lixi: lixi),
+                      ],
+                    ),
+                    SizedBox(height: 6.h),
+                    Flexible(
+                      child: SingleChildScrollView(
+                        physics: const ClampingScrollPhysics(),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            if (!visit.seated)
+                              Padding(
+                                padding: EdgeInsets.symmetric(vertical: 16.h),
+                                child: AppText.manrope(
+                                  stall.kind.sellsFuel ? 'Tắt máy, chờ người bán ra…' : 'Dựng xe, đi vào quán…',
+                                  fontSize: 13.h,
+                                  fontWeight: FontWeight.w700,
+                                  textAlign: TextAlign.center,
+                                  color: AppColors.ff6B7280,
+                                ),
+                              )
+                            else ...[
+                              ...switch (stall.kind) {
+                                StallKind.xang => _gasOffers(hud, lixi),
+                                StallKind.xangLe => _bottleOffers(hud, lixi),
+                                StallKind.vaXe => _repairOffers(hud, lixi, stall),
+                                _ => [
+                                  // Đặc sản tỉnh đang đi qua (nhỉnh hơn món thường); quán
+                                  // đã nhiều món thì chỉ bày một món cho bảng khỏi dài.
+                                  for (final item
+                                      in controller.game
+                                          .specialtiesAt(stall)
+                                          .take(stall.kind.menu.length + (raincoatOffer ? 1 : 0) >= 3 ? 1 : 2))
+                                    _OfferRow(
+                                      art: Img.item(item.art),
+                                      title: item.name,
+                                      caption:
+                                          'Đặc sản ${Provinces.provinceOf(item)?.name ?? 'địa phương'} · +${item.alert.round()} tỉnh táo · ${item.minutes.round()} phút',
+                                      price: item.price,
+                                      button: 'Gọi',
+                                      accent: AppColors.ffEE9B2F,
+                                      enabled: lixi >= item.price,
+                                      onPressed: () => controller.order(item),
+                                    ),
+                                  for (final item in stall.kind.menu)
+                                    _OfferRow(
+                                      art: Img.item(item.art),
+                                      title: item.name,
+                                      caption: '+${item.alert.round()} tỉnh táo · ${item.minutes.round()} phút',
+                                      price: item.price,
+                                      button: 'Gọi',
+                                      enabled: lixi >= item.price,
+                                      onPressed: () => controller.order(item),
+                                    ),
+                                ],
+                              },
+                              // Chở cả nhà: bim bim, hộp sữa cho bé (một hàng gọn).
+                              FamilySnackRow(controller: controller, kind: stall.kind, lixi: lixi),
+                              if (raincoatOffer)
+                                _OfferRow(
+                                  art: Img.imgItemRaincoat,
+                                  title: 'Áo mưa cánh dơi',
+                                  caption: 'Đi mưa không ướt, không lạnh run',
+                                  price: GameConfig.raincoatLixi,
+                                  button: 'Mua',
+                                  accent: AppColors.ff3A78A8,
+                                  enabled: lixi >= GameConfig.raincoatLixi,
+                                  onPressed: controller.buyRaincoat,
+                                ),
+                              SeasonalOffers(controller: controller, lixi: lixi),
+                            ],
+                          ],
                         ),
                       ),
-                      SizedBox(width: 8.h),
-                      Expanded(child: AppText.manrope(stall.name, fontSize: 16.h, fontWeight: FontWeight.w800, color: AppColors.ff1B1D22)),
-                      _LixiBadge(lixi: lixi),
-                    ],
-                  ),
-                  SizedBox(height: 6.h),
-                  if (!visit.seated)
-                    Padding(
-                      padding: EdgeInsets.symmetric(vertical: 16.h),
-                      child: AppText.manrope(
-                        stall.kind.sellsFuel ? 'Tắt máy, chờ người bán ra…' : 'Dựng xe, đi vào quán…',
-                        fontSize: 13.h,
-                        fontWeight: FontWeight.w700,
-                        textAlign: TextAlign.center,
-                        color: AppColors.ff6B7280,
-                      ),
-                    )
-                  else ...[
-                    ...switch (stall.kind) {
-                      StallKind.xang => _gasOffers(hud, lixi),
-                      StallKind.xangLe => _bottleOffers(hud, lixi),
-                      StallKind.vaXe => _repairOffers(hud, lixi, stall),
-                      _ => [
-                          // Đặc sản tỉnh đang đi qua (nhỉnh hơn món thường); quán
-                          // đã nhiều món thì chỉ bày một món cho bảng khỏi dài.
-                          for (final item in controller.game
-                              .specialtiesAt(stall)
-                              .take(stall.kind.menu.length + (raincoatOffer ? 1 : 0) >= 3 ? 1 : 2))
-                            _OfferRow(
-                              art: Img.item(item.art),
-                              title: item.name,
-                              caption: 'Đặc sản ${Provinces.provinceOf(item)?.name ?? 'địa phương'} · +${item.alert.round()} tỉnh táo · ${item.minutes.round()} phút',
-                              price: item.price,
-                              button: 'Gọi',
-                              accent: AppColors.ffEE9B2F,
-                              enabled: lixi >= item.price,
-                              onPressed: () => controller.order(item),
-                            ),
-                          for (final item in stall.kind.menu)
-                            _OfferRow(
-                              art: Img.item(item.art),
-                              title: item.name,
-                              caption: '+${item.alert.round()} tỉnh táo · ${item.minutes.round()} phút',
-                              price: item.price,
-                              button: 'Gọi',
-                              enabled: lixi >= item.price,
-                              onPressed: () => controller.order(item),
-                            ),
-                        ],
-                    },
-                    // Chở cả nhà: bim bim, hộp sữa cho bé (một hàng gọn).
-                    FamilySnackRow(controller: controller, kind: stall.kind, lixi: lixi),
-                    if (raincoatOffer)
-                      _OfferRow(
-                        art: Img.imgItemRaincoat,
-                        title: 'Áo mưa cánh dơi',
-                        caption: 'Đi mưa không ướt, không lạnh run',
-                        price: GameConfig.raincoatLixi,
-                        button: 'Mua',
-                        accent: AppColors.ff3A78A8,
-                        enabled: lixi >= GameConfig.raincoatLixi,
-                        onPressed: controller.buyRaincoat,
-                      ),
-                    SeasonalOffers(controller: controller, lixi: lixi),
+                    ),
+                    SizedBox(height: 6.h),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _FooterStatus(hud: hud, fuelFirst: stall.kind.sellsFuel),
+                        ),
+                        SizedBox(width: 12.h),
+                        AppButton(label: 'Đi tiếp', icon: Img.icPlay, onPressed: controller.leaveStall),
+                      ],
+                    ),
                   ],
-                  SizedBox(height: 6.h),
-                  Row(
-                    children: [
-                      Expanded(child: _FooterStatus(hud: hud, fuelFirst: stall.kind.sellsFuel)),
-                      SizedBox(width: 12.h),
-                      AppButton(label: 'Đi tiếp', icon: Img.icPlay, onPressed: controller.leaveStall),
-                    ],
-                  ),
-                ],
+                ),
               ),
             ),
           ],
@@ -477,7 +510,11 @@ class StallSheet extends StatelessWidget {
     final tank = controller.game.fuel;
     final full = tank.fullPrice;
     return [
-      _PumpDisplay(pump: controller.pump.value, level: tank.level, tankLiters: _tankLiters(controller.setup.vehicle) * controller.game.perks.fuelCapacity),
+      _PumpDisplay(
+        pump: controller.pump.value,
+        level: tank.level,
+        tankLiters: _tankLiters(controller.setup.vehicle) * controller.game.perks.fuelCapacity,
+      ),
       SizedBox(height: 6.h),
       _OfferRow(
         art: Img.imgItemNozzle,
@@ -506,7 +543,12 @@ class StallSheet extends StatelessWidget {
   List<Widget> _bottleOffers(HudData? hud, int lixi) {
     final tank = controller.game.fuel;
     return [
-      _PumpDisplay(pump: controller.pump.value, level: tank.level, tankLiters: _tankLiters(controller.setup.vehicle) * controller.game.perks.fuelCapacity, bottles: true),
+      _PumpDisplay(
+        pump: controller.pump.value,
+        level: tank.level,
+        tankLiters: _tankLiters(controller.setup.vehicle) * controller.game.perks.fuelCapacity,
+        bottles: true,
+      ),
       SizedBox(height: 6.h),
       _OfferRow(
         art: Img.imgItemBottle,
@@ -553,10 +595,10 @@ class StallSheet extends StatelessWidget {
   }
 
   static double _tankLiters(VehicleKind kind) => switch (kind) {
-        VehicleKind.motorbike => 5,
-        VehicleKind.car => 45,
-        VehicleKind.bus => 200,
-      };
+    VehicleKind.motorbike => 5,
+    VehicleKind.car => 45,
+    VehicleKind.bus => 200,
+  };
 }
 
 /// Mái che sọc kiểu mái hiên quán, mép dưới lượn vỏ sò.
@@ -667,7 +709,10 @@ class _StallChatterState extends State<StallChatter> {
             // Đuôi bong bóng chĩa lên phía quán.
             Padding(
               padding: EdgeInsets.only(left: 28.h),
-              child: Transform.flip(flipY: true, child: CustomPaint(size: Size(16.h, 10.h), painter: _BubbleTailPainter())),
+              child: Transform.flip(
+                flipY: true,
+                child: CustomPaint(size: Size(16.h, 10.h), painter: _BubbleTailPainter()),
+              ),
             ),
             Container(
               constraints: BoxConstraints(maxWidth: 280.h),
@@ -682,8 +727,7 @@ class _StallChatterState extends State<StallChatter> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  if (speaker.isNotEmpty)
-                    AppText.manrope(speaker, fontSize: 11.h, fontWeight: FontWeight.w800, color: AppColors.ffB4231E),
+                  if (speaker.isNotEmpty) AppText.manrope(speaker, fontSize: 11.h, fontWeight: FontWeight.w800, color: AppColors.ffB4231E),
                   AppText.manrope(line, fontSize: 12.5.h, fontWeight: FontWeight.w700, maxLines: 3, color: AppColors.ff1B1D22),
                 ],
               ),
@@ -730,7 +774,9 @@ class GasChatPanel extends StatelessWidget {
                 child: RoadIcon(RoadGlyph.pump, size: 15.h, color: AppColors.ffFFFFFF, accent: AppColors.ffC1121F),
               ),
               SizedBox(width: 7.h),
-              Expanded(child: AppText.manrope('Nhân viên cây xăng', fontSize: 11.5.h, fontWeight: FontWeight.w800, color: AppColors.ffB4231E)),
+              Expanded(
+                child: AppText.manrope('Nhân viên cây xăng', fontSize: 11.5.h, fontWeight: FontWeight.w800, color: AppColors.ffB4231E),
+              ),
               AppText.manrope('${chat.round}/${GasChat.maxRounds}', fontSize: 10.h, fontWeight: FontWeight.w700, color: AppColors.ff9A9385),
             ],
           ),
@@ -757,8 +803,13 @@ class GasChatPanel extends StatelessWidget {
                         Image.asset(Img.icChat, height: 13.h, color: AppColors.ffEE9B2F),
                         SizedBox(width: 6.h),
                         Expanded(
-                          child: AppText.manrope(reply.text.replaceAll('{to}', to),
-                              fontSize: 11.5.h, fontWeight: FontWeight.w700, maxLines: 2, color: AppColors.ff1B1D22),
+                          child: AppText.manrope(
+                            reply.text.replaceAll('{to}', to),
+                            fontSize: 11.5.h,
+                            fontWeight: FontWeight.w700,
+                            maxLines: 2,
+                            color: AppColors.ff1B1D22,
+                          ),
                         ),
                       ],
                     ),
@@ -914,7 +965,10 @@ class _OfferRow extends StatelessWidget {
               decoration: BoxDecoration(
                 color: enabled ? accent : AppColors.ffE3E5E9,
                 borderRadius: BorderRadius.circular(10.h),
-                border: Border.all(color: AppColors.ff1B1D22.withValues(alpha: enabled ? 0.3 : 0.08), width: 1.5.h),
+                border: Border.all(
+                  color: AppColors.ff1B1D22.withValues(alpha: enabled ? 0.3 : 0.08),
+                  width: 1.5.h,
+                ),
               ),
               child: AppText.manrope(
                 button,
@@ -942,35 +996,48 @@ class _FooterStatus extends StatelessWidget {
     final alert = hud?.alert ?? 100;
     final fuel = hud?.fuel ?? 1;
     Widget bar(String label, double value, Color color, String text) => Expanded(
-          child: Row(
-            children: [
-              SizedBox(
-                width: 52.h,
-                child: AppText.manrope(label, fontSize: 11.h, fontWeight: FontWeight.w700, color: AppColors.ff6B7280),
-              ),
-              Expanded(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(4.h),
-                  child: TweenAnimationBuilder<double>(
-                    tween: Tween(end: value),
-                    duration: const Duration(milliseconds: 900),
-                    curve: Curves.easeOutCubic,
-                    builder: (_, v, _) => LinearProgressIndicator(
-                      value: v,
-                      minHeight: 8.h,
-                      backgroundColor: AppColors.ffE3E5E9,
-                      color: color,
-                    ),
-                  ),
-                ),
-              ),
-              SizedBox(width: 6.h),
-              AppText.manrope(text, fontSize: 11.h, fontWeight: FontWeight.w800, color: AppColors.ff1B1D22),
-            ],
+      child: Row(
+        children: [
+          SizedBox(
+            width: 52.h,
+            child: AppText.manrope(label, fontSize: 11.h, fontWeight: FontWeight.w700, color: AppColors.ff6B7280),
           ),
-        );
-    final alertBar = bar('Tỉnh táo', alert / 100, alert >= 45 ? AppColors.ff1E9C53 : alert >= 25 ? AppColors.ffEE9B2F : AppColors.ffD62828, '$alert%');
-    final fuelBar = bar('Xăng', fuel, fuel >= 0.35 ? AppColors.ff1E9C53 : fuel >= 0.12 ? AppColors.ffEE9B2F : AppColors.ffD62828, '${(fuel * 100).round()}%');
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(4.h),
+              child: TweenAnimationBuilder<double>(
+                tween: Tween(end: value),
+                duration: const Duration(milliseconds: 900),
+                curve: Curves.easeOutCubic,
+                builder: (_, v, _) => LinearProgressIndicator(value: v, minHeight: 8.h, backgroundColor: AppColors.ffE3E5E9, color: color),
+              ),
+            ),
+          ),
+          SizedBox(width: 6.h),
+          AppText.manrope(text, fontSize: 11.h, fontWeight: FontWeight.w800, color: AppColors.ff1B1D22),
+        ],
+      ),
+    );
+    final alertBar = bar(
+      'Tỉnh táo',
+      alert / 100,
+      alert >= 45
+          ? AppColors.ff1E9C53
+          : alert >= 25
+          ? AppColors.ffEE9B2F
+          : AppColors.ffD62828,
+      '$alert%',
+    );
+    final fuelBar = bar(
+      'Xăng',
+      fuel,
+      fuel >= 0.35
+          ? AppColors.ff1E9C53
+          : fuel >= 0.12
+          ? AppColors.ffEE9B2F
+          : AppColors.ffD62828,
+      '${(fuel * 100).round()}%',
+    );
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -1002,7 +1069,11 @@ class _PumpDisplay extends StatelessWidget {
     return Container(
       padding: EdgeInsets.fromLTRB(12.h, 6.h, 12.h, 7.h),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter, colors: [AppColors.ff1F4E9C, AppColors.ff23408E]),
+        gradient: const LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [AppColors.ff1F4E9C, AppColors.ff23408E],
+        ),
         borderRadius: BorderRadius.circular(12.h),
         border: Border.all(color: AppColors.ff1B1D22, width: 2.h),
       ),
@@ -1019,9 +1090,19 @@ class _PumpDisplay extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Expanded(child: _LedField(label: bottles ? 'SỐ CHAI' : 'SỐ LÍT', value: bottles ? (shownLiters / (GameConfig.fuelBottle * tankLiters)).toStringAsFixed(0) : shownLiters.toStringAsFixed(2), color: AppColors.ffFFB547)),
+                  Expanded(
+                    child: _LedField(
+                      label: bottles ? 'SỐ CHAI' : 'SỐ LÍT',
+                      value: bottles
+                          ? (shownLiters / (GameConfig.fuelBottle * tankLiters)).toStringAsFixed(0)
+                          : shownLiters.toStringAsFixed(2),
+                      color: AppColors.ffFFB547,
+                    ),
+                  ),
                   SizedBox(width: 10.h),
-                  Expanded(child: _LedField(label: 'BÌNH XĂNG', value: '${(level * 100).round()}%', color: AppColors.ff7CFFB2)),
+                  Expanded(
+                    child: _LedField(label: 'BÌNH XĂNG', value: '${(level * 100).round()}%', color: AppColors.ff7CFFB2),
+                  ),
                 ],
               ),
               SizedBox(height: 6.h),
@@ -1089,7 +1170,11 @@ class _TankGauge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = level >= 0.35 ? AppColors.ff4ADE80 : level >= 0.12 ? AppColors.ffFFD166 : AppColors.ffFF5A4E;
+    final color = level >= 0.35
+        ? AppColors.ff4ADE80
+        : level >= 0.12
+        ? AppColors.ffFFD166
+        : AppColors.ffFF5A4E;
     return Row(
       children: [
         AppText.manrope('E', fontSize: 11.h, fontWeight: FontWeight.w800, color: AppColors.ffFF8FAB),
@@ -1121,8 +1206,7 @@ class _TankGaugePainter extends CustomPainter {
     canvas.clipRRect(r);
     canvas.drawRect(
       Rect.fromLTWH(0, 0, size.width * level.clamp(0.0, 1.0), size.height),
-      Paint()
-        ..shader = LinearGradient(colors: [color.withValues(alpha: 0.75), color]).createShader(Offset.zero & size),
+      Paint()..shader = LinearGradient(colors: [color.withValues(alpha: 0.75), color]).createShader(Offset.zero & size),
     );
     canvas.restore();
     final tick = Paint()
@@ -1164,7 +1248,9 @@ class _TireStatus extends StatelessWidget {
         children: [
           RoadIcon(glyph, size: 22.h, color: color, accent: AppColors.ffFFFBF2),
           SizedBox(width: 8.h),
-          Expanded(child: AppText.manrope(text, fontSize: 13.h, fontWeight: FontWeight.w800, color: color)),
+          Expanded(
+            child: AppText.manrope(text, fontSize: 13.h, fontWeight: FontWeight.w800, color: color),
+          ),
           if (gouging)
             Container(
               padding: EdgeInsets.symmetric(horizontal: 6.h, vertical: 2.h),
@@ -1238,12 +1324,7 @@ class JobCard extends StatelessWidget {
           SizedBox(height: 8.h),
           ClipRRect(
             borderRadius: BorderRadius.circular(4.h),
-            child: LinearProgressIndicator(
-              value: state.progress,
-              minHeight: 7.h,
-              backgroundColor: AppColors.ffE3E5E9,
-              color: color,
-            ),
+            child: LinearProgressIndicator(value: state.progress, minHeight: 7.h, backgroundColor: AppColors.ffE3E5E9, color: color),
           ),
         ],
       ),
@@ -1287,8 +1368,12 @@ class _JobStep extends StatelessWidget {
             child: done
                 ? Image.asset(Img.icCheck, width: 12.h, height: 12.h, color: AppColors.ffFFFFFF)
                 : active
-                    ? SizedBox(width: 10.h, height: 10.h, child: CupertinoActivityIndicator(radius: 5.h, color: color))
-                    : null,
+                ? SizedBox(
+                    width: 10.h,
+                    height: 10.h,
+                    child: CupertinoActivityIndicator(radius: 5.h, color: color),
+                  )
+                : null,
           ),
           SizedBox(width: 10.h),
           Expanded(
