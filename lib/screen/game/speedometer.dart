@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart' show CupertinoButton;
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -336,6 +337,33 @@ class CruiseChip extends StatelessWidget {
             AppText.manrope(note, fontSize: 10.5.h, fontWeight: FontWeight.w800, color: AppColors.ff7FB2E5),
           ],
         ],
+      ),
+    );
+  }
+}
+
+/// Nút "i" nhỏ góc trên bên trái: chạm thì hiện thẻ [CruiseTip], vài giây sau tự ẩn.
+class CruiseTipButton extends StatelessWidget {
+  const CruiseTipButton({super.key, required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return CupertinoButton(
+      padding: EdgeInsets.zero,
+      minimumSize: Size.zero,
+      onPressed: onTap,
+      child: Container(
+        width: 28.h,
+        height: 28.h,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: AppColors.ff1B1D22.withValues(alpha: 0.6),
+          shape: BoxShape.circle,
+          border: Border.all(color: AppColors.ffFFB020.withValues(alpha: 0.85), width: 1.5.h),
+        ),
+        child: AppText.manrope('i', fontSize: 14.h, fontWeight: FontWeight.w800, color: AppColors.ffFFB020),
       ),
     );
   }

@@ -141,12 +141,13 @@ class GameController extends GetxController {
     final args = Get.arguments;
     setup = args is StageSetup ? args : _fallbackStage();
     _createGame();
-    // Chặng tập lái đã có thẻ hướng dẫn riêng.
-    if (!setup.tutorial && !LocalService.shared.getCruiseTipShown()) {
-      cruiseTip.value = true;
-      LocalService.shared.saveCruiseTipShown();
-      _cruiseTipTimer = Timer(const Duration(seconds: 12), () => cruiseTip.value = false);
-    }
+  }
+
+  /// Chạm nút "i": hiện thẻ cách lái, 2 giây sau tự ẩn.
+  void showCruiseTip() {
+    cruiseTip.value = true;
+    _cruiseTipTimer?.cancel();
+    _cruiseTipTimer = Timer(const Duration(seconds: 2), () => cruiseTip.value = false);
   }
 
   /// Vào thẳng màn chơi (chế độ tự lái khi phát triển): đi tiếp chuyến đang

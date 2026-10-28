@@ -162,11 +162,15 @@ class _GameViewState extends State<GameView> {
                       child: ContextActions(controller: controller),
                     ),
                     Obx(() {
-                      if (!controller.cruiseTip.value || controller.phase.value != GamePhase.driving) {
-                        return const SizedBox.shrink();
-                      }
+                      if (controller.phase.value != GamePhase.driving || controller.setup.tutorial) return const SizedBox.shrink();
                       // Góc trên bên trái (phía làn ngược chiều) để không che xe mình.
-                      return Positioned(left: 12.h, top: 58.h, child: CruiseTip(assist: controller.driveAssist.value));
+                      return Positioned(
+                        left: 12.h,
+                        top: 58.h,
+                        child: controller.cruiseTip.value
+                            ? CruiseTip(assist: controller.driveAssist.value)
+                            : CruiseTipButton(onTap: controller.showCruiseTip),
+                      );
                     }),
                     Obx(() {
                       final job = controller.job.value;

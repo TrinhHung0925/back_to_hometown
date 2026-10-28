@@ -225,37 +225,37 @@ class ReversedChip extends StatelessWidget {
       final chips = <Widget>[
         // Chở cả nhà: bé còn kiên nhẫn bao nhiêu (mặt bé theo tâm trạng).
         if (hud.family != null) FamilyChip(family: hud.family!),
-        if (hud.reversed) _chip(RoadGlyph.uTurn, 'Đang đi ngược về ${controller.setup.fromName}', AppColors.ffB4231E),
-        if (hud.pushing) _chip(RoadGlyph.walker, 'Đang dắt bộ — giữ Ga để đẩy xe', AppColors.ff5B6169),
+        if (hud.reversed) _chip(RoadGlyph.uTurn, 'Đi ngược về ${controller.setup.fromName}', AppColors.ffB4231E),
+        if (hud.pushing) _chip(RoadGlyph.walker, 'Dắt bộ — giữ Ga để đẩy', AppColors.ff5B6169),
         if (hud.rider != null)
-          _chip(RoadGlyph.walker, hud.riderMeters == null ? 'Chở ${hud.rider} — tấp lề cho xuống' : 'Chở ${hud.rider} · còn ${_distance(hud.riderMeters!)}',
+          _chip(RoadGlyph.walker, hud.riderMeters == null ? 'Chở ${hud.rider} — tấp lề' : 'Chở ${hud.rider} · còn ${_distance(hud.riderMeters!)}',
               AppColors.ff1E9C53),
         if (hud.peach != null)
           _chip(RoadGlyph.blossom, hud.peach! > 0 ? 'Cành đào ${hud.peach}%' : 'Cành đào gãy mất rồi', hud.peach! >= 60 ? AppColors.ffD94F7A : AppColors.ff5B6169),
-        if (hud.fog) _chip(RoadGlyph.fog, 'Sương mù — bật đèn, đi chậm', AppColors.ff5B6169),
+        if (hud.fog) _chip(RoadGlyph.fog, 'Sương mù — bật đèn', AppColors.ff5B6169),
         ...NightColdChips.of(hud.cold),
       ];
       if (chips.isEmpty) return const SizedBox.shrink();
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [for (final c in chips) Padding(padding: EdgeInsets.only(bottom: 6.h), child: c)],
+        children: [for (final c in chips) Padding(padding: EdgeInsets.only(bottom: 3.h), child: c)],
       );
     });
   }
 
   Widget _chip(RoadGlyph glyph, String text, Color color) => Container(
-        height: 30.h,
-        padding: EdgeInsets.symmetric(horizontal: 10.h),
+        height: 22.h,
+        padding: EdgeInsets.symmetric(horizontal: 8.h),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.9),
-          borderRadius: BorderRadius.circular(15.h),
+          color: color.withValues(alpha: 0.78),
+          borderRadius: BorderRadius.circular(11.h),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            RoadIcon(glyph, size: 16.h, color: AppColors.ffFFFFFF, accent: color),
-            SizedBox(width: 6.h),
-            AppText.manrope(text, fontSize: 12.h, fontWeight: FontWeight.w800, color: AppColors.ffFFFFFF),
+            RoadIcon(glyph, size: 13.h, color: AppColors.ffFFFFFF, accent: color),
+            SizedBox(width: 5.h),
+            AppText.manrope(text, fontSize: 10.5.h, fontWeight: FontWeight.w800, color: AppColors.ffFFFFFF),
           ],
         ),
       );

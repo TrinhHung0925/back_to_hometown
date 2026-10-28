@@ -19,15 +19,15 @@ abstract class NightColdChips {
       if (cold.label != null)
         _ColdChip(
           glyph: RoadGlyph.thermometer,
-          text: cold.numb ? '${cold.label} · tay cóng — mua găng tay' : cold.label!,
+          text: cold.numb ? '${cold.label} · tay cóng' : cold.label!,
           color: cold.severe ? AppColors.ff2C5D8A : AppColors.ff3E6A92,
         ),
       if (cold.kicksLeft != null)
-        const _ColdChip(glyph: RoadGlyph.scooter, text: 'Máy nguội — bấm Ga để đạp nổ máy', color: AppColors.ffB4231E, blink: true),
+        const _ColdChip(glyph: RoadGlyph.scooter, text: 'Máy nguội — bấm Ga', color: AppColors.ffB4231E, blink: true),
       if (cold.alcohol != null)
         _ColdChip(
           glyph: RoadGlyph.breathalyzer,
-          text: 'Hơi men ${(cold.alcohol! / 100).toStringAsFixed(2).replaceAll('.', ',')} mg/L · còn ~${_duration(cold.soberMinutes ?? 0)} — đã uống đừng lái!',
+          text: 'Hơi men ${(cold.alcohol! / 100).toStringAsFixed(2).replaceAll('.', ',')} · còn ~${_duration(cold.soberMinutes ?? 0)}',
           color: AppColors.ff8E1428,
         ),
     ];
@@ -71,19 +71,19 @@ class _ColdChipState extends State<_ColdChip> with SingleTickerProviderStateMixi
   @override
   Widget build(BuildContext context) {
     final chip = Container(
-      height: 30.h,
-      padding: EdgeInsets.symmetric(horizontal: 10.h),
+      height: 22.h,
+      padding: EdgeInsets.symmetric(horizontal: 8.h),
       decoration: BoxDecoration(
-        color: widget.color.withValues(alpha: 0.9),
-        borderRadius: BorderRadius.circular(15.h),
+        color: widget.color.withValues(alpha: 0.78),
+        borderRadius: BorderRadius.circular(11.h),
         border: widget.blink ? Border.all(color: AppColors.ffFFD166, width: 1.5.h) : null,
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          RoadIcon(widget.glyph, size: 16.h, color: AppColors.ffFFFFFF, accent: widget.color),
-          SizedBox(width: 6.h),
-          AppText.manrope(widget.text, fontSize: 12.h, fontWeight: FontWeight.w800, color: AppColors.ffFFFFFF),
+          RoadIcon(widget.glyph, size: 13.h, color: AppColors.ffFFFFFF, accent: widget.color),
+          SizedBox(width: 5.h),
+          AppText.manrope(widget.text, fontSize: 10.5.h, fontWeight: FontWeight.w800, color: AppColors.ffFFFFFF),
         ],
       ),
     );
