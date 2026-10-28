@@ -80,11 +80,11 @@ class GameController extends GetxController {
 
   /// Hiện ít nhất chừng này mới để thông báo cùng mức thay; chờ quá
   /// [_noticeStale] thì bỏ (chuyện đã qua rồi).
-  static const _noticeMin = Duration(milliseconds: 2200);
+  static const _noticeMin = Duration(milliseconds: 1500);
 
   /// Bản tin radio dài hai dòng: giữ lâu hơn mới nhường thông báo cùng mức.
-  static const _radioMin = Duration(milliseconds: 4200);
-  static const _noticeStale = Duration(seconds: 7);
+  static const _radioMin = Duration(milliseconds: 3000);
+  static const _noticeStale = Duration(seconds: 3);
 
   /// Đang ghé quán (null khi đang lái).
   final stallVisit = Rxn<StallVisit>();
@@ -379,7 +379,7 @@ class GameController extends GetxController {
     var i = _noticeQueue.indexWhere((q) => first ? q.$1.kind.rank <= value.kind.rank : q.$1.kind.rank < value.kind.rank);
     if (i < 0) i = _noticeQueue.length;
     _noticeQueue.insert(i, (value, at));
-    if (_noticeQueue.length > 3) _noticeQueue.removeLast();
+    if (_noticeQueue.length > 1) _noticeQueue.removeLast();
   }
 
   void _presentNotice(GameNotice value) {
@@ -388,14 +388,16 @@ class GameController extends GetxController {
     if (value.kind == NoticeKind.radio && radio.value) {
       // Nhạc hiệu của đài, nhạc nhỏ xuống trong lúc đọc bản tin.
       _audio.play(AppAudio.sfxRadioJingle, volume: 0.5);
-      _audio.duckMusic(const Duration(milliseconds: 5200));
+      _audio.duckMusic(const Duration(milliseconds: 4000));
     }
+    // Chữ ngắn thì tắt sớm, câu dài mới giữ lâu hơn (đừng che đường quá lâu).
+    final read = Duration(milliseconds: (1300 + value.text.length * 32).clamp(1800, 3000));
     final hold = value.kind == NoticeKind.danger
-        ? const Duration(milliseconds: 4500)
+        ? const Duration(milliseconds: 3200)
         : value.kind == NoticeKind.radio
-            ? const Duration(milliseconds: 5600)
+            ? const Duration(milliseconds: 4000)
             : _noticeQueue.isEmpty
-            ? const Duration(milliseconds: 3200)
+            ? read
             : _noticeMin;
     _scheduleNotice(_noticeAt.add(hold));
   }

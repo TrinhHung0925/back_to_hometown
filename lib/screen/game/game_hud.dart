@@ -596,21 +596,21 @@ class NoticeBanner extends StatelessWidget {
                 ? _DangerNotice(key: ValueKey(notice), text: notice.text)
                 : Container(
                     key: ValueKey(notice),
-                    constraints: BoxConstraints(maxWidth: 520.h),
-                    padding: EdgeInsets.symmetric(horizontal: 16.h, vertical: 8.h),
+                    constraints: BoxConstraints(maxWidth: 440.h),
+                    padding: EdgeInsets.symmetric(horizontal: 12.h, vertical: 5.h),
                     decoration: BoxDecoration(
                       color: switch (notice.kind) {
                         NoticeKind.warning || NoticeKind.danger => const Color(0xE6B4231E),
                         NoticeKind.money => const Color(0xE6976A12),
-                        NoticeKind.info || NoticeKind.radio => AppColors.ff1B1D22.withValues(alpha: 0.8),
+                        NoticeKind.info || NoticeKind.radio => AppColors.ff1B1D22.withValues(alpha: 0.7),
                       },
-                      borderRadius: BorderRadius.circular(18.h),
+                      borderRadius: BorderRadius.circular(14.h),
                     ),
                     child: AppText.manrope(
                       notice.text,
-                      fontSize: 13.h,
+                      fontSize: 12.h,
                       fontWeight: FontWeight.w800,
-                      maxLines: 3,
+                      maxLines: 2,
                       textAlign: TextAlign.center,
                       color: AppColors.ffFFFFFF,
                     ),
@@ -630,8 +630,8 @@ class _DangerNotice extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      constraints: BoxConstraints(maxWidth: 560.h),
-      padding: EdgeInsets.fromLTRB(10.h, 7.h, 16.h, 7.h),
+      constraints: BoxConstraints(maxWidth: 480.h),
+      padding: EdgeInsets.fromLTRB(8.h, 5.h, 12.h, 5.h),
       decoration: BoxDecoration(
         color: const Color(0xF29E1418),
         borderRadius: BorderRadius.circular(18.h),
@@ -646,9 +646,9 @@ class _DangerNotice extends StatelessWidget {
           Flexible(
             child: AppText.manrope(
               text,
-              fontSize: 13.5.h,
+              fontSize: 12.5.h,
               fontWeight: FontWeight.w800,
-              maxLines: 3,
+              maxLines: 2,
               color: AppColors.ffFFFFFF,
             ),
           ),
