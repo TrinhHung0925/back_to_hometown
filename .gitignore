@@ -49,3 +49,8 @@ app.*.map.json
 
 # Raw downloaded asset packs (re-downloadable, see document/asset_credits.md)
 /asset_source/
+
+# Dựng xe từ GLB (tool/asset_pipeline/glb): thư viện node, mô hình tải về, ảnh thô
+tool/asset_pipeline/glb/node_modules/
+tool/asset_pipeline/glb/models/
+tool/asset_pipeline/glb/raw/

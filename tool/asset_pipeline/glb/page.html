@@ -1,0 +1,225 @@
+<!doctype html><html><head><meta charset="utf-8">
+<style>html,body{margin:0;background:transparent}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"./vendor/three/three.module.js","three/addons/":"./vendor/three/addons/"}}</script>
+</head><body><script type="module">
+// Dựng xe từ GLB: ảnh trực giao nhìn từ trên xuống (xe trong game nhìn từ
+// trên) và các góc nhìn ghế lái (máy ảnh trực giao, ngẩng 7°, vòng quanh xe).
+// Trang này chỉ phơi ra window.glb; render.mjs gọi nó qua puppeteer.
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(1);
+renderer.setClearColor(0x000000, 0);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const env = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
+let car = null; // {root, extra, L, W, H}
+
+// Tối dần gầm xe / hốc bánh gần mặt đất (ánh sáng bầu trời không lọt xuống đó),
+// thay cho che khuất môi trường mà bộ dựng này không có.
+function addGroundAO(mat) {
+  mat.onBeforeCompile = sh => {
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying float vAoY;')
+      .replace('#include <project_vertex>', '#include <project_vertex>\nvAoY = (modelMatrix * vec4(transformed, 1.0)).y;');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vAoY;')
+      .replace('#include <dithering_fragment>', '#include <dithering_fragment>\ngl_FragColor.rgb *= mix(0.22, 1.0, smoothstep(0.10, 0.52, vAoY));');
+  };
+  mat.customProgramCacheKey = () => 'groundAO';
+  mat.needsUpdate = true;
+}
+
+function rng(seed) { let a = seed >>> 0; return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function balls(group, rand, n, center, radius, colors, size, shell) {
+  const geo = new THREE.SphereGeometry(1, 8, 6);
+  const mats = colors.map(c => new THREE.MeshStandardMaterial({ color: c, roughness: 0.7 }));
+  const per = mats.map(() => []);
+  for (let i = 0; i < n; i++) {
+    const u = rand() * 2 - 1, th = rand() * Math.PI * 2, r = Math.sqrt(1 - u * u);
+    const k = shell ? radius * (0.85 + rand() * 0.15) : radius * Math.cbrt(rand());
+    per[Math.floor(rand() * mats.length)].push([center.x + r * Math.cos(th) * k, center.y + u * k * 0.9, center.z + r * Math.sin(th) * k, size * (0.7 + rand() * 0.6)]);
+  }
+  mats.forEach((m, j) => {
+    const im = new THREE.InstancedMesh(geo, m, Math.max(1, per[j].length)); im.count = per[j].length; im.castShadow = true;
+    per[j].forEach((q, i) => { im.setMatrixAtIndex ? 0 : 0; const mt = new THREE.Matrix4().makeScale(q[3], q[3], q[3]).setPosition(q[0], q[1], q[2]); im.setMatrixAt(i, mt); });
+    group.add(im);
+  });
+}
+function stick(group, a, b, r, color) {
+  const d = b.clone().sub(a), len = d.length();
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(r * 0.7, r, len, 6), new THREE.MeshStandardMaterial({ color, roughness: 0.9 }));
+  m.position.copy(a).addScaledVector(d, 0.5); m.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), d.normalize());
+  m.castShadow = true; group.add(m);
+}
+// Hàng chở trên thùng bán tải: cây quất, cành đào, thùng carton. [c] = {kind, z, y, seed, size}
+function buildCargo(c) {
+  const g = new THREE.Group(); const rand = rng(c.seed || 7); const cx = c.x || 0;
+  if (c.kind === 'kumquat') {
+    const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.18, 0.32, 14), new THREE.MeshStandardMaterial({ color: 0x8a4a2c, roughness: 0.8 }));
+    pot.position.set(cx, c.y + 0.16, c.z); pot.castShadow = true; g.add(pot);
+    const center = new THREE.Vector3(cx, c.y + 0.32 + 0.50 * c.size, c.z);
+    balls(g, rand, 170, center, 0.52 * c.size, [0x2f6b2a, 0x3d7d32, 0x255a22], 0.13 * c.size, false);
+    balls(g, rand, 70, center, 0.56 * c.size, [0xf29a12, 0xe8860c, 0xffb02e], 0.075 * c.size, true);
+    balls(g, rand, 10, center, 0.56 * c.size, [0xd8201c], 0.05 * c.size, true);
+  } else if (c.kind === 'peach') {
+    const base = new THREE.Vector3(cx, c.y + 0.05, c.z);
+    const top = base.clone().add(new THREE.Vector3(0.05, 1.0 * c.size, -0.05));
+    stick(g, base, top, 0.045, 0x4a3426);
+    for (let i = 0; i < 9; i++) {
+      const t0 = 0.25 + rand() * 0.6, from = base.clone().lerp(top, t0);
+      const to = from.clone().add(new THREE.Vector3((rand() - 0.5) * 0.9, 0.2 + rand() * 0.4, (rand() - 0.5) * 0.9).multiplyScalar(c.size));
+      stick(g, from, to, 0.02, 0x4a3426);
+      balls(g, rand, 26, to.clone().lerp(from, 0.2), 0.2 * c.size, [0xf7a8c0, 0xf4b6c8, 0xe97ea0], 0.05 * c.size, false);
+    }
+  } else if (c.kind === 'boxes') {
+    const cols = [0xb88a55, 0xc79a63, 0xa97a48];
+    [[-0.25, 0, 0.5, 0.45, 0.5], [0.28, 0, 0.55, 0.5, 0.55], [0.0, 0.5, 0.5, 0.42, 0.45]].forEach(([x, dy, w, h, d], i) => {
+      const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshStandardMaterial({ color: cols[i % 3], roughness: 0.85 }));
+      b.position.set(cx + x, c.y + h / 2 + dy, c.z + (i === 2 ? 0 : (i - 0.5) * 0.12)); b.castShadow = true; g.add(b);
+    });
+  }
+  return g;
+}
+
+function disposeCar() {
+  if (!car) return;
+  car.root.traverse(o => { if (o.isMesh) { o.geometry.dispose(); } });
+  car = null;
+}
+
+// Nạp [url], xoay mũi xe về -Z (hướng lên đầu ảnh nhìn từ trên), co dài [length]
+// mét, đặt tâm ở gốc, bánh chạm y = 0.
+async function load(url, o) {
+  disposeCar();
+  const gltf = await loader.loadAsync(url);
+  const model = gltf.scene;
+  model.updateMatrixWorld(true);
+  let box = new THREE.Box3().setFromObject(model);
+  let size = box.getSize(new THREE.Vector3());
+  const pivot = new THREE.Group();
+  pivot.add(model);
+  // Chiều dài nằm dọc Z.
+  if (size.x > size.z) pivot.rotation.y = Math.PI / 2;
+  pivot.rotation.y += (o.turn || 0) * Math.PI / 180;
+  pivot.updateMatrixWorld(true);
+  box = new THREE.Box3().setFromObject(pivot);
+  size = box.getSize(new THREE.Vector3());
+  const k = o.length / size.z;
+  const root = new THREE.Group();
+  root.add(pivot);
+  root.scale.setScalar(k);
+  root.updateMatrixWorld(true);
+  box = new THREE.Box3().setFromObject(root);
+  const c = box.getCenter(new THREE.Vector3());
+  pivot.position.x -= c.x / k; pivot.position.z -= c.z / k; pivot.position.y -= box.min.y / k;
+  root.updateMatrixWorld(true);
+  box = new THREE.Box3().setFromObject(root);
+  size = box.getSize(new THREE.Vector3());
+  root.traverse(m => {
+    if (!m.isMesh) return;
+    m.castShadow = true; m.receiveShadow = true;
+    for (const mat of (Array.isArray(m.material) ? m.material : [m.material])) {
+      if (o.tint && new RegExp(o.tint.match, 'i').test(mat.name || '')) {
+        mat.color.set(o.tint.color); if (mat.map && o.tint.dropMap) mat.map = null;
+        if (o.tint.metalness !== undefined) mat.metalness = o.tint.metalness;
+        if (o.tint.roughness !== undefined) mat.roughness = o.tint.roughness;
+        mat.needsUpdate = true;
+      }
+      if (mat.envMapIntensity !== undefined) mat.envMapIntensity = o.envIntensity ?? 0.9;
+    }
+  });
+  const extra = new THREE.Group();
+  if (o.cargo) extra.add(buildCargo(o.cargo));
+  root.traverse(m => { if (m.isMesh) for (const mat of (Array.isArray(m.material) ? m.material : [m.material])) if (o.ao !== false) addGroundAO(mat); });
+  car = { root, extra, L: size.z, W: size.x, H: size.y };
+  return { L: size.z, W: size.x, H: size.y };
+}
+
+function makeScene(sunDir, sunStrength) {
+  const scene = new THREE.Scene();
+  scene.environment = env;
+  scene.environmentIntensity = 0.75;
+  const sun = new THREE.DirectionalLight(0xfff2e0, sunStrength);
+  sun.position.copy(sunDir.clone().multiplyScalar(30));
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(2048, 2048);
+  const e = 5; sun.shadow.camera.left = -e; sun.shadow.camera.right = e; sun.shadow.camera.top = e; sun.shadow.camera.bottom = -e;
+  sun.shadow.camera.near = 1; sun.shadow.camera.far = 80; sun.shadow.bias = -0.0004; sun.shadow.normalBias = 0.02;
+  scene.add(sun);
+  scene.add(new THREE.HemisphereLight(0xcfe3ff, 0x6a5a48, 0.35));
+  scene.add(car.root);
+  scene.add(car.extra);
+  return scene;
+}
+
+function snap(w, h) {
+  return renderer.domElement.toDataURL('image/png').slice(22);
+}
+
+// Ảnh nhìn từ trên: khung [w]×[h] điểm ảnh ở [ppm] điểm ảnh/mét, siêu mẫu [ss];
+// mũi xe cách mép trên [noseY] điểm ảnh, tâm xe ở giữa khung theo bề ngang.
+async function topdown({ w, h, ppm, noseY, ss }) {
+  const sunDir = new THREE.Vector3(-0.42, 0.70, -0.58).normalize(); // trên - trái ảnh, phía mũi xe
+  const scene = makeScene(sunDir, 2.6);
+  renderer.setSize(w * ss, h * ss);
+  const zt = (h / 2 - (noseY + car.L * ppm / 2)) / ppm; // z ứng với tâm ảnh
+  const cam = new THREE.OrthographicCamera(-w / 2 / ppm, w / 2 / ppm, h / 2 / ppm, -h / 2 / ppm, 0.1, 100);
+  cam.up.set(0, 0, -1);
+  cam.position.set(0, 40, zt); cam.lookAt(0, 0, zt);
+  renderer.render(scene, cam);
+  return { png: snap(), alphaOnly: false };
+}
+
+// Một góc nhìn ghế lái: [yaw] độ tính từ ngay sau đuôi (0 = đuôi, 90 = hông trái,
+// 180 = đầu), dương lệch sang hông TRÁI của xe, ngẩng [elev]°. Trả về ảnh cả
+// khung (cắt do Python) + toạ độ điểm đất dưới tâm xe và các điểm đèn.
+async function view({ yaw, elev, ppm, ss, lamps }) {
+  const t = yaw * Math.PI / 180, e = elev * Math.PI / 180;
+  // Mũi xe hướng -Z; "đứng sau xe" = camera ở +Z. Hông trái của xe = x < 0.
+  const eye = new THREE.Vector3(-Math.sin(t) * Math.cos(e), Math.sin(e), Math.cos(t) * Math.cos(e));
+  const fwd = eye.clone().negate();
+  const up0 = new THREE.Vector3(0, 1, 0);
+  const right = new THREE.Vector3().crossVectors(fwd, up0).normalize();
+  const camUp = new THREE.Vector3().crossVectors(right, fwd).normalize();
+  const back = new THREE.Vector3(eye.x, 0, eye.z).normalize();
+  const sunDir = right.clone().multiplyScalar(-0.42).add(back.clone().multiplyScalar(0.40)).add(new THREE.Vector3(0, 0.80, 0)).normalize();
+  const scene = makeScene(sunDir, 2.6);
+  const span = Math.hypot(car.L, car.W, car.H) + 1;
+  const W = Math.ceil(span * ppm), H = Math.ceil(span * ppm);
+  renderer.setSize(W * ss, H * ss);
+  const target = new THREE.Vector3(0, car.H / 2, 0);
+  const cam = new THREE.OrthographicCamera(-W / 2 / ppm, W / 2 / ppm, H / 2 / ppm, -H / 2 / ppm, 0.1, 100);
+  cam.position.copy(target).addScaledVector(eye, 30);
+  cam.up.copy(camUp); cam.lookAt(target);
+  renderer.render(scene, cam);
+  const proj = p => {
+    const d = p.clone().sub(target);
+    return [W / 2 + d.dot(right) * ppm, H / 2 - d.dot(camUp) * ppm];
+  };
+  const ground = proj(new THREE.Vector3(0, 0, 0));
+  const lampPts = (lamps || []).map(l => {
+    const p = new THREE.Vector3(l.x, l.y, l.z);
+    const n = new THREE.Vector3(l.nx || 0, 0, l.nz).normalize();
+    const vis = n.dot(eye) > (l.minDot ?? 0.12);
+    return { p: proj(p), vis };
+  });
+  return { png: snap(), W, H, ground, lamps: lampPts };
+}
+
+// Liệt kê vật liệu (tên, trong suốt, màu, có ảnh) để chọn vật liệu cần đổi màu / ép đặc.
+async function mats(url) {
+  const g = await loader.loadAsync(url); const out = [];
+  g.scene.traverse(m => { if (!m.isMesh) return;
+    for (const x of (Array.isArray(m.material) ? m.material : [m.material]))
+      out.push({ mesh: m.name, mat: x.name, transparent: x.transparent, opacity: x.opacity, alphaTest: x.alphaTest, color: x.color ? x.color.getHexString() : null, map: !!x.map, metal: x.metalness, rough: x.roughness, side: x.side });
+  });
+  return out;
+}
+window.glb = { load, topdown, view, mats, ready: true };
+</script></body></html>

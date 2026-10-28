@@ -1,0 +1,7 @@
+{
+  "name": "glb-vehicle-render",
+  "private": true,
+  "type": "module",
+  "description": "Dựng ảnh xe từ mô hình GLB bằng three.js chạy trong Chrome không đầu (xem README.md)",
+  "dependencies": { "puppeteer-core": "^24.0.0" }
+}
