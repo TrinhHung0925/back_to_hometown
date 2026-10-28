@@ -73,9 +73,9 @@ def write_jobs(entries):
     for e in entries:
         w, h, nose = e['frame']
         jobs.append({
-            'name': e['name'], 'glb': path_of(e['model']), 'length': e['length'], 'turn': e.get('turn', 0),
+            'name': e['name'], 'glb': path_of(e['model']), 'length': e['length'], 'turn': e.get('turn', 0), 'squeeze': e.get('squeeze', 1),
             'tint': e.get('tint'), 'lampSpec': e.get('lamps', {}), 'cargo': e.get('cargo'),
-            'top': {'w': w, 'h': h, 'ppm': TOP_PPM, 'noseY': nose},
+            'top': {'w': w, 'h': h, 'ppm': e.get('top_ppm', TOP_PPM), 'noseY': nose},
             'yaws': sorted(set(VIEWS.values())),
         })
     spec = {'out': RAW, 'ss': SS, 'elev': ELEV, 'ppm': PPM, 'jobs': jobs}

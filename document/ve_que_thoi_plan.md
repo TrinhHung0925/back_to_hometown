@@ -844,3 +844,5 @@ Chơi thử trên máy thật và chỉnh cân bằng vẫn cần người chơi
 6. **Tin nhắn chat:** hiện ở phía trên màn hình. *(tạm theo đề xuất)*
 
 Các mục "tạm theo đề xuất" đổi được bất cứ lúc nào, chỉ cần báo.
+
+(2026-10-28, tiếp) Xe khách (bus_1..3), xe tải (truck) và container (container_1/2) cũng dựng từ mô hình GLB thật bằng cùng pipeline (`tool/asset_pipeline/glb`). Xe tải/container_1 dùng chung một mô hình xe tải thùng (ngắn hơn hộp va chạm nên ảnh được giãn đều khi vẽ). `img_bus_player` (xe khách người chơi) vẫn là ảnh cũ. Ghi công thêm trong CREDITS.md.

@@ -14,6 +14,11 @@ hàng Tết trên thùng bán tải), không phải mô hình gốc.
 | mini_van | D3S MB Vito (W447) '14 | DANZ \| D3S DESIGN® | https://sketchfab.com/3d-models/d3s-mb-vito-w447-14-237d72410cab4732ab98446ded360ee6 |
 | pickup_blue / pickup_white | Chevrolet S10 | David_Holiday | https://sketchfab.com/3d-models/chevrolet-s10-5e77a057585d47309d2605934197669f |
 | pickup_gray | The all new Isuzu D'Max 2021 Model. | MERCEDES TRUCKS LLC | https://sketchfab.com/3d-models/the-all-new-isuzu-dmax-2021-model-ebb7ce30d778471184defaf0719cb3df |
+| bus_1 | Autobus ABCO | BgirlKittyEmo | https://sketchfab.com/3d-models/852a63f852584448a49d643ae944506e |
+| bus_2 | Busscar Micruss | Red Fox / nokillnando | https://sketchfab.com/3d-models/60c006be9a834849895438f15d4927c0 |
+| bus_3 | Karosa C734 | Jan Bláha | https://sketchfab.com/3d-models/21262813724e401b88333d381c4626f7 |
+| truck / container_1 | Truck (Textured) | Aegin | https://sketchfab.com/3d-models/bee50cc724a640328020bf31be85e91d |
+| container_2 | IVECO Bus | Weitstern | https://sketchfab.com/3d-models/bfdd04a15273482694e7319ca98fc468 |
 
 Khi phát hành bản chính thức nhớ ghi các dòng trên ở màn hình "Giới thiệu / Ghi công".
 Thông tin tác giả và giấy phép lấy từ API Sketchfab ngày 2026-10-28; kiểm tra lại
